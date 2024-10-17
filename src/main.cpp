@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
 
 	Socket socket;
 	socket.socket_creation();
-// les commentaires de jeza en anglais et en francais c'est incr
+// les prints de jeza en anglais et en francais c'est incr
 	socket.socket_binding();
 
 
