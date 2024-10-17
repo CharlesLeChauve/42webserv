@@ -5,9 +5,15 @@ CXXFLAGS = -Wall -Wextra -Werror -std=c++98
 SRCDIR = src
 OBJDIR = obj
 
-SRC =
+# Liste des fichiers source
+SRC = \
+	$(SRCDIR)/ConfigParser.cpp \
+	$(SRCDIR)/ServerConfig.cpp \
+	$(SRCDIR)/socket.cpp \
+	$(SRCDIR)/main.cpp
 
-OBJ =
+# Liste des fichiers objets
+OBJ = $(SRC:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
 # Règles
 all: webserver
