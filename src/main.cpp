@@ -1,5 +1,6 @@
 #include "ConfigParser.hpp"
-#include "socket.hpp"
+#include "Socket.hpp"
+#include "Server.hpp"
 #include <iostream>
 
 int main(int argc, char* argv[]) {
@@ -10,7 +11,7 @@ int main(int argc, char* argv[]) {
 
 	std::string configFile = argv[1];
 	ConfigParser configParser;
-
+	// ARRETE DE JUGER MES PRINTS SINON J'EN METS PARTOUT DANS TON CODE ! ;)
 	if (configParser.parseConfigFile(configFile)) {
 		const std::vector<ServerConfig>& serverConfigs = configParser.getServerConfigs();
 		std::cout << "Number of configured servers: " << serverConfigs.size() << std::endl;
@@ -31,11 +32,11 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	Socket socket;
-	socket.socket_creation();
-// les prints de jeza en anglais et en francais c'est incr
-	socket.socket_binding();
+	Server	server;
+	Socket socket(8080);
+	socket.build_sockets();
 
-
+	server.stockClientsSockets(socket);
+	server.receiveAndSend();
 	return 0;
 }

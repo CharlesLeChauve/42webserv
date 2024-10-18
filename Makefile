@@ -9,7 +9,7 @@ OBJDIR = obj
 SRC = \
 	$(SRCDIR)/ConfigParser.cpp \
 	$(SRCDIR)/ServerConfig.cpp \
-	$(SRCDIR)/socket.cpp \
+	$(SRCDIR)/Socket.cpp \
 	$(SRCDIR)/main.cpp
 
 # Liste des fichiers objets

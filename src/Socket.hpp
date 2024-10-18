@@ -13,11 +13,12 @@ class Socket
 {
 private:
     int _socket_fd;
+    int _port;
     struct sockaddr_in address;
     // int new_sockets[10]; // Need to use vector later ?
 
 public:
-    Socket();
+    Socket(int p_port);
     ~Socket();
 
     // Socket creation
@@ -30,7 +31,11 @@ public:
 
     // Sending & receiving messages
 
-    bool operator==(int fd) const;
+    bool    operator==(int fd) const;
+    int     getSocket() const;
+    int     getPort() const;
+    sockaddr_in& getAddress() ;
 
+    void    build_sockets();
     void    close_sockets();
 };
