@@ -16,34 +16,34 @@ bool ConfigParser::parseConfigFile(const std::string &filename) {
 		return false;
 	}
 
-	std::cout << "Parsing configuration file: " << filename << std::endl;
+	// std::cout << "Parsing configuration file: " << filename << std::endl;
 
 	std::string line;
 	while (std::getline(file, line)) {
 		trim(line);
-		std::cout << "Read line: \"" << line << "\"" << std::endl;
+		// std::cout << "Read line: \"" << line << "\"" << std::endl;
 
 		if (line.empty() || line[0] == '#') {
-			std::cout << "Skipping empty line or comment." << std::endl;
+			// std::cout << "Skipping empty line or comment." << std::endl;
 			continue;
 		}
 
 		if (line == "server {") {
-			std::cout << "Starting server block" << std::endl;
+			// std::cout << "Starting server block" << std::endl;
 			ServerConfig serverConfig;
 			while (std::getline(file, line)) {
 				trim(line);
 				if (line.empty() || line[0] == '#') {
-					std::cout << "Skipping empty line or comment in server block." << std::endl;
+					// std::cout << "Skipping empty line or comment in server block." << std::endl;
 					continue;
 				}
 				if (line == "}") {
-					std::cout << "End of server block" << std::endl;
+					// std::cout << "End of server block" << std::endl;
 					break;
 				}
-				std::cout << "Directive in server block: \"" << line << "\"" << std::endl;
+				// std::cout << "Directive in server block: \"" << line << "\"" << std::endl;
 				if (!processServerDirective(file, line, serverConfig)) {
-					std::cerr << "Error parsing server block." << std::endl;
+					// std::cerr << "Error parsing server block." << std::endl;
 					return false;
 				}
 			}
@@ -54,7 +54,7 @@ bool ConfigParser::parseConfigFile(const std::string &filename) {
 		}
 	}
 
-	std::cout << "Configuration file parsing completed successfully." << std::endl;
+	// std::cout << "Configuration file parsing completed successfully." << std::endl;
 	return true;
 }
 
@@ -122,7 +122,7 @@ bool ConfigParser::processServerDirective(std::ifstream &file, const std::string
 	std::string directive;
 	iss >> directive;
 
-	std::cout << "Processing directive: \"" << directive << "\"" << std::endl;
+	// std::cout << "Processing directive: \"" << directive << "\"" << std::endl;
 
 	std::string value;
 	std::getline(iss, value, ';');
@@ -133,16 +133,16 @@ bool ConfigParser::processServerDirective(std::ifstream &file, const std::string
 	if (directive == "listen") {
 		int port = std::atoi(value.c_str());
 		serverConfig.ports.push_back(port);
-		std::cout << "Found 'listen' directive: port = " << port << std::endl;
+		// std::cout << "Found 'listen' directive: port = " << port << std::endl;
 	} else if (directive == "server_name") {
 		serverConfig.serverName = value;
-		std::cout << "Found 'server_name' directive: " << serverConfig.serverName << std::endl;
+		// std::cout << "Found 'server_name' directive: " << serverConfig.serverName << std::endl;
 	} else if (directive == "root") {
 		serverConfig.root = value;
-		std::cout << "Found 'root' directive: " << serverConfig.root << std::endl;
+		// std::cout << "Found 'root' directive: " << serverConfig.root << std::endl;
 	} else if (directive == "index") {
 		serverConfig.index = value;
-		std::cout << "Found 'index' directive: " << serverConfig.index << std::endl;
+		// std::cout << "Found 'index' directive: " << serverConfig.index << std::endl;
 	} else if (directive == "error_page") {
 		std::istringstream valueStream(value);
 		std::string token;
@@ -160,18 +160,18 @@ bool ConfigParser::processServerDirective(std::ifstream &file, const std::string
 
 		for (size_t i = 0; i < errorCodes.size(); ++i) {
 			serverConfig.errorPages[errorCodes[i]] = errorPage;
-			std::cout << "Directive 'error_page' found : code = " << errorCodes[i] << ", page = " << errorPage << std::endl;
+			// std::cout << "Directive 'error_page' found : code = " << errorCodes[i] << ", page = " << errorPage << std::endl;
 		}
 	} else if (directive == "location") {
 		Location location;
 		location.path = value;
-		std::cout << "Starting location block for path: " << location.path << std::endl;
+		// std::cout << "Starting location block for path: " << location.path << std::endl;
 		if (!processLocationBlock(file, location.options)) {
 			std::cerr << "Error parsing location block." << std::endl;
 			return false;
 		}
 		serverConfig.locations.push_back(location);
-		std::cout << "End of location block for path: " << location.path << std::endl;
+		// std::cout << "End of location block for path: " << location.path << std::endl;
 	} else {
 		std::cerr << "Unknown directive: \"" << directive << "\"" << std::endl;
 		return false;
@@ -184,11 +184,11 @@ bool ConfigParser::processLocationBlock(std::ifstream &file, std::map<std::strin
 	while (std::getline(file, line)) {
 		trim(line);
 		if (line.empty() || line[0] == '#') {
-			std::cout << "Skipping empty line or comment in location block." << std::endl;
+			// std::cout << "Skipping empty line or comment in location block." << std::endl;
 			continue;
 		}
 		if (line == "}") {
-			std::cout << "End of location block" << std::endl;
+			// std::cout << "End of location block" << std::endl;
 			return true;
 		}
 
@@ -196,7 +196,7 @@ bool ConfigParser::processLocationBlock(std::ifstream &file, std::map<std::strin
 		std::string directive;
 		iss >> directive;
 
-		std::cout << "Directive in location block: \"" << directive << "\"" << std::endl;
+		// std::cout << "Directive in location block: \"" << directive << "\"" << std::endl;
 
 		if (directive == "root" || directive == "index" || directive == "method" || directive == "cgi") {
 			std::string value;
@@ -206,13 +206,13 @@ bool ConfigParser::processLocationBlock(std::ifstream &file, std::map<std::strin
 				return false;
 			}
 			options[directive] = value;
-			std::cout << "Found option '" << directive << "': " << value << std::endl;
+			// std::cout << "Found option '" << directive << "': " << value << std::endl;
 		} else if (directive == "proxy_pass") {
 			std::string proxyPass;
 			std::getline(iss, proxyPass, ';');
 			trim(proxyPass);
 			options["proxy_pass"] = proxyPass;
-			std::cout << "Found 'proxy_pass' option: " << proxyPass << std::endl;
+			// std::cout << "Found 'proxy_pass' option: " << proxyPass << std::endl;
 		} else {
 			std::cerr << "Unknown directive in location block: \"" << directive << "\"" << std::endl;
 			return false;
