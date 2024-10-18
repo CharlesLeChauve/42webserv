@@ -111,11 +111,9 @@ bool ConfigParser::processServerDirective(std::ifstream &file, const std::string
 	std::string value;
 	std::getline(iss, value, ';');
 	trim(value);
-
 	if (!validateDirectiveValue(directive, value)) {
 		return false;
 	}
-
 	if (directive == "listen") {
 		int port = std::atoi(value.c_str());
 		serverConfig.ports.push_back(port);
@@ -131,11 +129,23 @@ bool ConfigParser::processServerDirective(std::ifstream &file, const std::string
 		std::cout << "Found 'index' directive: " << serverConfig.index << std::endl;
 	} else if (directive == "error_page") {
 		std::istringstream valueStream(value);
-		std::string errorCodeStr, errorPage;
-		valueStream >> errorCodeStr >> errorPage;
-		int errorCode = std::atoi(errorCodeStr.c_str());
-		serverConfig.errorPages[errorCode] = errorPage;
-		std::cout << "Found 'error_page' directive: code = " << errorCode << ", page = " << errorPage << std::endl;
+		std::string token;
+		std::vector<int> errorCodes;
+		std::string errorPage;
+
+		while (valueStream >> token) {
+			if (isdigit(token[0])) {
+				errorCodes.push_back(std::atoi(token.c_str()));
+			} else {
+				errorPage = token;
+				break;
+			}
+		}
+
+		for (size_t i = 0; i < errorCodes.size(); ++i) {
+			serverConfig.errorPages[errorCodes[i]] = errorPage;
+			std::cout << "Directive 'error_page' found : code = " << errorCodes[i] << ", page = " << errorPage << std::endl;
+		}
 	} else if (directive == "location") {
 		Location location;
 		location.path = value;
