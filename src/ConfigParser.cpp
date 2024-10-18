@@ -74,6 +74,21 @@ bool ConfigParser::validateDirectiveValue(const std::string &directive, const st
 			std::cerr << "Invalid path for '" << directive << "'" << std::endl;
 			return false;
 		}
+		if (directive == "error_page") {
+			std::istringstream valueStream(value);
+			std::string token;
+			while (valueStream >> token) {
+				if (isdigit(token[0])) {
+					int errorCode = std::atoi(token.c_str());
+					if (errorCode < 100 || errorCode > 599) {
+						std::cerr << "Invalid error code: " << errorCode << std::endl;
+						return false;
+					}
+				} else {
+					break;
+				}
+			}
+		}
 	} else if (directive == "server_name") {
 		if (value.empty() || value.find(' ') != std::string::npos || value.length() > 255) {
 			std::cerr << "Invalid server name: " << value << std::endl;
@@ -100,6 +115,7 @@ bool ConfigParser::validateDirectiveValue(const std::string &directive, const st
 	}
 	return true;
 }
+
 
 bool ConfigParser::processServerDirective(std::ifstream &file, const std::string &line, ServerConfig &serverConfig) {
 	std::istringstream iss(line);
