@@ -61,3 +61,29 @@ void	Server::receiveAndSend() {
         std::cout << "Connection closed." << std::endl;
     }
 }
+
+// void    Server::stockClientsSockets(Socket& socket) {
+//     pollfd  server_pollfd;
+
+//     server_pollfd.fd = socket.getSocket();
+//     server_pollfd.events = POLLIN; // Surveiller les connexions entrantes. (POLLIN : lecture)
+//     fds.push_back(server_pollfd);
+
+//     while (true) {
+//         int fds_nb = poll(fds.data(), fds.size(), -1);
+//         if (fds_nb == -1) {
+//             std::cout << "Error while checking client requests" << std::endl;
+//             return ;
+//         }
+//         for (std::vector<int>::iterator it = fds.begin(); it != fds.end(); ++it) {
+//             if (fds[it].revents && POLLIN) { // Si le fd est prêt à être lu.
+//                 if (fds[it].fd == socket.getSocket()) { // Si c'est le socket serveur > Accept new connection.
+
+//                 }
+//             }
+//             else { // Si pas socket serveur, recevoir request + response
+
+//             }
+//         }
+//     }
+// }

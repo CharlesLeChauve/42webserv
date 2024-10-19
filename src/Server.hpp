@@ -1,6 +1,8 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <poll.h>
+#include <iostream>
 
 #include "Socket.hpp"
 #include "ServerConfig.hpp"
@@ -13,6 +15,7 @@ private:
 	// ServerConfig& _config;
 	// std::vector<Socket&> _sockets;
 	std::vector<int> _clientsFd;
+	std::vector<pollfd> fds;
 public:
 	// Server(ServerConfig& config);
 	Server();
