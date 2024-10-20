@@ -10,7 +10,10 @@ SRC = \
 	$(SRCDIR)/ConfigParser.cpp \
 	$(SRCDIR)/ServerConfig.cpp \
 	$(SRCDIR)/Socket.cpp \
-	$(SRCDIR)/main.cpp
+	$(SRCDIR)/main.cpp \
+	$(SRCDIR)/Server.cpp \
+	$(SRCDIR)/CGIHandler.cpp \
+	$(SRCDIR)/HTTPRequest.cpp
 
 # Liste des fichiers objets
 OBJ = $(SRC:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)

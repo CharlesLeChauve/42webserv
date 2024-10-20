@@ -2,6 +2,7 @@
 #include "Socket.hpp"
 #include "Server.hpp"
 #include <iostream>
+#include "ServerConfig.hpp"
 
 int main(int argc, char* argv[]) {
 	if (argc < 2) {
@@ -36,7 +37,11 @@ int main(int argc, char* argv[]) {
 	Socket socket(8080);
 	socket.build_sockets();
 
-	server.stockClientsSockets(socket);
-	server.receiveAndSend();
+	// Boucle pour accepter des connexions et les traiter
+	while (true) {
+		server.stockClientsSockets(socket);  // Accepter les connexions
+		server.receiveAndSend();  // Gérer les requêtes des clients
+	}
+
 	return 0;
 }
