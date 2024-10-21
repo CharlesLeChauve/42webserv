@@ -26,7 +26,7 @@ void    Socket::socket_creation() {
 	std::cout << "Socket successfully created !" << std::endl;
 }
 
-void    Socket::socket_binding() {
+void    Socket::socket_binding() { // Check if bind() function is the same as connect()
 
 	int	add_size = sizeof(address);
  

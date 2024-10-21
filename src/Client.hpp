@@ -11,10 +11,11 @@
 class Client {
 private:
     int _client_socket;
+    int _port;
     struct sockaddr_in _server_address;
 
 public:
-    Client();
+    Client(int p_port);
     ~Client();
 
     void connect_to_server();

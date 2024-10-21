@@ -75,14 +75,44 @@ void	Server::receiveAndSend() {
 //             std::cout << "Error while checking client requests" << std::endl;
 //             return ;
 //         }
-//         for (std::vector<int>::iterator it = fds.begin(); it != fds.end(); ++it) {
-//             if (fds[it].revents && POLLIN) { // Si le fd est prêt à être lu.
-//                 if (fds[it].fd == socket.getSocket()) { // Si c'est le socket serveur > Accept new connection.
+//         for (std::vector<pollfd>::iterator it = fds.begin(); it != fds.end(); ++it) {
+//             if (it->revents & POLLIN) { // Si le fd est prêt à être lu. > & : vérifie si le bit correspondant à POLLIN est activé dans revents
+//                 if (it->fd == socket.getSocket()) { // Si c'est le socket serveur > Accept new connection.
+//                     socklen_t   addr_len = sizeof(socket.getAddress());
+//                     int client_socket = accept(socket.getSocket(), (struct sockaddr*)&server.getAddress(), addr_len);
+//                     if (client_socket == -1) {
+//                         std::cout << "Failed to accept client connection." << std::endl;
+//                         continue ;
+//                     }
+//                     pollfd  client_pollfd;
 
+//                     client_pollfd.fd = client_socket;
+//                     client_pollfd.events = POLLIN;
+//                     fds.push_back(client_pollfd);
+//                     std::cout << "New client connected." << std::endl;
 //                 }
-//             }
-//             else { // Si pas socket serveur, recevoir request + response
+//                 // Means that the event is linked to a client request.
+//                 else {
+//                     char    buffer[1024] = {0};
+//                     int bytes_rcv = recv(it->fd, buffer, 1024, 0);
 
+//                     if (bytes_rcv <= 0) {
+//                         close (it->fd);
+//                         it = fds.erase(it); // Après avoir appelé erase(it), l'iterator est invalidé, donc il faut mettre à jour l'iterator pour qu'il pointe sur le bon élément suivant
+//                         std::cout << "Connection has been closed by the client." << std::endl;
+//                         continue ;
+//                     }
+
+//                     std::cout << "Client request is : " << buffer << std::endl;
+//                     std::string response = "This is a fucking response waiting by another client !";
+
+//                     int bytes_sent = send(it->fd, response.c_str(), response.size(), 0);
+//                     if (bytes_sent == -1) {
+//                         std::cout << "Failed in sending response to client." << std::endl;
+//                         continue ;
+//                     }
+//                 }
+//                 // Need to manage POLLERR - POLLHUP - POLLNVAL
 //             }
 //         }
 //     }
