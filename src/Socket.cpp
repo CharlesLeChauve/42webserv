@@ -45,7 +45,7 @@ void    Socket::socket_binding() {
 
 void    Socket::socket_listening() {
 
-	int	add_size = sizeof(address);
+	//int	add_size = sizeof(address);
 
 	if (listen(_socket_fd, 10) == -1) {
 		std::cout << "Failed to put socket in listening mode." << std::endl;

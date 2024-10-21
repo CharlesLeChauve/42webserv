@@ -11,7 +11,7 @@ SRC = \
 	$(SRCDIR)/ServerConfig.cpp \
 	$(SRCDIR)/Socket.cpp \
 	$(SRCDIR)/main.cpp \
-	$(SRCDIR)/Server.cpp \
+	$(SRCDIR)/ServerCopy.cpp \
 	$(SRCDIR)/CGIHandler.cpp \
 	$(SRCDIR)/HTTPRequest.cpp
 

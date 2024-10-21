@@ -1,5 +1,5 @@
 #include <fstream>
-#include "Server.hpp"
+#include "ServerCopy.hpp"
 #include "HTTPRequest.hpp"
 #include "CGIHandler.hpp"
 #include "ServerConfig.hpp"
@@ -86,7 +86,9 @@ void Server::sendErrorResponse(int client_fd, int errorCode) {
 
 // Méthode pour gérer la requête HTTP en fonction de la méthode
 void Server::handleHttpRequest(int client_fd, const HTTPRequest& request) {
-	if (request.getMethod() == "GET" || request.getMethod() == "POST") {
+	if (request.getMethod() == "GET") {
+		handleGetOrPostRequest(client_fd, request);
+	} else if (request.getMethod() == "POST") {
 		handleGetOrPostRequest(client_fd, request);
 	} else if (request.getMethod() == "DELETE") {
 		handleDeleteRequest(client_fd, request);
