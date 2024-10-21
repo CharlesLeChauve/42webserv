@@ -128,6 +128,12 @@ bool ConfigParser::processServerDirective(std::ifstream &file, const std::string
 	std::string value;
 	std::getline(iss, value, ';');
 	trim(value);
+
+	  if (directive == "location" && value.back() == '{') {
+		value = value.substr(0, value.size() - 1);
+		trim(value);
+	}
+
 	if (!validateDirectiveValue(directive, value)) {
 		return false;
 	}
@@ -182,42 +188,44 @@ bool ConfigParser::processServerDirective(std::ifstream &file, const std::string
 
 
 bool ConfigParser::processLocationBlock(std::ifstream &file, std::map<std::string, std::string> &options) {
-		std::string line;
-		while (std::getline(file, line)) {
-				trim(line);
-				if (line.empty() || line[0] == '#') {
-						continue;
-				}
-				if (line == "}") {
-						return true;
-				}
-
-				std::istringstream iss(line);
-				std::string directive;
-				iss >> directive;
-
-				if (directive == "root" || directive == "index" || directive == "method" || directive == "cgi" || directive == "cgi_extension") {
-						std::string value;
-						std::getline(iss, value, ';');
-						trim(value);
-						if (!validateDirectiveValue(directive, value)) {
-								return false;
-						}
-						options[directive] = value;
-				} else if (directive == "proxy_pass") {
-						std::string proxyPass;
-						std::getline(iss, proxyPass, ';');
-						trim(proxyPass);
-						options["proxy_pass"] = proxyPass;
-				} else {
-						std::cerr << "Unknown directive in location block: \"" << directive << "\"" << std::endl;
-						return false;
-				}
+	std::string line;
+	while (std::getline(file, line)) {
+		trim(line);
+		if (line.empty() || line[0] == '#') {
+			continue;
+		}
+		if (line == "}") {
+			return true;
 		}
 
-		std::cerr << "Error: unexpected end of file in location block." << std::endl;
-		return false;
+		std::istringstream iss(line);
+		std::string directive;
+		iss >> directive;
+
+		// Assurer que toutes les options sont bien parsées sans ajout d'accolades
+		if (directive == "root" || directive == "index" || directive == "method" || directive == "cgi" || directive == "cgi_extension") {
+			std::string value;
+			std::getline(iss, value, ';');
+			trim(value);
+			if (!validateDirectiveValue(directive, value)) {
+				return false;
+			}
+			options[directive] = value;
+		} else if (directive == "proxy_pass") {
+			std::string proxyPass;
+			std::getline(iss, proxyPass, ';');
+			trim(proxyPass);
+			options["proxy_pass"] = proxyPass;
+		} else {
+			std::cerr << "Unknown directive in location block: \"" << directive << "\"" << std::endl;
+			return false;
+		}
+	}
+
+	std::cerr << "Error: unexpected end of file in location block." << std::endl;
+	return false;
 }
+
 
 void ConfigParser::trim(std::string &s) {
 		size_t start = s.find_first_not_of(" \t\r\n");
