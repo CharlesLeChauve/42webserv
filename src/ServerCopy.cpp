@@ -8,9 +8,50 @@
 #include <time.h>
 
 Server::Server(const ServerConfig& config) : _config(config) {
-	// Utilisation de _config pour initialiser le serveur
-	std::cout << "Server initialized with name: " << _config.serverName << std::endl;
+    // Affichage des informations de la configuration du serveur
+    std::cout << "Server initialized with the following configuration:" << std::endl;
+
+    // Afficher le nom du serveur
+    std::cout << "Server Name: " << _config.serverName << std::endl;
+
+    // Afficher l'hôte et les ports
+    std::cout << "Host: " << _config.host << std::endl;
+    std::cout << "Ports: ";
+    for (size_t i = 0; i < _config.ports.size(); ++i) {
+        std::cout << _config.ports[i];
+        if (i != _config.ports.size() - 1)
+            std::cout << ", ";
+    }
+    std::cout << std::endl;
+
+    // Afficher le chemin racine et le fichier index
+    std::cout << "Root directory: " << _config.root << std::endl;
+    std::cout << "Index file: " << _config.index << std::endl;
+
+    // Afficher les pages d'erreur
+    std::cout << "Error Pages: " << std::endl;
+    for (std::map<int, std::string>::const_iterator it = _config.errorPages.begin(); it != _config.errorPages.end(); ++it) {
+        std::cout << "  Error Code " << it->first << ": " << it->second << std::endl;
+    }
+
+    // Afficher les locations et leurs options
+    std::cout << "Locations: " << std::endl;
+    for (size_t i = 0; i < _config.locations.size(); ++i) {
+        const Location& location = _config.locations[i];
+        std::cout << "  Location path: " << location.path << std::endl;
+        for (std::map<std::string, std::string>::const_iterator it = location.options.begin(); it != location.options.end(); ++it) {
+            std::cout << "    " << it->first << ": " << it->second << std::endl;
+        }
+    }
+
+    // Vérifier si la configuration est valide
+    if (!_config.isValid()) {
+        std::cerr << "Server configuration is invalid." << std::endl;
+    } else {
+        std::cout << "Server configuration is valid." << std::endl;
+    }
 }
+
 
 Server::~Server() {}
 
@@ -230,6 +271,60 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath) {
 }
 
 
+void Server::stockClientsSockets(Socket& socket) {
+    // Ajouter le socket du serveur à la liste des fds surveillés par poll
+    pollfd server_pollfd;
+    server_pollfd.fd = socket.getSocket();
+    server_pollfd.events = POLLIN; // Surveiller les connexions entrantes
+    fds.push_back(server_pollfd);
+
+    while (true) {
+        int fds_nb = poll(fds.data(), fds.size(), -1); // Attendre les événements
+        if (fds_nb == -1) {
+            std::cerr << "Error during poll" << std::endl;
+            return;
+        }
+
+        for (std::vector<pollfd>::iterator it = fds.begin(); it != fds.end();) {
+            if (it->revents & POLLIN) { // Prêt pour la lecture
+                if (it->fd == socket.getSocket()) { // Nouvelle connexion entrante
+                    int client_fd = accept(socket.getSocket(), NULL, NULL);
+                    if (client_fd == -1) {
+                        std::cerr << "Failed to accept connection" << std::endl;
+                        continue;
+                    }
+
+                    // Ajouter le nouveau client à la liste de poll
+                    pollfd client_pollfd;
+                    client_pollfd.fd = client_fd;
+                    client_pollfd.events = POLLIN; // Surveiller les requêtes clients
+                    fds.push_back(client_pollfd);
+
+                    std::cout << "New client connected, fd: " << client_fd << std::endl;
+                } else { // Gérer les requêtes des clients existants
+                    char buffer[1024];
+                    int bytes_received = recv(it->fd, buffer, sizeof(buffer), 0);
+                    if (bytes_received <= 0) {
+                        // Déconnexion du client ou erreur
+                        close(it->fd);
+                        it = fds.erase(it); // Supprimer le client de la liste de poll
+                        std::cout << "Client disconnected or error occurred" << std::endl;
+                        continue;
+                    } else {
+                        // Traiter la requête client
+                        std::cout << "Request received: " << buffer << std::endl;
+                        std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!";
+                        send(it->fd, response.c_str(), response.size(), 0);
+                    }
+                }
+            }
+            ++it;
+        }
+    }
+}
+
+
+
 // void Server::stockClientsSockets(Socket& socket) {
 // 	int add_size = sizeof(socket.getAddress());
 
@@ -249,82 +344,82 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath) {
 // }
 
 
-void    Server::stockClientsSockets(Socket& socket) {
-    pollfd  server_pollfd;
+// void    Server::stockClientsSockets(Socket& socket) {
+//     pollfd  server_pollfd;
 
-    server_pollfd.fd = socket.getSocket();
-    server_pollfd.events = POLLIN; // Surveiller les connexions entrantes. (POLLIN : lecture)
-    fds.push_back(server_pollfd);
+//     server_pollfd.fd = socket.getSocket();
+//     server_pollfd.events = POLLIN; // Surveiller les connexions entrantes. (POLLIN : lecture)
+//     fds.push_back(server_pollfd);
 
-    while (true) {
-        int fds_nb = poll(fds.data(), fds.size(), -1);
-        if (fds_nb == -1) {
-            std::cout << "Error while checking client requests" << std::endl;
-            return ;
-        }
-        for (std::vector<pollfd>::iterator it = fds.begin(); it != fds.end();) {
-            // Need to manage POLLERR - POLLHUP - POLLNVAL => Check if we use strerror(errno) for error log.
-            if (it->revents & POLLERR) { // signifie qu'une erreur non récupérable s'est produite.
-                std::cout << "An error occured on this socket !" << std::endl;
-                close (it->fd);
-                it = fds.erase(it);
-                break ;
-            }
-            else if (it->revents & POLLHUP) { // indique que le client a fermé la connexion proprement.
-                std::cout << "Connection has been closed by client." << std::endl;
-                close (it->fd);
-                it = fds.erase(it);
-                break ;
-            }
-            else if (it->revents & POLLNVAL) { // fd est invalide (ex., si tu utilises un socket fermé ou non valide dans poll())
-                std::cout << "File descriptor is not valid." << std::endl;
-                close(it->fd);
-                it = fds.erase(it);
-                break ;
-            }
-            else if (it->revents & POLLIN) { // Si le fd est prêt à être lu. > & : vérifie si le bit correspondant à POLLIN est activé dans revents
-                if (it->fd == socket.getSocket()) { // Si c'est le socket serveur > Accept new connection.
-					int add_size = sizeof(socket.getAddress());
-                    int client_socket = accept(socket.getSocket(), (struct sockaddr*)&socket.getAddress(), (socklen_t*)&add_size);
-                    if (client_socket == -1) {
-                        std::cout << "Failed to accept client connection." << std::endl;
-                        continue ;
-                    }
-                    pollfd  client_pollfd;
+//     while (true) {
+//         int fds_nb = poll(fds.data(), fds.size(), -1);
+//         if (fds_nb == -1) {
+//             std::cout << "Error while checking client requests" << std::endl;
+//             return ;
+//         }
+//         for (std::vector<pollfd>::iterator it = fds.begin(); it != fds.end();) {
+//             // Need to manage POLLERR - POLLHUP - POLLNVAL => Check if we use strerror(errno) for error log.
+//             if (it->revents & POLLERR) { // signifie qu'une erreur non récupérable s'est produite.
+//                 std::cout << "An error occured on this socket !" << std::endl;
+//                 close (it->fd);
+//                 it = fds.erase(it);
+//                 break ;
+//             }
+//             else if (it->revents & POLLHUP) { // indique que le client a fermé la connexion proprement.
+//                 std::cout << "Connection has been closed by client." << std::endl;
+//                 close (it->fd);
+//                 it = fds.erase(it);
+//                 break ;
+//             }
+//             else if (it->revents & POLLNVAL) { // fd est invalide (ex., si tu utilises un socket fermé ou non valide dans poll())
+//                 std::cout << "File descriptor is not valid." << std::endl;
+//                 close(it->fd);
+//                 it = fds.erase(it);
+//                 break ;
+//             }
+//             else if (it->revents & POLLIN) { // Si le fd est prêt à être lu. > & : vérifie si le bit correspondant à POLLIN est activé dans revents
+//                 if (it->fd == socket.getSocket()) { // Si c'est le socket serveur > Accept new connection.
+// 					int add_size = sizeof(socket.getAddress());
+//                     int client_socket = accept(socket.getSocket(), (struct sockaddr*)&socket.getAddress(), (socklen_t*)&add_size);
+//                     if (client_socket == -1) {
+//                         std::cout << "Failed to accept client connection." << std::endl;
+//                         continue ;
+//                     }
+//                     pollfd  client_pollfd;
 
-                    client_pollfd.fd = client_socket;
-                    client_pollfd.events = POLLIN;
-                    fds.push_back(client_pollfd);
-                    std::cout << "New client connected." << std::endl;
-                }
-                // Means that the event is linked to a client request.
-                else {
-                    char    buffer[1024] = {0};
-                    int bytes_rcv = recv(it->fd, buffer, 1024, 0);
+//                     client_pollfd.fd = client_socket;
+//                     client_pollfd.events = POLLIN;
+//                     fds.push_back(client_pollfd);
+//                     std::cout << "New client connected." << std::endl;
+//                 }
+//                 // Means that the event is linked to a client request.
+//                 else {
+//                     char    buffer[1024] = {0};
+//                     int bytes_rcv = recv(it->fd, buffer, 1024, 0);
 
-                    if (bytes_rcv == 0) {
-                        close (it->fd);
-                        it = fds.erase(it); // Après avoir appelé erase(it), l'iterator est invalidé, donc il faut mettre à jour l'iterator pour qu'il pointe sur le bon élément suivant
-                        std::cout << "Connection has been closed by the client." << std::endl;
-                        break ;
-                    }
-                    else if (bytes_rcv == -1) {
-                        close (it->fd);
-                        it = fds.erase(it); // Après avoir appelé erase(it), l'iterator est invalidé, donc il faut mettre à jour l'iterator pour qu'il pointe sur le bon élément suivant
-                        std::cout << "Failed in receiving client request." << std::endl;
-                        break ;
-                    }
+//                     if (bytes_rcv == 0) {
+//                         close (it->fd);
+//                         it = fds.erase(it); // Après avoir appelé erase(it), l'iterator est invalidé, donc il faut mettre à jour l'iterator pour qu'il pointe sur le bon élément suivant
+//                         std::cout << "Connection has been closed by the client." << std::endl;
+//                         break ;
+//                     }
+//                     else if (bytes_rcv == -1) {
+//                         close (it->fd);
+//                         it = fds.erase(it); // Après avoir appelé erase(it), l'iterator est invalidé, donc il faut mettre à jour l'iterator pour qu'il pointe sur le bon élément suivant
+//                         std::cout << "Failed in receiving client request." << std::endl;
+//                         break ;
+//                     }
 
-                    std::cout << "Client request is : " << buffer << std::endl;
-                    std::string response = "This is a fucking response waiting by another client !";
+//                     std::cout << "Client request is : " << buffer << std::endl;
+//                     std::string response = "This is a fucking response waiting by another client !";
 
-                    int bytes_sent = send(it->fd, response.c_str(), response.size(), 0);
-                    if (bytes_sent == -1) {
-                        std::cout << "Failed in sending response to client." << std::endl;
-                        break ;
-                    }
-                }
-            }
-        }
-    }
-}
+//                     int bytes_sent = send(it->fd, response.c_str(), response.size(), 0);
+//                     if (bytes_sent == -1) {
+//                         std::cout << "Failed in sending response to client." << std::endl;
+//                         break ;
+//                     }
+//                 }
+//             }
+//         }
+//     }
+// }
