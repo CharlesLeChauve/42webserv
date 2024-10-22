@@ -21,11 +21,14 @@ input {
 	background-color: red; 
 }
 
-input .myclass {
-	
+.antoine_le_bg {
+	background-color: gold;
+	box-shadow: -10px 10px 20px rgba(0, 0, 0, 0.5);
 }
 
-input::after 
+img {
+	margin : 20 20 20 20;
+}
 
 /* Ils sont présentés dans leur ordre de prépondérance, si une règle vise un id, 
 elle surpasse une visant l'élément parcequ'il a une class. Ici, le background-color red de fm s'appliquera au lieu 
