@@ -1,3 +1,33 @@
-#fm {
-	background-color: red;
+/*			CSS				*/
+/*Cascade Style Sheet (Cascade parceque les régles s'appliquent de manière descendante vers les enfants de chaque conteneur html ciblé)*/
+/*Le langage constite en une suite de règles, qu'on peut appliquer à un type de conteneur, */
+/*un groupe de conteneur identifiés par une class html ou un élément unique identifié par une balise id*/
+
+
+/* '<element>' cible tous les éléments du type HTML spécifié (div, a, body, ...) */
+input {
+	border: 2px solid green;
+	border-radius: 45%;
 }
+
+/* '.<class>' permet de cibler tous les éléments à qui on a attribué la class cible*/
+.myclass {
+	background-color: blue;
+	font-size: 5rem;
+}
+
+/* '#<id>' permet de cibler l'élément html portant l'id cible*/
+#fm {
+	background-color: red; 
+}
+
+input .myclass {
+	
+}
+
+input::after 
+
+/* Ils sont présentés dans leur ordre de prépondérance, si une règle vise un id, 
+elle surpasse une visant l'élément parcequ'il a une class. Ici, le background-color red de fm s'appliquera au lieu 
+de celui blue de myclass.  */
+
