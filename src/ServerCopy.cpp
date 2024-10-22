@@ -5,6 +5,8 @@
 #include "ServerConfig.hpp"
 #include <sys/stat.h>  // Pour utiliser la fonction stat
 
+#include <time.h>
+
 Server::Server(const ServerConfig& config) : _config(config) {
 	// Utilisation de _config pour initialiser le serveur
 	std::cout << "Server initialized with name: " << _config.serverName << std::endl;
@@ -19,11 +21,23 @@ std::string to_string(T value) {
     return oss.str();
 }
 
+std::string getSorryPath() {
+	srand(time(NULL));
+	int num = rand() % 6;
+	num++;
+	return "/images/" + std::to_string(num) + "_sorry.gif";
+}
+
 // Génération de la page d'erreur en utilisant les informations de configuration du serveur
 std::string Server::generateErrorPage(int errorCode, const std::string& errorMessage) {
 	std::stringstream page;
-	page << "<html><head><title>Error " << errorCode << " - " << _config.serverName << "</title></head>";  // Utilisation du nom du serveur
+	page << "<html><head><title>Error " << errorCode << " - " << _config.serverName << "</title>";  // Utilisation du nom du serveur
+	page << "<link rel=\"stylesheet\" href=\"/css/err_style.css\"></head>";
 	page << "<body><h1>Error " << errorCode << ": " << errorMessage << "</h1>";
+	page << "<img src=\"" << getSorryPath() << "\" alt=\"Error Image\">";
+	page << "<div style=\"width:100%;height:0;padding-bottom:56%;position:relative;\">"
+     << "<iframe src=\"https://giphy.com/embed/l0HlGkNWJbGSm24Te\" width=\"100%\" height=\"100%\" style=\"position:absolute\" frameBorder=\"0\" class=\"giphy-embed\" allowFullScreen></iframe>"
+     << "</div><p><a href=\"https://giphy.com/gifs/southparkgifs-l0HlGkNWJbGSm24Te\">via GIPHY</a></p>";
 	page << "<p>The server encountered an issue processing your request.</p>";
 	page << "<p>Server Root: " << _config.root << "</p>";  // Afficher le chemin racine configuré
 	page << "</body></html>";
