@@ -2,7 +2,7 @@
 #include <iostream>
 
 ServerConfig::ServerConfig() : serverName("NotreSite"), root("www/"), index("index.html"), host("0.0.0.0") {
-	ports.push_back(80);
+	// ports.push_back(80);
 }
 
 ServerConfig::ServerConfig(const ServerConfig& other) {

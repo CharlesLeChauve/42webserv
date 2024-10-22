@@ -4,21 +4,78 @@
 /*un groupe de conteneur identifiés par une class html ou un élément unique identifié par une balise id*/
 
 
+header {
+	background-color: rgb(160, 82, 45);
+	color: rgb(255, 255, 240);
+	padding: 20px; /* Espace interieur pour le texte ne touche pas les bords */
+	text-align: center;
+	font-size: 1.6rem;
+}
+
+nav ul {
+	list-style-type: none;
+	padding: 0;
+}
+
+nav li {
+	display: inline; /* Display lest elements en ligne */
+	margin: 0 15px; /* Espacement entre les éléments */
+}
+
+nav a {
+	color: white;
+	text-decoration: none; /* Enlève le soulignement des liens */
+}
+
+nav a:hover {
+	text-decoration: underline;/* Ajoute un soulignement au survol */
+	color: #FFA500;
+}
+
 /* '<element>' cible tous les éléments du type HTML spécifié (div, a, body, ...) */
 input {
-	border: 2px solid green;
-	border-radius: 45%;
+	border: 2px solid rgb(0, 0, 0);
+	border-radius: 0%;
 }
+
+section {
+	background-color: #F5DEB3;
+	color: #5B3A29; /* Marron foncé pour le texte */
+	text-align: center;
+	padding: 50px;
+}
+
+section h2 {
+	font-size: 2.5rem;/* Taille du titre */
+}
+
+section p {
+	font-size: 1.2rem; /* Taille du paragraphe */
+}
+
+button {
+	background-color: #FFA500;
+	color: white;
+}
+
+
+
+/* button {
+	border: 2px seashell;
+	background-color: rgb(205, 92, 92);
+	font-size: medium;
+	border-radius: 10%;
+} */
 
 /* '.<class>' permet de cibler tous les éléments à qui on a attribué la class cible*/
 .myclass {
-	background-color: blue;
-	font-size: 5rem;
+	background-color: rgb(31, 31, 83);
+	font-size: 3rem;
 }
 
 /* '#<id>' permet de cibler l'élément html portant l'id cible*/
 #fm {
-	background-color: red; 
+	background-color: rgb(139, 0, 0); 
 }
 
 .antoine_le_bg {

@@ -1,6 +1,7 @@
 #include "HTTPRequest.hpp"
 #include <sstream>
 #include <iostream>
+#include <cstdlib>
 
 HTTPRequest::HTTPRequest() {}
 
@@ -36,7 +37,7 @@ bool HTTPRequest::parse(const std::string& raw_request) {
     // Handle the body if there's a Content-Length
     std::map<std::string, std::string>::iterator it = _headers.find("Content-Length");
     if (it != _headers.end()) {
-        int content_length = std::stoi(it->second);
+        int content_length = std::atoi(it->second.c_str());
         if (body_part.size() < static_cast<size_t>(content_length)) {
             std::cerr << "Failed to read the entire body." << std::endl;
             return false;

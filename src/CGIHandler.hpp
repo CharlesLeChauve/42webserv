@@ -2,6 +2,7 @@
 #define CGIHANDLER_HPP
 
 #include <string>
+#include <stdlib.h> 
 #include "HTTPRequest.hpp"
 
 class Server;

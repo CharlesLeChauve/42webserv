@@ -9,6 +9,13 @@ CGIHandler::CGIHandler(Server& server) : _server(server) {}
 
 CGIHandler::~CGIHandler() {}
 
+template <typename T>
+std::string to_string(T value) {
+    std::ostringstream oss;
+    oss << value;
+    return oss.str();
+}
+
 std::string CGIHandler::executeCGI(const std::string& scriptPath, const HTTPRequest& request) {
     std::string fullPath = scriptPath;
 
@@ -34,7 +41,7 @@ std::string CGIHandler::executeCGI(const std::string& scriptPath, const HTTPRequ
 
         if (request.getMethod() == "POST") {
             setenv("REQUEST_METHOD", "POST", 1);  // Définir POST comme méthode
-            setenv("CONTENT_LENGTH", std::to_string(request.getBody().size()).c_str(), 1);  // Définir la taille du corps de la requête
+            setenv("CONTENT_LENGTH", to_string(request.getBody().size()).c_str(), 1);  // Définir la taille du corps de la requête
         } else {
             setenv("REQUEST_METHOD", "GET", 1);  // Définir GET comme méthode par défaut
         }
@@ -68,7 +75,7 @@ std::string CGIHandler::executeCGI(const std::string& scriptPath, const HTTPRequ
         if (WIFEXITED(status)) {
             int exitCode = WEXITSTATUS(status);
             if (exitCode != 0) {
-                std::string errorPage = _server.generateErrorPage(500, _server.getErrorMessage(500) + ": CGI script failed with exit code " + std::to_string(exitCode));
+                std::string errorPage = _server.generateErrorPage(500, _server.getErrorMessage(500) + ": CGI script failed with exit code " + to_string(exitCode));
                 return "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\n" + errorPage;
             }
         }

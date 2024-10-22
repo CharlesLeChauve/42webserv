@@ -129,7 +129,7 @@ bool ConfigParser::processServerDirective(std::ifstream &file, const std::string
 	std::getline(iss, value, ';');
 	trim(value);
 
-	  if (directive == "location" && value.back() == '{') {
+	  if (directive == "location" && *(value.end() - 1) == '{') {
 		value = value.substr(0, value.size() - 1);
 		trim(value);
 	}
