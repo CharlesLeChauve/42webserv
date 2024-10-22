@@ -12,6 +12,13 @@ Server::Server(const ServerConfig& config) : _config(config) {
 
 Server::~Server() {}
 
+template <typename T>
+std::string to_string(T value) {
+    std::ostringstream oss;
+    oss << value;
+    return oss.str();
+}
+
 // Génération de la page d'erreur en utilisant les informations de configuration du serveur
 std::string Server::generateErrorPage(int errorCode, const std::string& errorMessage) {
 	std::stringstream page;
@@ -90,9 +97,9 @@ void Server::sendErrorResponse(int client_fd, int errorCode) {
 	std::string errorMessage = getErrorMessage(errorCode);
 	std::string errorPage = generateErrorPage(errorCode, errorMessage);
 
-	std::string response = "HTTP/1.1 " + std::to_string(errorCode) + " " + errorMessage + "\r\n";
+	std::string response = "HTTP/1.1 " + to_string(errorCode) + " " + errorMessage + "\r\n";
 	response += "Content-Type: text/html\r\n";
-	response += "Content-Length: " + std::to_string(errorPage.size()) + "\r\n\r\n";
+	response += "Content-Length: " + to_string(errorPage.size()) + "\r\n\r\n";
 	response += errorPage;
 
 	write(client_fd, response.c_str(), response.size());
@@ -181,7 +188,7 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath) {
 				std::string content = buffer.str();
 
 				std::string response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n";
-				response += "Content-Length: " + std::to_string(content.size()) + "\r\n\r\n";
+				response += "Content-Length: " + to_string(content.size()) + "\r\n\r\n";
 				response += content;
 				write(client_fd, response.c_str(), response.size());
 			} else {
@@ -199,7 +206,7 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath) {
 			std::string content = buffer.str();
 
 			std::string response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n";
-			response += "Content-Length: " + std::to_string(content.size()) + "\r\n\r\n";
+			response += "Content-Length: " + to_string(content.size()) + "\r\n\r\n";
 			response += content;
 			write(client_fd, response.c_str(), response.size());
 		} else {
