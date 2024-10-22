@@ -52,10 +52,10 @@ int main(int argc, char* argv[]) {
 			socket.build_sockets();
 
 			// Boucle pour accepter des connexions et les traiter
-			while (true) {
+			// while (true) {
 				server.stockClientsSockets(socket);  // Accepter les connexions
-				server.receiveAndSend();  // Gérer les requêtes des clients
-			}
+				// server.receiveAndSend();  // Gérer les requêtes des clients
+			// }
 		}
 	} else {
 		std::cerr << "Failed to parse the configuration file." << std::endl;

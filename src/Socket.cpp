@@ -15,6 +15,7 @@ Socket::Socket(int p_port) : _port(p_port) {
 
 Socket::~Socket()
 {
+	close(_socket_fd);
 }
 
 void    Socket::socket_creation() {
