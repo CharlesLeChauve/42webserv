@@ -56,7 +56,56 @@ section p {
 button {
 	background-color: #FFA500;
 	color: white;
+	border: none;
+	border-radius: 5px;
+	padding: 10px 20px;
+	font-size: 1rem;
+	cursor: pointer; /* Curseur en forme de main */
+	text-decoration: underline;
 }
+
+button:hover {
+	background-color: #FF8C00;
+}
+
+section.content {
+	background-color: #FFF8DC;
+	padding: 50px 20px;
+	text-align: center;
+}
+
+.content h3 {
+	font-size: 2rem;
+	color: saddlebrown;
+}
+
+.content-box {
+	display: flex; /* Affichage en flexbox */
+	justify-content: space-around; /* Espace autour des cartes */
+	margin-top: 30px; /* Espacement entre le titre et les cartes */
+	gap: 20px;
+}
+
+.box {
+	background-color: #F4A460;
+	color: white; /* Text color */
+	border-radius: 10px;  /* Coins arrondis */
+	padding: 20px;
+	width: 30%; /* Largeur des cartes */
+	box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2); /* Ombre sous les cartes */
+	/* margin: 0px 10px; 0px en haut et en bas / 10 px à gauche/droite */
+}
+
+.box h4 {
+	font-size: 1.5rem; /* Taille du titre de la carte */
+	color: beige;
+}
+
+.box p {
+	font-size: 1rem; /* Taille du texte */
+	color: white;
+}
+
 
 
 
