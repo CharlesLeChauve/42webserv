@@ -85,9 +85,21 @@ void HTTPRequest::parseHeaders(const std::string& headers_line) {
 	if (pos != std::string::npos) {
 		std::string key = headers_line.substr(0, pos);
 		std::string value = headers_line.substr(pos + 1);
+		trim(key);
+		trim(value);
 		_headers[key] = value;
 	}
 }
+
+
+std::string HTTPRequest::getHost() const {
+	std::map<std::string, std::string>::const_iterator it = _headers.find("Host");
+	if (it != _headers.end()) {
+		return it->second;
+	}
+	return "";
+}
+
 
 void HTTPRequest::parseBody(const std::string& body) {
 	_body = body;
@@ -111,4 +123,14 @@ std::map<std::string, std::string> HTTPRequest::getHeaders() const {
 
 std::string HTTPRequest::getBody() const {
 	return _body;
+}
+
+void HTTPRequest::trim(std::string& s) const {
+	size_t start = s.find_first_not_of(" \t\r\n");
+	size_t end = s.find_last_not_of(" \t\r\n");
+	if (start == std::string::npos || end == std::string::npos) {
+		s = "";
+	} else {
+		s = s.substr(start, end - start + 1);
+	}
 }

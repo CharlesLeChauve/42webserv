@@ -15,6 +15,8 @@ public:
 	std::string getQueryString() const;
 	std::map<std::string, std::string> getHeaders() const;
 	std::string getBody() const;
+	std::string getHost() const;
+	void trim(std::string& s) const;
 
 	bool parse(const std::string& raw_request);
 

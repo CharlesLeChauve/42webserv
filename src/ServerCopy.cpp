@@ -4,7 +4,7 @@
 #include "CGIHandler.hpp"
 #include "ServerConfig.hpp"
 #include <sys/stat.h>  // Pour utiliser la fonction stat
-
+#include <fcntl.h>
 #include <time.h>
 
 Server::Server(const ServerConfig& config) : _config(config) {
@@ -52,10 +52,7 @@ Server::Server(const ServerConfig& config) : _config(config) {
 	}
 }
 
-
 Server::~Server() {}
-
-#include <fcntl.h>
 
 void setNonBlocking(int fd) {
 	int flags = fcntl(fd, F_GETFL, 0);
@@ -68,7 +65,6 @@ void setNonBlocking(int fd) {
 		std::cerr << "fcntl(F_SETFL) failed: " << strerror(errno) << std::endl;
 	}
 }
-
 
 template <typename T>
 std::string to_string(T value) {
@@ -144,8 +140,6 @@ std::string Server::receiveRequest(int client_fd) {
 	return std::string(buffer, bytes_received);
 }
 
-
-
 void Server::sendErrorResponse(int client_fd, int errorCode) {
 	std::string errorMessage = getErrorMessage(errorCode);
 	std::string errorPage = generateErrorPage(errorCode, errorMessage);
@@ -161,13 +155,36 @@ void Server::sendErrorResponse(int client_fd, int errorCode) {
 	write(client_fd, responseString.c_str(), responseString.size());
 }
 
-
 // Méthode pour gérer la requête HTTP en fonction de la méthode
 void Server::handleHttpRequest(int client_fd, const HTTPRequest& request) {
-	std::string fullPath = _config.root + request.getPath();  // Utilisation du chemin racine de _config
-	std::cout << std::endl << " Test : " << _config.ports.at(0) << std::endl << std::endl;
+	// Vérifier si le Host correspond au server_name
+	std::string hostHeader = request.getHost();
+	if (!hostHeader.empty()) {
+		// Extraire le nom d'hôte et le port s'il est présent
+		size_t colonPos = hostHeader.find(':');
+		std::string hostName = (colonPos != std::string::npos) ? hostHeader.substr(0, colonPos) : hostHeader;
+		std::string portStr = (colonPos != std::string::npos) ? hostHeader.substr(colonPos + 1) : "";
+
+		if (hostName != _config.serverName) {
+			sendErrorResponse(client_fd, 404);  // Not Found
+			return;
+		}
+
+		// Optionnel : Vérifier le port
+		if (!portStr.empty()) {
+			int port = std::atoi(portStr.c_str());
+			if (port != _config.ports.at(0)) {
+				sendErrorResponse(client_fd, 404);  // Not Found
+				return;
+			}
+		}
+	} else {
+		sendErrorResponse(client_fd, 400);  // Bad Request
+		return;
+	}
+
+	// Traiter la requête en fonction de la méthode
 	if (request.getMethod() == "GET" || request.getMethod() == "POST") {
-		// Utilisez la même méthode pour gérer GET et POST
 		handleGetOrPostRequest(client_fd, request);
 	} else if (request.getMethod() == "DELETE") {
 		handleDeleteRequest(client_fd, request);
@@ -175,7 +192,6 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request) {
 		sendErrorResponse(client_fd, 405);  // Méthode non autorisée
 	}
 }
-
 
 // Méthode pour gérer les requêtes GET et POST
 void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request) {
@@ -216,7 +232,6 @@ void Server::handleDeleteRequest(int client_fd, const HTTPRequest& request) {
 		}
 	}
 }
-
 
 // Méthode pour servir les fichiers statiques
 void Server::serveStaticFile(int client_fd, const std::string& filePath) {
@@ -269,12 +284,9 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath) {
 	}
 }
 
-
-
 int Server::acceptNewClient(int server_fd) {
 	std::cout << "Tentative d'acceptation d'une nouvelle connexion sur le socket FD: " << server_fd << std::endl;
 
-	// Vérification du descripteur de fichier du serveur
 	if (server_fd <= 0) {
 		std::cerr << "Invalid server FD: " << server_fd << std::endl;
 		return -1;
@@ -296,12 +308,7 @@ int Server::acceptNewClient(int server_fd) {
 	return client_fd;
 }
 
-
-
-
-
 void Server::handleClient(int client_fd) {
-	// Vérification que le descripteur client est valide
 	if (client_fd <= 0) {
 		std::cerr << "Invalid client FD: " << client_fd << std::endl;
 		return;
@@ -310,17 +317,14 @@ void Server::handleClient(int client_fd) {
 	std::string requestString = receiveRequest(client_fd);
 	if (requestString.empty()) {
 		std::cerr << "Erreur lors de la réception de la requête." << std::endl;
-		// close(client_fd);  // Fermer la connexion si aucune requête n'est reçue
 		return;
 	}
 
 	HTTPRequest request;
 	if (!request.parse(requestString)) {
 		sendErrorResponse(client_fd, 400);  // Mauvaise requête
-		// close(client_fd);  // Fermer la connexion après avoir envoyé la réponse
 		return;
 	}
 
 	handleHttpRequest(client_fd, request);
-	// close(client_fd);  // Fermer la connexion après avoir traité la requête
 }
