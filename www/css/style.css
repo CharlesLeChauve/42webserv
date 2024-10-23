@@ -5,11 +5,15 @@
 
 
 header {
-	background-color: rgb(160, 82, 45);
-	color: rgb(255, 255, 240);
+	background-color: #8B4513;
+	color: beige;
 	padding: 20px; /* Espace interieur pour le texte ne touche pas les bords */
 	text-align: center;
 	font-size: 1.6rem;
+}
+
+section {
+	margin: 50px 0; /* Espace vertical de 50px entre les sections */
 }
 
 nav ul {
@@ -23,7 +27,8 @@ nav li {
 }
 
 nav a {
-	color: white;
+	font-size: 1.5rem;
+	color: seashell;
 	text-decoration: none; /* Enlève le soulignement des liens */
 }
 
@@ -55,17 +60,20 @@ section p {
 
 button {
 	background-color: #FFA500;
-	color: white;
 	border: none;
 	border-radius: 5px;
 	padding: 10px 20px;
 	font-size: 1rem;
 	cursor: pointer; /* Curseur en forme de main */
-	text-decoration: underline;
 }
 
-button:hover {
-	background-color: #FF8C00;
+button a {
+	text-decoration: none;
+	color: sienna; /* Why color here give the right color to the text and when it's in button section i don't get the color ! */
+}
+
+a:hover {
+	text-decoration: underline;
 }
 
 section.content {
@@ -106,7 +114,23 @@ section.content {
 	color: white;
 }
 
+footer {
+	background-color: #8B4513;
+	color: #FFD700; /* Color of text.  */ 
+	padding: 20px 0;
+	text-align: center;
+	font-size: 0.9rem; /* Taille de texte */
+}
 
+footer a {
+	text-decoration: none;
+	color: seashell;
+
+}
+
+a:hover {
+	text-decoration: underline;
+}
 
 
 /* button {
@@ -117,24 +141,24 @@ section.content {
 } */
 
 /* '.<class>' permet de cibler tous les éléments à qui on a attribué la class cible*/
-.myclass {
+/* .myclass {
 	background-color: rgb(31, 31, 83);
 	font-size: 3rem;
-}
+} */
 
 /* '#<id>' permet de cibler l'élément html portant l'id cible*/
-#fm {
+/* #fm {
 	background-color: rgb(139, 0, 0); 
-}
+} */
 
-.antoine_le_bg {
+/* .antoine_le_bg {
 	background-color: gold;
 	box-shadow: -10px 10px 20px rgba(0, 0, 0, 0.5);
-}
+} */
 
-img {
+/* img {
 	margin : 20 20 20 20;
-}
+} */
 
 /* Ils sont présentés dans leur ordre de prépondérance, si une règle vise un id, 
 elle surpasse une visant l'élément parcequ'il a une class. Ici, le background-color red de fm s'appliquera au lieu 

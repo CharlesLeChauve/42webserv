@@ -8,6 +8,7 @@
 #include <string.h> // memset()
 #include <iostream>
 #include <sstream>
+#include <cerrno>
 
 class Socket
 {
