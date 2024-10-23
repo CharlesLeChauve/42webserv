@@ -81,19 +81,16 @@ std::string getSorryPath() {
 	srand(time(NULL));
 	int num = rand() % 6;
 	num++;
-	return "/images/" + to_string(num) + "_sorry.gif";
+	return "images/" + to_string(num) + "-sorry.gif";
 }
 
 // Génération de la page d'erreur en utilisant les informations de configuration du serveur
 std::string Server::generateErrorPage(int errorCode, const std::string& errorMessage) {
 	std::stringstream page;
 	page << "<html><head><title>Error " << errorCode << " - " << _config.serverName << "</title>";  // Utilisation du nom du serveur
-	page << "<link rel=\"stylesheet\" href=\"/css/err_style.css\"></head>";
+	page << "<link rel=\"stylesheet\" href=\"css/err_style.css\"></head>";
 	page << "<body><h1>Error " << errorCode << ": " << errorMessage << "</h1>";
 	page << "<img src=\"" << getSorryPath() << "\" alt=\"Error Image\">";
-	page << "<div style=\"width:100%;height:0;padding-bottom:56%;position:relative;\">"
-	 << "<iframe src=\"https://giphy.com/embed/l0HlGkNWJbGSm24Te\" width=\"100%\" height=\"100%\" style=\"position:absolute\" frameBorder=\"0\" class=\"giphy-embed\" allowFullScreen></iframe>"
-	 << "</div><p><a href=\"https://giphy.com/gifs/southparkgifs-l0HlGkNWJbGSm24Te\">via GIPHY</a></p>";
 	page << "<p>The server encountered an issue processing your request.</p>";
 	page << "<p>Server Root: " << _config.root << "</p>";  // Afficher le chemin racine configuré
 	page << "</body></html>";
@@ -178,7 +175,7 @@ void Server::sendErrorResponse(int client_fd, int errorCode) {
 // Méthode pour gérer la requête HTTP en fonction de la méthode
 void Server::handleHttpRequest(int client_fd, const HTTPRequest& request) {
 	std::string fullPath = _config.root + request.getPath();  // Utilisation du chemin racine de _config
-
+	std::cout << std::endl << " Test : " << _config.ports.at(0) << std::endl << std::endl;
 	if (request.getMethod() == "GET" || request.getMethod() == "POST") {
 		// Utilisez la même méthode pour gérer GET et POST
 		handleGetOrPostRequest(client_fd, request);
@@ -193,6 +190,7 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request) {
 // Méthode pour gérer les requêtes GET et POST
 void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request) {
 	std::string fullPath = _config.root + request.getPath();  // Utilisation du chemin racine de _config
+	//Changer ca pour détecter des vrais extrensions de fichiers...
 	if (fullPath.find(".cgi") != std::string::npos) {
 		if (access(fullPath.c_str(), F_OK) == -1) {
 			sendErrorResponse(client_fd, 404);
@@ -225,29 +223,35 @@ void Server::handleDeleteRequest(int client_fd, const HTTPRequest& request) {
 // Méthode pour servir les fichiers statiques
 void Server::serveStaticFile(int client_fd, const std::string& filePath) {
 	struct stat pathStat;
+	std::cout << "Filepath = " << filePath << std::endl;
 	if (stat(filePath.c_str(), &pathStat) == 0 && S_ISDIR(pathStat.st_mode)) {
 		// Le chemin est un répertoire, chercher un fichier index
 
 		std::string indexPath;
-		bool indexFound = false;
+		// bool indexFound = false;
 
 		// Rechercher dans les locations si un index est défini
+		if (filePath.substr(0, 4) == "www/") {
+			indexPath = _config.root + "/" + _config.index;
+			std::cout << "indexPath = " + indexPath << std::endl;
+		}
+
 		for (size_t i = 0; i < _config.locations.size(); ++i) {
 			const Location& location = _config.locations[i];
 			if (filePath.find(location.path) == 0) {  // Si la location correspond au chemin
 				std::map<std::string, std::string>::const_iterator it = location.options.find("index");
 				if (it != location.options.end()) {
 					indexPath = filePath + "/" + it->second;  // Utiliser l'index défini dans la location
-					indexFound = true;
+					// indexFound = true;
 					break;
 				}
 			}
 		}
 
 		// Si aucun index n'a été trouvé dans les locations, utiliser l'index par défaut du serveur
-		if (!indexFound) {
-			indexPath = filePath + "/" + _config.index;
-		}
+		// if (!indexFound) {
+		// 	indexPath = filePath + _config.index;
+		// }
 
 		// Vérifier si l'index existe
 		if (access(indexPath.c_str(), F_OK) != -1) {
@@ -412,4 +416,3 @@ void Server::stockClientsSockets(std::vector<Socket*>& sockets) {
 		}
 	}
 }
-
