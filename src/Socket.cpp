@@ -23,10 +23,12 @@ Socket::~Socket() {
 	}
 }
 
-
-
 void Socket::socket_creation() {
 	_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (address.sin_family != AF_INET) {
+		std::cerr << "Erreur: mauvaise famille d'adresses pour le socket: " << address.sin_family << std::endl;
+}
+
 	if (_socket_fd == -1) {
 		std::cerr << "Socket creation failed: " << strerror(errno) << std::endl;
 		return;
@@ -55,6 +57,15 @@ void Socket::socket_creation() {
 void Socket::socket_binding() {
 	int add_size = sizeof(address);
 
+	// Set socket options to allow reuse of the address and port
+	int opt = 1;
+	if (setsockopt(_socket_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+		std::cerr << "Failed to set socket options: " << strerror(errno) << std::endl;
+		close(_socket_fd);
+		_socket_fd = -1;
+		return;
+	}
+
 	if (bind(_socket_fd, (struct sockaddr *)&address, add_size) == -1) {
 		std::cerr << "Failed to bind socket to IP address and port: " << strerror(errno) << std::endl;
 		close(_socket_fd);  // Fermer le socket en cas d'erreur
@@ -64,16 +75,21 @@ void Socket::socket_binding() {
 	std::cout << "Socket successfully bound to port " << _port << std::endl;
 }
 
-
 void Socket::socket_listening() {
-	if (listen(_socket_fd, 10) == -1) {
+	int ret = listen(_socket_fd, SOMAXCONN);
+
+	// std::cout << "listen() returned: " << ret << std::endl;
+
+	if (ret == -1) {
 		std::cerr << "Failed to put socket in listening mode: " << strerror(errno) << std::endl;
-		close(_socket_fd);  // Fermer le socket en cas d'erreur
+		close(_socket_fd);
 		_socket_fd = -1;
 		return;
 	}
+
 	std::cout << "Socket is now listening on port " << _port << std::endl;
 }
+
 
 int Socket::getSocket() const {
 	return _socket_fd;

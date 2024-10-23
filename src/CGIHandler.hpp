@@ -2,24 +2,24 @@
 #define CGIHANDLER_HPP
 
 #include <string>
-#include <stdlib.h> 
+#include <stdlib.h>
 #include "HTTPRequest.hpp"
 
 class Server;
 
 class CGIHandler {
 public:
-    CGIHandler(Server& server);
-    ~CGIHandler();
+	CGIHandler(Server& server);
+	~CGIHandler();
 
-    // Execute the CGI script and return the output
-    std::string executeCGI(const std::string& scriptPath, const HTTPRequest& request);
+	// Execute the CGI script and return the output
+	std::string executeCGI(const std::string& scriptPath, const HTTPRequest& request);
 
 private:
-    // Setup the environment variables required for CGI execution
-    void setupEnvironment(const std::string& queryString);
+	// Setup the environment variables required for CGI execution
+	void setupEnvironment(const std::string& queryString);
 
-    Server& _server;
+	Server& _server;
 };
 
 #endif
