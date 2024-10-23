@@ -1,3 +1,4 @@
+// ConfigParser.hpp
 #ifndef CONFIGPARSER_HPP
 #define CONFIGPARSER_HPP
 
@@ -6,24 +7,36 @@
 #include <string>
 #include <map>
 #include <fstream>
+#include <stdexcept>
+
+class ConfigParserException : public std::exception {
+public:
+	ConfigParserException(const std::string& message) : _message(message) {}
+	virtual ~ConfigParserException() throw() {}
+	virtual const char* what() const throw() {
+		return _message.c_str();
+	}
+private:
+	std::string _message;
+};
 
 class ConfigParser {
 public:
 	ConfigParser();
 	~ConfigParser();
 
-	bool parseConfigFile(const std::string &filename);
+	void parseConfigFile(const std::string &filename);
 
 	const std::vector<ServerConfig>& getServerConfigs() const;
 
 private:
 	std::vector<ServerConfig> _serverConfigs;
 
-	bool processServerDirective(std::ifstream &file, const std::string &line, ServerConfig &serverConfig);
+	void processServerDirective(std::ifstream &file, const std::string &line, ServerConfig &serverConfig);
 
-	bool processLocationBlock(std::ifstream &file, std::map<std::string, std::string> &options);
+	void processLocationBlock(std::ifstream &file, const std::string& locationPath, ServerConfig& serverConfig);
 
-	bool validateDirectiveValue(const std::string &directive, const std::string &value);
+	void validateDirectiveValue(const std::string &directive, const std::string &value);
 
 	void trim(std::string &s);
 };

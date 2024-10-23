@@ -1,8 +1,11 @@
+// main.cpp
 #include "ConfigParser.hpp"
 #include "Socket.hpp"
 #include "ServerCopy.hpp"
 #include <iostream>
 #include "ServerConfig.hpp"
+#include <poll.h>
+#include <unistd.h>
 
 int main(int argc, char* argv[]) {
 	if (argc < 2) {
@@ -12,8 +15,11 @@ int main(int argc, char* argv[]) {
 
 	std::string configFile = argv[1];
 	ConfigParser configParser;
-	if (!configParser.parseConfigFile(configFile)) {
-		std::cerr << "Échec de l'analyse du fichier de configuration." << std::endl;
+
+	try {
+		configParser.parseConfigFile(configFile);
+	} catch (const ConfigParserException& e) {
+		std::cerr << "Échec de l'analyse du fichier de configuration : " << e.what() << std::endl;
 		return 1;
 	}
 
@@ -37,7 +43,7 @@ int main(int argc, char* argv[]) {
 		pfd.events = POLLIN;
 		poll_fds.push_back(pfd);
 
-		// Map pour associer les sockets serveurs aux serveurs
+		// Associer les sockets serveurs aux serveurs
 		fdToServerMap[socket->getSocket()] = server;
 
 		servers.push_back(server);
@@ -47,19 +53,19 @@ int main(int argc, char* argv[]) {
 	}
 
 	while (true) {
-		int poll_count = poll(poll_fds.data(), poll_fds.size(), 5000);
+		int poll_count = poll(&poll_fds[0], poll_fds.size(), 5000);
 		if (poll_count < 0) {
-			perror("poll error");
+			perror("Erreur lors de l'appel à poll");
 			continue;
 		}
 
 		for (size_t i = 0; i < poll_fds.size(); ++i) {
 			if (poll_fds[i].revents & POLLIN) {
-				std::cout << "Ready to read from FD: " << poll_fds[i].fd << std::endl;
+				std::cout << "Prêt à lire depuis le FD : " << poll_fds[i].fd << std::endl;
 
 				if (fdToServerMap.find(poll_fds[i].fd) != fdToServerMap.end()) {
 					// C'est un descripteur de socket serveur, accepter une nouvelle connexion
-					std::cout << "Processing server socket FD: " << poll_fds[i].fd << std::endl;
+					std::cout << "Traitement du socket serveur FD : " << poll_fds[i].fd << std::endl;
 
 					Server* server = fdToServerMap[poll_fds[i].fd];
 					int client_fd = server->acceptNewClient(poll_fds[i].fd);
@@ -72,16 +78,16 @@ int main(int argc, char* argv[]) {
 						client_pollfd.events = POLLIN;
 						poll_fds.push_back(client_pollfd);
 
-						std::cout << "New client FD: " << client_fd << " accepted on server FD: " << poll_fds[i].fd << std::endl;
+						std::cout << "Nouveau client FD : " << client_fd << " accepté sur le serveur FD : " << poll_fds[i].fd << std::endl;
 					} else {
-						std::cerr << "Failed to accept client on server FD: " << poll_fds[i].fd << std::endl;
+						std::cerr << "Échec de l'acceptation du client sur le serveur FD : " << poll_fds[i].fd << std::endl;
 					}
 				} else {
 					// C'est un descripteur de socket client, traiter la requête
-					std::cout << "Processing client socket FD: " << poll_fds[i].fd << std::endl;
+					std::cout << "Traitement du socket client FD : " << poll_fds[i].fd << std::endl;
 
 					Server* server = clientFdToServerMap[poll_fds[i].fd];
-					if (server != nullptr) {
+					if (server != NULL) {
 						server->handleClient(poll_fds[i].fd);
 					}
 
@@ -95,7 +101,7 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	// Nettoyage mémoire
+	// Nettoyage de la mémoire
 	for (size_t i = 0; i < servers.size(); ++i) {
 		delete servers[i];
 		delete sockets[i];
