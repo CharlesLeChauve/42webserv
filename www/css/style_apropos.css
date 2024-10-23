@@ -3,6 +3,100 @@ header {
     text-align: center;
     color:white;
     background-color: rgb(22, 73, 0);
-    padding: 50px 0;
-    font-size: 1.8rem;
+    padding: 30px 0;
+    font-size: 1.5rem;
+}
+
+section {
+    background-color: white;
+    text-align: center;
+    padding: 30px;
+}
+
+section h2 {
+    font-size: 2.3rem;
+    color: green;
+}
+
+section p {
+    font-size: 1rem;
+}
+
+button {
+    cursor: auto;
+    background-color: rgb(22, 73, 0);
+    border: none;
+    color: white;
+    border-radius: 5px;
+}
+
+/* Applique un style au lien à l'intérieur du bouton */
+button a {
+    text-align: center;               /* Aligner le texte */
+    font-size: 2rem;                  /* Taille du texte/flèche */
+    margin-top: 5px;                 /* Espacement autour */
+    text-decoration: none;            /* Enlève le soulignement du lien */
+    color: white;                    /* Couleur du texte */
+    display: inline-block;            /* Pour que le lien agisse comme un bloc */
+    padding: 10px 20px;               /* Ajoute du padding pour agrandir la zone du lien */
+    transition: transform 0.3s ease;  /* Animation fluide pour le changement de taille */
+}
+
+button a:hover {
+    transform: scale(1.2); /* Grossit l'élément à 120% de sa taille initiale */
+}
+
+.team-section {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 50px;
+    background-color: #e8f5e8;
+}
+
+.card {
+    background-color: #4caf50;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    margin: 20px;
+    width: 250px;
+    text-align: center;
+}
+
+.card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Figure and Image */
+.card figure {
+    margin: 0;
+    padding: 20px;
+}
+
+.card img {
+    width: 100%;
+    border-radius: 10px 10px 0 0;
+}
+
+/* Figcaption (Text) */
+.card figcaption {
+    display: none;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 20px;
+}
+
+.card:hover figcaption {
+    display: block;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    background-color: #2e7d32;
+    color: white;
+    margin-top: 50px;
 }

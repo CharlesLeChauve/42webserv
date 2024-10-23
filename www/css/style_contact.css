@@ -1,1 +1,12 @@
 
+header {
+    background-color: pink;
+    color: white;
+    padding: 50px;
+    font-size: 2rem;
+    text-align: center;
+}
+
+header p {
+    font-size: 1.3rem;;
+}
