@@ -6,7 +6,7 @@
 
 int main(int argc, char* argv[]) {
 	if (argc < 2) {
-		std::cerr << "Usage: " << argv[0] << " <path_to_configuration_file>" << std::endl;
+		std::cerr << "Usage: " << argv[0] << " <chemin_vers_le_fichier_de_configuration>" << std::endl;
 		return 1;
 	}
 
@@ -14,51 +14,42 @@ int main(int argc, char* argv[]) {
 	ConfigParser configParser;
 	if (configParser.parseConfigFile(configFile)) {
 		const std::vector<ServerConfig>& serverConfigs = configParser.getServerConfigs();
-		std::cout << "Number of configured servers: " << serverConfigs.size() << std::endl;
+		std::cout << "Nombre de serveurs configurés : " << serverConfigs.size() << std::endl;
 
-		// Boucle sur tous les serveurs configurés
+		// Créer des objets Server à partir des ServerConfigs
+		std::vector<Server*> servers;
+		std::vector<Socket*> sockets;
+
 		for (size_t i = 0; i < serverConfigs.size(); ++i) {
 			const ServerConfig& serverConfig = serverConfigs[i];
 
-			std::cout << "Server " << i + 1 << " :" << std::endl;
-			std::cout << "  Server name: " << serverConfig.serverName << std::endl;
-			std::cout << "  Root: " << serverConfig.root << std::endl;
-			std::cout << "  Index: " << serverConfig.index << std::endl;
-			std::cout << "  Host: " << serverConfig.host << std::endl;
+			// Créer un serveur et un socket avec chaque configuration
+			Server* server = new Server(serverConfig);
+			Socket* socket = new Socket(serverConfig.ports[0]);
+			socket->build_sockets();  // Créer et lier le socket
+			std::cout << "Création d'un socket pour le port : " << serverConfig.ports[0] << ", FD : " << socket->getSocket() << std::endl;
 
-			std::cout << "  Ports: ";
-			for (size_t j = 0; j < serverConfig.ports.size(); ++j) {
-				std::cout << serverConfig.ports[j] << " ";
-			}
-			std::cout << std::endl;
+			servers.push_back(server);
+			sockets.push_back(socket);
 
-			std::cout << "  Error pages:" << std::endl;
-			for (std::map<int, std::string>::const_iterator it = serverConfig.errorPages.begin(); it != serverConfig.errorPages.end(); ++it) {
-				std::cout << "    Error code: " << it->first << " -> Page: " << it->second << std::endl;
-			}
+			std::cout << "Lancement du serveur sur le port " << serverConfig.ports[0] << std::endl;
+		}
 
-			std::cout << "  Locations:" << std::endl;
-			for (size_t j = 0; j < serverConfig.locations.size(); ++j) {
-				const Location& location = serverConfig.locations[j];
-				std::cout << "    Path: " << location.path << std::endl;
-				for (std::map<std::string, std::string>::const_iterator it = location.options.begin(); it != location.options.end(); ++it) {
-					std::cout << "      " << it->first << ": " << it->second << std::endl;
-				}
-			}
-
-			// Créer un serveur avec chaque configuration
-			Server server(serverConfig);
-			Socket socket(serverConfig.ports[0]);  // Utilise le premier port de la configuration
-			socket.build_sockets();
-
-			// Boucle pour accepter des connexions et les traiter
-			while (true) {
-				server.stockClientsSockets(socket);  // Accepter les connexions
-				server.receiveAndSend();  // Gérer les requêtes des clients
+		// Boucle pour gérer les connexions et les requêtes
+		while (true) {
+			for (size_t i = 0; i < servers.size(); ++i) {
+				servers[i]->stockClientsSockets(sockets);
 			}
 		}
+
+		// Nettoyage mémoire
+		for (size_t i = 0; i < servers.size(); ++i) {
+			delete servers[i];
+			delete sockets[i];
+		}
+
 	} else {
-		std::cerr << "Failed to parse the configuration file." << std::endl;
+		std::cerr << "Échec de l'analyse du fichier de configuration." << std::endl;
 		return 1;
 	}
 

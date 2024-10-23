@@ -37,7 +37,7 @@ public:
 	std::string generateErrorPage(int errorCode, const std::string& errorMessage);
 	std::string getErrorMessage(int errorCode);
 
-	void stockClientsSockets(Socket& sockets);
+	void stockClientsSockets(std::vector<Socket*>& sockets);
 	void receiveAndSend();
 };
 

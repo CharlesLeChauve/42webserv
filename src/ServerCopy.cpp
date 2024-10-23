@@ -8,58 +8,73 @@
 #include <time.h>
 
 Server::Server(const ServerConfig& config) : _config(config) {
-    // Affichage des informations de la configuration du serveur
-    std::cout << "Server initialized with the following configuration:" << std::endl;
+	// Affichage des informations de la configuration du serveur
+	std::cout << "Server initialized with the following configuration:" << std::endl;
 
-    // Afficher le nom du serveur
-    std::cout << "Server Name: " << _config.serverName << std::endl;
+	// Afficher le nom du serveur
+	std::cout << "Server Name: " << _config.serverName << std::endl;
 
-    // Afficher l'hôte et les ports
-    std::cout << "Host: " << _config.host << std::endl;
-    std::cout << "Ports: ";
-    for (size_t i = 0; i < _config.ports.size(); ++i) {
-        std::cout << _config.ports[i];
-        if (i != _config.ports.size() - 1)
-            std::cout << ", ";
-    }
-    std::cout << std::endl;
+	// Afficher l'hôte et les ports
+	std::cout << "Host: " << _config.host << std::endl;
+	std::cout << "Ports: ";
+	for (size_t i = 0; i < _config.ports.size(); ++i) {
+		std::cout << _config.ports[i];
+		if (i != _config.ports.size() - 1)
+			std::cout << ", ";
+	}
+	std::cout << std::endl;
 
-    // Afficher le chemin racine et le fichier index
-    std::cout << "Root directory: " << _config.root << std::endl;
-    std::cout << "Index file: " << _config.index << std::endl;
+	// Afficher le chemin racine et le fichier index
+	std::cout << "Root directory: " << _config.root << std::endl;
+	std::cout << "Index file: " << _config.index << std::endl;
 
-    // Afficher les pages d'erreur
-    std::cout << "Error Pages: " << std::endl;
-    for (std::map<int, std::string>::const_iterator it = _config.errorPages.begin(); it != _config.errorPages.end(); ++it) {
-        std::cout << "  Error Code " << it->first << ": " << it->second << std::endl;
-    }
+	// Afficher les pages d'erreur
+	std::cout << "Error Pages: " << std::endl;
+	for (std::map<int, std::string>::const_iterator it = _config.errorPages.begin(); it != _config.errorPages.end(); ++it) {
+		std::cout << "  Error Code " << it->first << ": " << it->second << std::endl;
+	}
 
-    // Afficher les locations et leurs options
-    std::cout << "Locations: " << std::endl;
-    for (size_t i = 0; i < _config.locations.size(); ++i) {
-        const Location& location = _config.locations[i];
-        std::cout << "  Location path: " << location.path << std::endl;
-        for (std::map<std::string, std::string>::const_iterator it = location.options.begin(); it != location.options.end(); ++it) {
-            std::cout << "    " << it->first << ": " << it->second << std::endl;
-        }
-    }
+	// Afficher les locations et leurs options
+	std::cout << "Locations: " << std::endl;
+	for (size_t i = 0; i < _config.locations.size(); ++i) {
+		const Location& location = _config.locations[i];
+		std::cout << "  Location path: " << location.path << std::endl;
+		for (std::map<std::string, std::string>::const_iterator it = location.options.begin(); it != location.options.end(); ++it) {
+			std::cout << "    " << it->first << ": " << it->second << std::endl;
+		}
+	}
 
-    // Vérifier si la configuration est valide
-    if (!_config.isValid()) {
-        std::cerr << "Server configuration is invalid." << std::endl;
-    } else {
-        std::cout << "Server configuration is valid." << std::endl;
-    }
+	// Vérifier si la configuration est valide
+	if (!_config.isValid()) {
+		std::cerr << "Server configuration is invalid." << std::endl;
+	} else {
+		std::cout << "Server configuration is valid." << std::endl;
+	}
 }
 
 
 Server::~Server() {}
 
+#include <fcntl.h>
+
+void setNonBlocking(int fd) {
+	int flags = fcntl(fd, F_GETFL, 0);
+	if (flags == -1) {
+		std::cerr << "fcntl(F_GETFL) failed: " << strerror(errno) << std::endl;
+		return;
+	}
+
+	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) {
+		std::cerr << "fcntl(F_SETFL) failed: " << strerror(errno) << std::endl;
+	}
+}
+
+
 template <typename T>
 std::string to_string(T value) {
-    std::ostringstream oss;
-    oss << value;
-    return oss.str();
+	std::ostringstream oss;
+	oss << value;
+	return oss.str();
 }
 
 std::string getSorryPath() {
@@ -77,8 +92,8 @@ std::string Server::generateErrorPage(int errorCode, const std::string& errorMes
 	page << "<body><h1>Error " << errorCode << ": " << errorMessage << "</h1>";
 	page << "<img src=\"" << getSorryPath() << "\" alt=\"Error Image\">";
 	page << "<div style=\"width:100%;height:0;padding-bottom:56%;position:relative;\">"
-     << "<iframe src=\"https://giphy.com/embed/l0HlGkNWJbGSm24Te\" width=\"100%\" height=\"100%\" style=\"position:absolute\" frameBorder=\"0\" class=\"giphy-embed\" allowFullScreen></iframe>"
-     << "</div><p><a href=\"https://giphy.com/gifs/southparkgifs-l0HlGkNWJbGSm24Te\">via GIPHY</a></p>";
+	 << "<iframe src=\"https://giphy.com/embed/l0HlGkNWJbGSm24Te\" width=\"100%\" height=\"100%\" style=\"position:absolute\" frameBorder=\"0\" class=\"giphy-embed\" allowFullScreen></iframe>"
+	 << "</div><p><a href=\"https://giphy.com/gifs/southparkgifs-l0HlGkNWJbGSm24Te\">via GIPHY</a></p>";
 	page << "<p>The server encountered an issue processing your request.</p>";
 	page << "<p>Server Root: " << _config.root << "</p>";  // Afficher le chemin racine configuré
 	page << "</body></html>";
@@ -162,16 +177,18 @@ void Server::sendErrorResponse(int client_fd, int errorCode) {
 
 // Méthode pour gérer la requête HTTP en fonction de la méthode
 void Server::handleHttpRequest(int client_fd, const HTTPRequest& request) {
-	if (request.getMethod() == "GET") {
-		handleGetOrPostRequest(client_fd, request);
-	} else if (request.getMethod() == "POST") {
+	std::string fullPath = _config.root + request.getPath();  // Utilisation du chemin racine de _config
+
+	if (request.getMethod() == "GET" || request.getMethod() == "POST") {
+		// Utilisez la même méthode pour gérer GET et POST
 		handleGetOrPostRequest(client_fd, request);
 	} else if (request.getMethod() == "DELETE") {
 		handleDeleteRequest(client_fd, request);
 	} else {
-		sendErrorResponse(client_fd, 405);
+		sendErrorResponse(client_fd, 405);  // Méthode non autorisée
 	}
 }
+
 
 // Méthode pour gérer les requêtes GET et POST
 void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request) {
@@ -206,7 +223,6 @@ void Server::handleDeleteRequest(int client_fd, const HTTPRequest& request) {
 }
 
 // Méthode pour servir les fichiers statiques
-
 void Server::serveStaticFile(int client_fd, const std::string& filePath) {
 	struct stat pathStat;
 	if (stat(filePath.c_str(), &pathStat) == 0 && S_ISDIR(pathStat.st_mode)) {
@@ -245,12 +261,26 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath) {
 				std::string response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n";
 				response += "Content-Length: " + to_string(content.size()) + "\r\n\r\n";
 				response += content;
-				write(client_fd, response.c_str(), response.size());
+
+				ssize_t bytes_written = 0;
+				ssize_t total_bytes_written = 0;
+				while (total_bytes_written < static_cast<ssize_t>(response.size())) {
+					bytes_written = write(client_fd, response.c_str() + total_bytes_written, response.size() - total_bytes_written);
+					if (bytes_written == -1) {
+						std::cerr << "Error writing to client: " << strerror(errno) << std::endl;
+						break;
+					}
+					total_bytes_written += bytes_written;
+				}
+
+				close(client_fd);  // Fermer la connexion après avoir servi le fichier
 			} else {
 				sendErrorResponse(client_fd, 404);  // Si l'index ne peut pas être lu
+				close(client_fd);
 			}
 		} else {
 			sendErrorResponse(client_fd, 404);  // Aucun index trouvé
+			close(client_fd);
 		}
 	} else {
 		// Le chemin n'est pas un répertoire, on essaie de servir le fichier directement
@@ -263,164 +293,123 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath) {
 			std::string response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n";
 			response += "Content-Length: " + to_string(content.size()) + "\r\n\r\n";
 			response += content;
-			write(client_fd, response.c_str(), response.size());
+
+			ssize_t bytes_written = 0;
+			ssize_t total_bytes_written = 0;
+			while (total_bytes_written < static_cast<ssize_t>(response.size())) {
+				bytes_written = write(client_fd, response.c_str() + total_bytes_written, response.size() - total_bytes_written);
+				if (bytes_written == -1) {
+					std::cerr << "Error writing to client: " << strerror(errno) << std::endl;
+					break;
+				}
+				total_bytes_written += bytes_written;
+			}
+
+			close(client_fd);  // Fermer la connexion après avoir servi le fichier
 		} else {
 			sendErrorResponse(client_fd, 404);  // Fichier non trouvé
+			close(client_fd);
 		}
 	}
 }
 
 
-// void Server::stockClientsSockets(Socket& socket) {
-//     // Ajouter le socket du serveur à la liste des fds surveillés par poll
-//     pollfd server_pollfd;
-//     server_pollfd.fd = socket.getSocket();
-//     server_pollfd.events = POLLIN; // Surveiller les connexions entrantes
-//     fds.push_back(server_pollfd);
 
-//     while (true) {
-//         int fds_nb = poll(fds.data(), fds.size(), -1); // Attendre les événements
-//         if (fds_nb == -1) {
-//             std::cerr << "Error during poll" << std::endl;
-//             return;
-//         }
+void Server::stockClientsSockets(std::vector<Socket*>& sockets) {
+	std::vector<pollfd> poll_fds;
 
-//         for (std::vector<pollfd>::iterator it = fds.begin(); it != fds.end();) {
-//             if (it->revents & POLLIN) { // Prêt pour la lecture
-//                 if (it->fd == socket.getSocket()) { // Nouvelle connexion entrante
-//                     int client_fd = accept(socket.getSocket(), NULL, NULL);
-//                     if (client_fd == -1) {
-//                         std::cerr << "Failed to accept connection" << std::endl;
-//                         continue;
-//                     }
+	// Ajouter tous les sockets des serveurs dans le tableau `poll_fds`
+	for (size_t i = 0; i < sockets.size(); ++i) {
+		Socket* socket = sockets[i];
 
-//                     // Ajouter le nouveau client à la liste de poll
-//                     pollfd client_pollfd;
-//                     client_pollfd.fd = client_fd;
-//                     client_pollfd.events = POLLIN; // Surveiller les requêtes clients
-//                     fds.push_back(client_pollfd);
+		pollfd server_pollfd;
+		server_pollfd.fd = socket->getSocket(); // Ajoute le FD du serveur
+		server_pollfd.events = POLLIN;
+		poll_fds.push_back(server_pollfd);
 
-//                     std::cout << "New client connected, fd: " << client_fd << std::endl;
-//                 } else { // Gérer les requêtes des clients existants
-//                     char buffer[1024];
-//                     int bytes_received = recv(it->fd, buffer, sizeof(buffer), 0);
-//                     if (bytes_received <= 0) {
-//                         // Déconnexion du client ou erreur
-//                         close(it->fd);
-//                         it = fds.erase(it); // Supprimer le client de la liste de poll
-//                         std::cout << "Client disconnected or error occurred" << std::endl;
-//                         continue;
-//                     } else {
-//                         // Traiter la requête client
-//                         std::cout << "Request received: " << buffer << std::endl;
-//                         std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 13\r\n\r\nHello, World!";
-//                         send(it->fd, response.c_str(), response.size(), 0);
-//                     }
-//                 }
-//             }
-//             ++it;
-//         }
-//     }
-// }
-
-
-
-void Server::stockClientsSockets(Socket& socket) {
-	int add_size = sizeof(socket.getAddress());
-
-	int client_fd = accept(socket.getSocket(), (struct sockaddr *)&socket.getAddress(), (socklen_t*)&add_size);
-	if (client_fd == -1) {
-		std::cerr << "Failed to accept an incoming connection. errno: " << strerror(errno) << std::endl;
-		return;
+		std::cout << "Ajout du socket FD: " << socket->getSocket() << " pour surveiller les connexions sur le port: " << socket->getPort() << std::endl;
 	}
 
-	std::cout << "Connection accepted with client_fd: " << client_fd << std::endl;
+	// Boucle principale de gestion des événements
+	while (true) {
+		int poll_result = poll(poll_fds.data(), poll_fds.size(), -1);  // Pas de timeout
+		if (poll_result == -1) {
+			if (errno == EINTR) {
+				continue; // Réessayer si poll est interrompu par un signal
+			}
+			std::cerr << "poll failed: " << strerror(errno) << std::endl;
+			break;
+		}
 
-	if (client_fd >= 0) {
-		_clientsFd.push_back(client_fd);
-	} else {
-		std::cerr << "Invalid client file descriptor: " << client_fd << std::endl;
+		// Parcourir les résultats de poll pour chaque socket surveillé
+		for (size_t i = 0; i < poll_fds.size(); ++i) {
+			bool isServerSocket = false;
+			for (size_t j = 0; j < sockets.size(); ++j) {
+				if (sockets[j]->getSocket() == poll_fds[i].fd) {
+					isServerSocket = true;
+					break;
+				}
+			}
+
+			if (poll_fds[i].revents & POLLIN) {
+				if (isServerSocket) {
+					Socket* socket = sockets[i];
+
+					// Nouvelle connexion entrante
+					int add_size = sizeof(socket->getAddress());
+					int client_socket = accept(socket->getSocket(), (struct sockaddr*)&socket->getAddress(), (socklen_t*)&add_size);
+					if (client_socket == -1) {
+						if (errno == EAGAIN || errno == EWOULDBLOCK) {
+							std::cerr << "No connections available to accept at the moment." << std::endl;
+						} else {
+							std::cerr << "Failed to accept client connection: " << strerror(errno) << std::endl;
+						}
+						continue;
+					}
+
+					// Ajouter le client connecté dans la liste des sockets surveillés
+					pollfd client_pollfd;
+					client_pollfd.fd = client_socket;
+					client_pollfd.events = POLLIN;
+					poll_fds.push_back(client_pollfd);
+					std::cout << "New client connected on port: " << socket->getPort() << " (FD: " << client_socket << ")" << std::endl;
+				}
+				else {
+					// Gérer les événements des clients déjà connectés
+					char buffer[1024] = {0};
+					ssize_t bytes_read = recv(poll_fds[i].fd, buffer, sizeof(buffer), 0);
+
+					if (bytes_read == 0 || (poll_fds[i].revents & POLLHUP)) {
+						// Déconnexion du client
+						std::cout << "Client disconnected: " << poll_fds[i].fd << std::endl;
+						close(poll_fds[i].fd);
+						poll_fds.erase(poll_fds.begin() + i);  // Suppression du client
+						--i; // Ajuster l'indice après suppression
+						continue;
+					} else if (bytes_read == -1) {
+						std::cerr << "recv failed: " << strerror(errno) << std::endl;
+						close(poll_fds[i].fd);
+						poll_fds.erase(poll_fds.begin() + i);
+						--i;
+						continue;
+					}
+
+					std::cout << "Received data: " << buffer << std::endl;
+
+					// Traiter la requête HTTP
+					HTTPRequest request;
+					if (request.parse(buffer)) {
+						handleHttpRequest(poll_fds[i].fd, request);
+					} else {
+						sendErrorResponse(poll_fds[i].fd, 400);  // Requête malformée
+					}
+
+					close(poll_fds[i].fd);  // Fermer le client après avoir traité la requête
+					poll_fds.erase(poll_fds.begin() + i);  // Suppression du client
+					--i;  // Ajuster l'indice après suppression
+				}
+			}
+		}
 	}
 }
 
-
-// void    Server::stockClientsSockets(Socket& socket) {
-//     pollfd  server_pollfd;
-
-//     server_pollfd.fd = socket.getSocket();
-//     server_pollfd.events = POLLIN; // Surveiller les connexions entrantes. (POLLIN : lecture)
-//     fds.push_back(server_pollfd);
-
-//     while (true) {
-//         int fds_nb = poll(fds.data(), fds.size(), -1);
-//         if (fds_nb == -1) {
-//             std::cout << "Error while checking client requests" << std::endl;
-//             return ;
-//         }
-//         for (std::vector<pollfd>::iterator it = fds.begin(); it != fds.end();) {
-//             // Need to manage POLLERR - POLLHUP - POLLNVAL => Check if we use strerror(errno) for error log.
-//             // if (it->revents & POLLERR) { // signifie qu'une erreur non récupérable s'est produite.
-//             //     std::cout << "An error occured on this socket !" << std::endl;
-//             //     close (it->fd);
-//             //     it = fds.erase(it);
-//             //     break ;
-//             // }
-//             // else if (it->revents & POLLHUP) { // indique que le client a fermé la connexion proprement.
-//             //     std::cout << "Connection has been closed by client." << std::endl;
-//             //     close (it->fd);
-//             //     it = fds.erase(it);
-//             //     break ;
-//             // }
-//             // else if (it->revents & POLLNVAL) { // fd est invalide (ex., si tu utilises un socket fermé ou non valide dans poll())
-//             //     std::cout << "File descriptor is not valid." << std::endl;
-//             //     close(it->fd);
-//             //     it = fds.erase(it);
-//             //     break ;
-//             // }
-//             if (it->revents & POLLIN) { // Si le fd est prêt à être lu. > & : vérifie si le bit correspondant à POLLIN est activé dans revents
-//                 if (it->fd == socket.getSocket()) { // Si c'est le socket serveur > Accept new connection.
-// 					int add_size = sizeof(socket.getAddress());
-//                     int client_socket = accept(socket.getSocket(), (struct sockaddr*)&socket.getAddress(), (socklen_t*)&add_size);
-//                     if (client_socket == -1) {
-//                         std::cout << "Failed to accept client connection." << std::endl;
-//                         continue ;
-//                     }
-//                     pollfd  client_pollfd;
-
-//                     client_pollfd.fd = client_socket;
-//                     client_pollfd.events = POLLIN;
-//                     fds.push_back(client_pollfd);
-//                     std::cout << "New client connected." << std::endl;
-//                 }
-//                 // Means that the event is linked to a client request.
-//                 else {
-//                     char    buffer[1024] = {0};
-//                     int bytes_rcv = recv(it->fd, buffer, 1024, 0);
-
-//                     if (bytes_rcv == 0) {
-//                         close (it->fd);
-//                         it = fds.erase(it); // Après avoir appelé erase(it), l'iterator est invalidé, donc il faut mettre à jour l'iterator pour qu'il pointe sur le bon élément suivant
-//                         std::cout << "Connection has been closed by the client." << std::endl;
-//                         continue ;
-//                     }
-//                     else if (bytes_rcv == -1) {
-//                         close (it->fd);
-//                         it = fds.erase(it); // Après avoir appelé erase(it), l'iterator est invalidé, donc il faut mettre à jour l'iterator pour qu'il pointe sur le bon élément suivant
-//                         std::cout << "Failed in receiving client request." << std::endl;
-//                         continue ;
-//                     }
-
-//                     std::cout << "Client request is : " << buffer << std::endl;
-//                     std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 60\r\n\r\nThis is a fucking response waiting by another client !";
-
-//                     int bytes_sent = send(it->fd, response.c_str(), response.size(), 0);
-//                     if (bytes_sent == -1) {
-//                         std::cout << "Failed in sending response to client." << std::endl;
-//                         continue ;
-//                     }
-//                 }
-//             }
-// 			++it;
-//         }
-//     }
-// }
