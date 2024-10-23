@@ -18,7 +18,8 @@ int main(int argc, char* argv[]) {
 
 		// Créer des objets Server à partir des ServerConfigs
 		std::vector<Server*> servers;
-		std::vector<Socket*> sockets;
+		std::vector<std::vector <Socket *> > sockets;
+		sockets.resize(serverConfigs.size());  // Redimensionne le vecteur pour contenir le bon nombre de vecteurs internes
 
 		for (size_t i = 0; i < serverConfigs.size(); ++i) {
 			const ServerConfig& serverConfig = serverConfigs[i];
@@ -30,7 +31,7 @@ int main(int argc, char* argv[]) {
 			std::cout << "Création d'un socket pour le port : " << serverConfig.ports[0] << ", FD : " << socket->getSocket() << std::endl;
 
 			servers.push_back(server);
-			sockets.push_back(socket);
+			sockets[i].push_back(socket);
 
 			std::cout << "Lancement du serveur sur le port " << serverConfig.ports[0] << std::endl;
 		}
@@ -38,14 +39,18 @@ int main(int argc, char* argv[]) {
 		// Boucle pour gérer les connexions et les requêtes
 		while (true) {
 			for (size_t i = 0; i < servers.size(); ++i) {
-				servers[i]->stockClientsSockets(sockets);
+				servers[i]->stockClientsSockets(sockets[i]);
+				std::cout << "Me produis-je ? non" << std::endl;
 			}
 		}
 
 		// Nettoyage mémoire
 		for (size_t i = 0; i < servers.size(); ++i) {
 			delete servers[i];
-			delete sockets[i];
+			for (size_t j = 0; j < sockets[i].size(); ++j) {
+				delete sockets[i][j];  // Libère chaque socket
+			}
+			// delete sockets[i];
 		}
 
 	} else {

@@ -129,7 +129,7 @@ bool ConfigParser::processServerDirective(std::ifstream &file, const std::string
 	std::getline(iss, value, ';');
 	trim(value);
 
-	  if (directive == "location" && *(value.end() - 1) == '{') {
+	if (directive == "location" && *(value.end() - 1) == '{') {
 		value = value.substr(0, value.size() - 1);
 		trim(value);
 	}
@@ -151,8 +151,10 @@ bool ConfigParser::processServerDirective(std::ifstream &file, const std::string
 		serverConfig.serverName = value;
 	} else if (directive == "root") {
 		serverConfig.root = value;
+		std::cout << std::endl << "root value : " << serverConfig.root << std::endl << std::endl;
 	} else if (directive == "index") {
 		serverConfig.index = value;
+		std::cout << std::endl <<  "config index = " << serverConfig.index << std::endl << std::endl; 
 	} else if (directive == "error_page") {
 		std::istringstream valueStream(value);
 		std::string token;
