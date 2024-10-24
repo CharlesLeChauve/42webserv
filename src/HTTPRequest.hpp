@@ -14,6 +14,10 @@ public:
 	std::string getPath() const;
 	std::string getQueryString() const;
 	std::map<std::string, std::string> getHeaders() const;
+
+    std::string getStrHeader(std::string header) const;
+    bool hasHeader(std::string header) const;
+    
 	std::string getBody() const;
 	std::string getHost() const;
 	void trim(std::string& s) const;

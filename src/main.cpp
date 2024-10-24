@@ -7,12 +7,26 @@
 #include <poll.h>
 #include <unistd.h>
 
+
+void initialize_random_generator() {
+    std::ifstream urandom("/dev/urandom", std::ios::binary);
+    unsigned int seed;
+    if (urandom.is_open()) {
+        urandom.read(reinterpret_cast<char*>(&seed), sizeof(seed));
+        urandom.close();
+    } else {
+        seed = std::time(0);
+    }
+    srand(seed);
+}
+
 int main(int argc, char* argv[]) {
 	if (argc < 2) {
 		std::cerr << "Usage: " << argv[0] << " <chemin_vers_le_fichier_de_configuration>" << std::endl;
 		return 1;
 	}
 
+	initialize_random_generator();
 	std::string configFile = argv[1];
 	ConfigParser configParser;
 

@@ -1,4 +1,5 @@
 #include <fstream>
+#include "SessionManager.hpp"
 #include "Server.hpp"
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
@@ -257,6 +258,9 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath, HTTPRes
 
 			response.setBody(content);
 
+			std::cout << std::endl << "Set-Cookie header : " << response.getStrHeader("Set-Cookie") << std::endl << std::endl;
+
+
 			std::string responseString = response.toString();
 			write(client_fd, responseString.c_str(), responseString.size());
 		} else {
@@ -308,6 +312,10 @@ void Server::handleClient(int client_fd) {
 		sendResponse(client_fd, response.beError(404));  // Mauvaise requête
 		return;
 	}
+
+	SessionManager session(request.getStrHeader("Cookie"));
+	if (session.getFirstCon())
+		response.setHeader("Set-Cookie", session.getSessionId() + "; Path=/; HttpOnly");
 
 	handleHttpRequest(client_fd, request, response);
 }

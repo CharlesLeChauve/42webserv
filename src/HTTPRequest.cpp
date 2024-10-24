@@ -7,6 +7,20 @@ HTTPRequest::HTTPRequest() {}
 
 HTTPRequest::~HTTPRequest() {}
 
+bool HTTPRequest::hasHeader(std::string header) const {
+    std::map<std::string, std::string>::const_iterator it = _headers.find(header);
+    if (it != _headers.end())
+        return true; // Retourner une chaîne vide si l'en-tête n'existe pas
+    return false;
+}
+
+std::string HTTPRequest::getStrHeader(std::string header) const {
+    std::map<std::string, std::string>::const_iterator it = _headers.find(header);
+    if (it == _headers.end())
+        return ""; // Retourner une chaîne vide si l'en-tête n'existe pas
+    return it->second;
+}
+
 bool HTTPRequest::parse(const std::string& raw_request) {
 	size_t header_end_pos = raw_request.find("\r\n\r\n");
 	if (header_end_pos == std::string::npos) {

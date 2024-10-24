@@ -87,6 +87,14 @@ std::string HTTPResponse::getBody() const {
 	return _body;
 }
 
+std::string HTTPResponse::getStrHeader(std::string header) const {
+    std::map<std::string, std::string>::const_iterator it = _headers.find(header);
+    if (it == _headers.end())
+        return ""; // Retourner une chaîne vide si l'en-tête n'existe pas
+    return it->second;
+}
+
+
 std::string HTTPResponse::toString() const {
 	std::ostringstream oss;
 	oss << "HTTP/1.1 " << _statusCode << " " << _reasonPhrase << "\r\n";

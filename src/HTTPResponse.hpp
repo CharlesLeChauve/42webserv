@@ -22,6 +22,7 @@ public:
 	std::string generateErrorPage(std::string infos);
 	std::map<std::string, std::string> getHeaders() const;
 	std::string getBody() const;
+	std::string getStrHeader(std::string header) const;
 
 	std::string toString() const;
 
