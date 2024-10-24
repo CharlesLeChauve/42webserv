@@ -83,7 +83,7 @@ button a:hover {
 
 /* Figcaption (Text) */
 .card figcaption {
-    display: none;
+    display: none; /* Cache la légende par défaut */
     background-color: rgba(0, 0, 0, 0.8);
     color: white;
     padding: 20px;
