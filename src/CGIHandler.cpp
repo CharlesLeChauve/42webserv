@@ -1,5 +1,5 @@
 #include "CGIHandler.hpp"
-#include "ServerCopy.hpp"
+#include "Server.hpp"
 #include <unistd.h>  // For fork, exec, pipe
 #include <sys/wait.h>  // For waitpid
 #include <iostream>

@@ -1,7 +1,7 @@
 // main.cpp
 #include "ConfigParser.hpp"
 #include "Socket.hpp"
-#include "ServerCopy.hpp"
+#include "Server.hpp"
 #include <iostream>
 #include "ServerConfig.hpp"
 #include <poll.h>
