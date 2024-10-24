@@ -1,4 +1,5 @@
 #include "HTTPResponse.hpp"
+#include "Server.hpp"
 #include <sstream>
 
 HTTPResponse::HTTPResponse() : _statusCode(200), _reasonPhrase("OK") {}
@@ -17,6 +18,45 @@ void HTTPResponse::setStatusCode(int code) {
 		case 405: _reasonPhrase = "Method Not Allowed"; break;
 		default: _reasonPhrase = "Unknown";
 	}
+}
+
+std::string HTTPResponse::generateErrorPage(std::string infos) {
+	std::stringstream page;
+	page << "<html><head><title>Error " << _statusCode << "</title>";
+	page << "<link rel=\"stylesheet\" href=\"css/err_style.css\"></head>";
+	page << "<body><h1>Error " << _statusCode << ": " << _reasonPhrase << "</h1>";
+	page << "<h3>" + infos + "</h3>";
+	page << "<img src=\"" << getSorryPath() << "\" alt=\"Error Image\">";
+	page << "<p>The server encountered an issue processing your request.</p>";
+	page << "</body></html>";
+	return page.str();
+}
+
+std::string HTTPResponse::generateErrorPage() {
+	std::stringstream page;
+	page << "<html><head><title>Error " << _statusCode << "</title>";
+	page << "<link rel=\"stylesheet\" href=\"css/err_style.css\"></head>";
+	page << "<body><h1>Error " << _statusCode << ": " << _reasonPhrase << "</h1>";
+	page << "<img src=\"" << getSorryPath() << "\" alt=\"Error Image\">";
+	page << "<p>The server encountered an issue processing your request.</p>";
+	page << "</body></html>";
+	return page.str();
+}
+
+HTTPResponse& HTTPResponse::beError(int err_code, std::string infos) {
+	setStatusCode(err_code);
+	setBody(generateErrorPage(infos));
+	setHeader("Content-Type", "text/html");
+	setHeader("Content-Length", to_string(getBody()));
+	return *this;
+}
+
+HTTPResponse& HTTPResponse::beError(int err_code) {
+	setStatusCode(err_code);
+	setBody(generateErrorPage());
+	setHeader("Content-Type", "text/html");
+	setHeader("Content-Length", to_string(getBody()));
+	return *this;
 }
 
 void HTTPResponse::setReasonPhrase(const std::string& reason) {

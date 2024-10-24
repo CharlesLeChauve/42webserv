@@ -1,34 +1,29 @@
 #include "CGIHandler.hpp"
+#include "HTTPResponse.hpp"
 #include "Server.hpp"
 #include <unistd.h>  // For fork, exec, pipe
 #include <sys/wait.h>  // For waitpid
 #include <iostream>
 #include <cstring>  // For strerror
 
-CGIHandler::CGIHandler(Server& server) : _server(server) {}
+CGIHandler::CGIHandler() /*: _server(server)*/ {}
 
 CGIHandler::~CGIHandler() {}
 
-template <typename T>
-std::string to_string(T value) {
-	std::ostringstream oss;
-	oss << value;
-	return oss.str();
-}
-
 std::string CGIHandler::executeCGI(const std::string& scriptPath, const HTTPRequest& request) {
 	std::string fullPath = scriptPath;
+    HTTPResponse response;
 
 	int pipefd[2];
 	if (pipe(pipefd) == -1) {
 		std::cerr << "Pipe failed: " << strerror(errno) << std::endl;
-		return "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\n" + _server.generateErrorPage(500, _server.getErrorMessage(500));
+            return response.beError(500).toString();
 	}
 
 	int pipefd_in[2];  // Ajout d'un second pipe pour l'entrée standard
 	if (pipe(pipefd_in) == -1) {
 		std::cerr << "Pipe for STDIN failed: " << strerror(errno) << std::endl;
-		return "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\n" + _server.generateErrorPage(500, _server.getErrorMessage(500));
+		return response.beError(500).toString();
 	}
 
 	pid_t pid = fork();
@@ -75,8 +70,7 @@ std::string CGIHandler::executeCGI(const std::string& scriptPath, const HTTPRequ
 		if (WIFEXITED(status)) {
 			int exitCode = WEXITSTATUS(status);
 			if (exitCode != 0) {
-				std::string errorPage = _server.generateErrorPage(500, _server.getErrorMessage(500) + ": CGI script failed with exit code " + to_string(exitCode));
-				return "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\n" + errorPage;
+				return response.beError(500, "CGI script failed with exit code : " + to_string(exitCode)).toString();
 			}
 		}
 
@@ -87,7 +81,7 @@ std::string CGIHandler::executeCGI(const std::string& scriptPath, const HTTPRequ
 		return cgiOutput;
 	} else {
 		std::cerr << "Fork failed: " << strerror(errno) << std::endl;
-		return "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\n\r\n" + _server.generateErrorPage(500, _server.getErrorMessage(500));
+		    return response.beError(500).toString();
 	}
 }
 

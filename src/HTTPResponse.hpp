@@ -13,9 +13,13 @@ public:
 	void setReasonPhrase(const std::string& reason);
 	void setHeader(const std::string& key, const std::string& value);
 	void setBody(const std::string& body);
+	HTTPResponse& beError(int err_code);
+	HTTPResponse& beError(int err_code, std::string infos);
 
 	int getStatusCode() const;
 	std::string getReasonPhrase() const;
+	std::string generateErrorPage();
+	std::string generateErrorPage(std::string infos);
 	std::map<std::string, std::string> getHeaders() const;
 	std::string getBody() const;
 
@@ -27,5 +31,7 @@ private:
 	std::map<std::string, std::string> _headers;
 	std::string _body;
 };
+
+std::string getSorryPath();
 
 #endif

@@ -1,6 +1,7 @@
 #include <fstream>
 #include "Server.hpp"
 #include "HTTPRequest.hpp"
+#include "HTTPResponse.hpp"
 #include "CGIHandler.hpp"
 #include "ServerConfig.hpp"
 #include <sys/stat.h>  // Pour utiliser la fonction stat
@@ -66,13 +67,6 @@ void setNonBlocking(int fd) {
 	}
 }
 
-template <typename T>
-std::string to_string(T value) {
-	std::ostringstream oss;
-	oss << value;
-	return oss.str();
-}
-
 std::string getSorryPath() {
 	srand(time(NULL));
 	int num = rand() % 6;
@@ -81,17 +75,7 @@ std::string getSorryPath() {
 }
 
 // Génération de la page d'erreur en utilisant les informations de configuration du serveur
-std::string Server::generateErrorPage(int errorCode, const std::string& errorMessage) {
-	std::stringstream page;
-	page << "<html><head><title>Error " << errorCode << " - " << _config.serverName << "</title>";
-	page << "<link rel=\"stylesheet\" href=\"css/err_style.css\"></head>";
-	page << "<body><h1>Error " << errorCode << ": " << errorMessage << "</h1>";
-	page << "<img src=\"" << getSorryPath() << "\" alt=\"Error Image\">";
-	page << "<p>The server encountered an issue processing your request.</p>";
-	page << "<p>Server Root: " << _config.root << "</p>";
-	page << "</body></html>";
-	return page.str();
-}
+
 
 // Utilisation de _config pour afficher les pages d'erreur personnalisées
 std::string Server::getErrorMessage(int errorCode) {
@@ -100,6 +84,12 @@ std::string Server::getErrorMessage(int errorCode) {
 	if (it != _config.errorPages.end()) {
 		return it->second;  // Si une page d'erreur personnalisée existe
 	}
+
+
+	///!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//	Il faut récupérer plus que le error_message, c'est d'ailleurs le path vers une page entière qui est contenue dans errorPages normalement 
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 
 	// Sinon, retourner des messages d'erreur par défaut
 	switch (errorCode) {
@@ -115,6 +105,7 @@ std::string Server::getErrorMessage(int errorCode) {
 			return "Unknown Error";
 	}
 }
+
 std::string Server::receiveRequest(int client_fd) {
 	if (client_fd <= 0) {
 		std::cerr << "Invalid client FD before reading: " << client_fd << std::endl;
@@ -140,23 +131,13 @@ std::string Server::receiveRequest(int client_fd) {
 	return std::string(buffer, bytes_received);
 }
 
-void Server::sendErrorResponse(int client_fd, int errorCode) {
-	std::string errorMessage = getErrorMessage(errorCode);
-	std::string errorPage = generateErrorPage(errorCode, errorMessage);
-
-	HTTPResponse response;
-	response.setStatusCode(errorCode);
-	response.setReasonPhrase(errorMessage);
-	response.setHeader("Content-Type", "text/html");
-	response.setHeader("Content-Length", to_string(errorPage.size()));
-	response.setBody(errorPage);
-
+void Server::sendResponse(int client_fd, HTTPResponse response) {
 	std::string responseString = response.toString();
 	write(client_fd, responseString.c_str(), responseString.size());
 }
 
 // Méthode pour gérer la requête HTTP en fonction de la méthode
-void Server::handleHttpRequest(int client_fd, const HTTPRequest& request) {
+void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response) {
 	// Vérifier si le Host correspond au server_name
 	std::string hostHeader = request.getHost();
 	if (!hostHeader.empty()) {
@@ -166,7 +147,7 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request) {
 		std::string portStr = (colonPos != std::string::npos) ? hostHeader.substr(colonPos + 1) : "";
 
 		if (hostName != _config.serverName) {
-			sendErrorResponse(client_fd, 404);  // Not Found
+			sendResponse(client_fd, response.beError(404));  // Not Found
 			return;
 		}
 
@@ -174,47 +155,48 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request) {
 		if (!portStr.empty()) {
 			int port = std::atoi(portStr.c_str());
 			if (port != _config.ports.at(0)) {
-				sendErrorResponse(client_fd, 404);  // Not Found
+				sendResponse(client_fd, response.beError(404));  // Not Found
 				return;
 			}
 		}
 	} else {
-		sendErrorResponse(client_fd, 400);  // Bad Request
+		sendResponse(client_fd, response.beError(400));  // Bad Request
 		return;
 	}
 
 	// Traiter la requête en fonction de la méthode
 	if (request.getMethod() == "GET" || request.getMethod() == "POST") {
-		handleGetOrPostRequest(client_fd, request);
+		handleGetOrPostRequest(client_fd, request, response);
 	} else if (request.getMethod() == "DELETE") {
 		handleDeleteRequest(client_fd, request);
 	} else {
-		sendErrorResponse(client_fd, 405);  // Méthode non autorisée
+		sendResponse(client_fd, response.beError(405));  // Méthode non autorisée
 	}
 }
 
 // Méthode pour gérer les requêtes GET et POST
-void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request) {
+void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response) {
 	std::string fullPath = _config.root + request.getPath();
 	//Changer ca pour détecter des vrais extrensions de fichiers...
 	if (fullPath.find(".cgi") != std::string::npos) {
 		if (access(fullPath.c_str(), F_OK) == -1) {
-			sendErrorResponse(client_fd, 404);
+			sendResponse(client_fd, response.beError(404));
 		} else {
-			CGIHandler cgiHandler(*this);
+			CGIHandler cgiHandler;
 			std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
 			write(client_fd, cgiOutput.c_str(), cgiOutput.length());
 		}
 	} else {
-		serveStaticFile(client_fd, fullPath);
+		serveStaticFile(client_fd, fullPath, response);
 	}
 }
 
 // Méthode pour gérer les requêtes DELETE
 void Server::handleDeleteRequest(int client_fd, const HTTPRequest& request) {
 	std::string fullPath = _config.root + request.getPath();
+	HTTPResponse response;
 	if (access(fullPath.c_str(), F_OK) == -1) {
-		sendErrorResponse(client_fd, 404);
+		sendResponse(client_fd, response.beError(404));
 	} else {
 		if (remove(fullPath.c_str()) == 0) {
 			HTTPResponse response;
@@ -228,21 +210,21 @@ void Server::handleDeleteRequest(int client_fd, const HTTPRequest& request) {
 			std::string responseString = response.toString();
 			write(client_fd, responseString.c_str(), responseString.size());
 		} else {
-			sendErrorResponse(client_fd, 500);
+			sendResponse(client_fd, response.beError(500));
 		}
 	}
 }
 
 // Méthode pour servir les fichiers statiques
-void Server::serveStaticFile(int client_fd, const std::string& filePath) {
+void Server::serveStaticFile(int client_fd, const std::string& filePath, HTTPResponse& response) {
 	struct stat pathStat;
 	if (stat(filePath.c_str(), &pathStat) == 0 && S_ISDIR(pathStat.st_mode)) {
 		// Gérer les répertoires en cherchant un fichier index
 		std::string indexPath = filePath + "/" + _config.index;
 		if (access(indexPath.c_str(), F_OK) != -1) {
-			serveStaticFile(client_fd, indexPath);
+			serveStaticFile(client_fd, indexPath, response);
 		} else {
-			sendErrorResponse(client_fd, 404);
+			sendResponse(client_fd, response.beError(404));
 		}
 	} else {
 		std::ifstream file(filePath.c_str(), std::ios::binary);
@@ -251,7 +233,6 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath) {
 			buffer << file.rdbuf();
 			std::string content = buffer.str();
 
-			HTTPResponse response;
 			response.setStatusCode(200);
 			response.setReasonPhrase("OK");
 
@@ -279,7 +260,7 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath) {
 			std::string responseString = response.toString();
 			write(client_fd, responseString.c_str(), responseString.size());
 		} else {
-			sendErrorResponse(client_fd, 404);
+			sendResponse(client_fd, response.beError(404));
 		}
 	}
 }
@@ -321,10 +302,12 @@ void Server::handleClient(int client_fd) {
 	}
 
 	HTTPRequest request;
+	HTTPResponse response;
+
 	if (!request.parse(requestString)) {
-		sendErrorResponse(client_fd, 400);  // Mauvaise requête
+		sendResponse(client_fd, response.beError(404));  // Mauvaise requête
 		return;
 	}
 
-	handleHttpRequest(client_fd, request);
+	handleHttpRequest(client_fd, request, response);
 }

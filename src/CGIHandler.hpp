@@ -9,7 +9,7 @@ class Server;
 
 class CGIHandler {
 public:
-	CGIHandler(Server& server);
+	CGIHandler();
 	~CGIHandler();
 
 	// Execute the CGI script and return the output
@@ -19,7 +19,7 @@ private:
 	// Setup the environment variables required for CGI execution
 	void setupEnvironment(const std::string& queryString);
 
-	Server& _server;
+	//Server& _server;
 };
 
 #endif
