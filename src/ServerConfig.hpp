@@ -8,8 +8,8 @@
 
 class ServerConfig {
 public:
-	std::vector<int>ports;
-	std::string serverName;
+	std::vector<int> ports;
+	std::vector<std::string> serverNames;
 	std::string root;
 	std::string index;
 	std::map<int, std::string> errorPages;

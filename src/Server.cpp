@@ -10,45 +10,6 @@
 #include <time.h>
 
 Server::Server(const ServerConfig& config) : _config(config) {
-	// Affichage des informations de la configuration du serveur
-	std::cout << "Server initialized with the following configuration:" << std::endl;
-
-	// Afficher le nom du serveur
-	std::cout << "Server Name: " << _config.serverName << std::endl;
-
-	// Afficher l'hôte et les ports
-	std::cout << "Host: " << _config.host << std::endl;
-	std::cout << "Ports: ";
-	for (size_t i = 0; i < _config.ports.size(); ++i) {
-		std::cout << _config.ports[i];
-		if (i != _config.ports.size() - 1)
-			std::cout << ", ";
-	}
-	std::cout << std::endl;
-
-	// Afficher le chemin racine et le fichier index
-	std::cout << "Root directory: " << _config.root << std::endl;
-	std::cout << "Index file: " << _config.index << std::endl;
-
-	// Afficher les pages d'erreur
-	std::cout << "Error Pages: " << std::endl;
-	for (std::map<int, std::string>::const_iterator it = _config.errorPages.begin();
-		 it != _config.errorPages.end(); ++it) {
-		std::cout << "  Error Code " << it->first << ": " << it->second << std::endl;
-	}
-
-	// Afficher les locations et leurs options
-	std::cout << "Locations: " << std::endl;
-	for (size_t i = 0; i < _config.locations.size(); ++i) {
-		const Location& location = _config.locations[i];
-		std::cout << "  Location path: " << location.path << std::endl;
-		for (std::map<std::string, std::string>::const_iterator it = location.options.begin();
-			 it != location.options.end(); ++it) {
-			std::cout << "    " << it->first << ": " << it->second << std::endl;
-		}
-	}
-
-	// Vérifier si la configuration est valide
 	if (!_config.isValid()) {
 		std::cerr << "Server configuration is invalid." << std::endl;
 	} else {
@@ -91,14 +52,13 @@ std::string Server::receiveRequest(int client_fd) {
 		return "";
 	} else if (bytes_received < 0) {
 		if (errno == EAGAIN || errno == EWOULDBLOCK) {
-			// Data pas encore disponible, le socket est non-bloquant
+
 			return "";
 		}
 		std::cerr << "Error reading from client: " << strerror(errno) << std::endl;
 		return "";
 	}
 
-	// Retourner la chaîne lue
 	return std::string(buffer, bytes_received);
 }
 
@@ -107,10 +67,9 @@ void Server::sendResponse(int client_fd, HTTPResponse response) {
 	write(client_fd, responseString.c_str(), responseString.size());
 }
 
-// Méthode pour gérer la requête HTTP en fonction de la méthode
 void Server::handleHttpRequest(int client_fd, const HTTPRequest& request,
 							   HTTPResponse& response) {
-	// Vérifier si le Host correspond au server_name
+	// Vérifier si le Host correspond à l'un des server_names
 	std::string hostHeader = request.getHost();
 	if (!hostHeader.empty()) {
 		// Extraire le nom d'hôte et le port s'il est présent
@@ -122,7 +81,15 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request,
 								  ? hostHeader.substr(colonPos + 1)
 								  : "";
 
-		if (hostName != _config.serverName) {
+		bool hostMatch = false;
+		for (size_t i = 0; i < _config.serverNames.size(); ++i) {
+			if (hostName == _config.serverNames[i]) {
+				hostMatch = true;
+				break;
+			}
+		}
+
+		if (!hostMatch) {
 			sendErrorResponse(client_fd, 404);  // Not Found
 			return;
 		}
@@ -150,7 +117,6 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request,
 	}
 }
 
-// Méthode pour gérer les requêtes GET et POST
 void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request,
 									HTTPResponse& response) {
 	std::string fullPath = _config.root + request.getPath();
@@ -168,7 +134,6 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request,
 	}
 }
 
-// Méthode pour gérer les requêtes DELETE
 void Server::handleDeleteRequest(int client_fd, const HTTPRequest& request) {
 	std::string fullPath = _config.root + request.getPath();
 	HTTPResponse response;
@@ -190,7 +155,6 @@ void Server::handleDeleteRequest(int client_fd, const HTTPRequest& request) {
 	}
 }
 
-// Méthode pour servir les fichiers statiques
 void Server::serveStaticFile(int client_fd, const std::string& filePath,
 							 HTTPResponse& response) {
 	struct stat pathStat;
@@ -269,10 +233,6 @@ int Server::acceptNewClient(int server_fd) {
 				  << strerror(errno) << " (errno " << errno << ")" << std::endl;
 		return -1;
 	}
-
-	std::cout << "Connexion acceptée : FD du client : " << client_fd << std::endl;
-	std::cout << "Adresse du client : " << inet_ntoa(client_addr.sin_addr)
-			  << " Port : " << ntohs(client_addr.sin_port) << std::endl;
 
 	return client_fd;
 }

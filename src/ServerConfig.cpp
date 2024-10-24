@@ -1,13 +1,13 @@
 #include "ServerConfig.hpp"
 #include <iostream>
 
-ServerConfig::ServerConfig() : serverName("NotreSite"), root("www/"), index("index.html"), host("0.0.0.0") {
-	// ports.push_back(80);
+ServerConfig::ServerConfig() : root("www/"), index("index.html"), host("0.0.0.0") {
+	serverNames.push_back("localhost");
 }
 
 ServerConfig::ServerConfig(const ServerConfig& other) {
 	ports = other.ports;
-	serverName = other.serverName;
+	serverNames = other.serverNames;
 	root = other.root;
 	index = other.index;
 	errorPages = other.errorPages;
@@ -18,7 +18,7 @@ ServerConfig::ServerConfig(const ServerConfig& other) {
 ServerConfig& ServerConfig::operator=(const ServerConfig& other) {
 	if (this != &other) {
 		ports = other.ports;
-		serverName = other.serverName;
+		serverNames = other.serverNames;
 		root = other.root;
 		index = other.index;
 		errorPages = other.errorPages;

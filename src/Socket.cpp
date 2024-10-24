@@ -17,7 +17,7 @@ Socket::Socket(int p_port) : _socket_fd(-1), _port(p_port) {
 
 Socket::~Socket() {
 	if (_socket_fd != -1) {
-		std::cout << "Fermeture du socket FD: " << _socket_fd << std::endl;
+		// std::cout << "Fermeture du socket FD: " << _socket_fd << std::endl;
 		close(_socket_fd);
 		_socket_fd = -1;
 	}
@@ -33,7 +33,7 @@ void Socket::socket_creation() {
 		std::cerr << "Socket creation failed: " << strerror(errno) << std::endl;
 		return;
 	}
-	std::cout << "Socket successfully created with FD: " << _socket_fd << " for port: " << _port << std::endl;
+	// std::cout << "Socket successfully created with FD: " << _socket_fd << " for port: " << _port << std::endl;
 
 	// Rendre le socket non bloquant
 	int flags = fcntl(_socket_fd, F_GETFL, 0);
@@ -50,7 +50,7 @@ void Socket::socket_creation() {
 		_socket_fd = -1;
 		return;
 	}
-	std::cout << "Socket FD: " << _socket_fd << " set to non-blocking mode." << std::endl;
+	// std::cout << "Socket FD: " << _socket_fd << " set to non-blocking mode." << std::endl;
 }
 
 
@@ -72,7 +72,7 @@ void Socket::socket_binding() {
 		_socket_fd = -1;
 		return;
 	}
-	std::cout << "Socket successfully bound to port " << _port << std::endl;
+	// std::cout << "Socket successfully bound to port " << _port << std::endl;
 }
 
 void Socket::socket_listening() {
@@ -87,7 +87,7 @@ void Socket::socket_listening() {
 		return;
 	}
 
-	std::cout << "Socket is now listening on port " << _port << std::endl;
+	// std::cout << "Socket is now listening on port " << _port << std::endl;
 }
 
 

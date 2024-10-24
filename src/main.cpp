@@ -9,15 +9,15 @@
 
 
 void initialize_random_generator() {
-    std::ifstream urandom("/dev/urandom", std::ios::binary);
-    unsigned int seed;
-    if (urandom.is_open()) {
-        urandom.read(reinterpret_cast<char*>(&seed), sizeof(seed));
-        urandom.close();
-    } else {
-        seed = std::time(0);
-    }
-    srand(seed);
+	std::ifstream urandom("/dev/urandom", std::ios::binary);
+	unsigned int seed;
+	if (urandom.is_open()) {
+		urandom.read(reinterpret_cast<char*>(&seed), sizeof(seed));
+		urandom.close();
+	} else {
+		seed = std::time(0);
+	}
+	srand(seed);
 }
 
 int main(int argc, char* argv[]) {
@@ -75,11 +75,11 @@ int main(int argc, char* argv[]) {
 
 		for (size_t i = 0; i < poll_fds.size(); ++i) {
 			if (poll_fds[i].revents & POLLIN) {
-				std::cout << "Prêt à lire depuis le FD : " << poll_fds[i].fd << std::endl;
+				// std::cout << "Prêt à lire depuis le FD : " << poll_fds[i].fd << std::endl;
 
 				if (fdToServerMap.find(poll_fds[i].fd) != fdToServerMap.end()) {
 					// C'est un descripteur de socket serveur, accepter une nouvelle connexion
-					std::cout << "Traitement du socket serveur FD : " << poll_fds[i].fd << std::endl;
+					// std::cout << "Traitement du socket serveur FD : " << poll_fds[i].fd << std::endl;
 
 					Server* server = fdToServerMap[poll_fds[i].fd];
 					int client_fd = server->acceptNewClient(poll_fds[i].fd);
@@ -92,13 +92,13 @@ int main(int argc, char* argv[]) {
 						client_pollfd.events = POLLIN;
 						poll_fds.push_back(client_pollfd);
 
-						std::cout << "Nouveau client FD : " << client_fd << " accepté sur le serveur FD : " << poll_fds[i].fd << std::endl;
+						// std::cout << "Nouveau client FD : " << client_fd << " accepté sur le serveur FD : " << poll_fds[i].fd << std::endl;
 					} else {
 						std::cerr << "Échec de l'acceptation du client sur le serveur FD : " << poll_fds[i].fd << std::endl;
 					}
 				} else {
 					// C'est un descripteur de socket client, traiter la requête
-					std::cout << "Traitement du socket client FD : " << poll_fds[i].fd << std::endl;
+					// std::cout << "Traitement du socket client FD : " << poll_fds[i].fd << std::endl;
 
 					Server* server = clientFdToServerMap[poll_fds[i].fd];
 					if (server != NULL) {
