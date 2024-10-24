@@ -32,7 +32,8 @@ Server::Server(const ServerConfig& config) : _config(config) {
 
 	// Afficher les pages d'erreur
 	std::cout << "Error Pages: " << std::endl;
-	for (std::map<int, std::string>::const_iterator it = _config.errorPages.begin(); it != _config.errorPages.end(); ++it) {
+	for (std::map<int, std::string>::const_iterator it = _config.errorPages.begin();
+		 it != _config.errorPages.end(); ++it) {
 		std::cout << "  Error Code " << it->first << ": " << it->second << std::endl;
 	}
 
@@ -41,7 +42,8 @@ Server::Server(const ServerConfig& config) : _config(config) {
 	for (size_t i = 0; i < _config.locations.size(); ++i) {
 		const Location& location = _config.locations[i];
 		std::cout << "  Location path: " << location.path << std::endl;
-		for (std::map<std::string, std::string>::const_iterator it = location.options.begin(); it != location.options.end(); ++it) {
+		for (std::map<std::string, std::string>::const_iterator it = location.options.begin();
+			 it != location.options.end(); ++it) {
 			std::cout << "    " << it->first << ": " << it->second << std::endl;
 		}
 	}
@@ -75,38 +77,6 @@ std::string getSorryPath() {
 	return "images/" + to_string(num) + "-sorry.gif";
 }
 
-// Génération de la page d'erreur en utilisant les informations de configuration du serveur
-
-
-// Utilisation de _config pour afficher les pages d'erreur personnalisées
-std::string Server::getErrorMessage(int errorCode) {
-	// Utilisation des pages d'erreur définies dans _config.errorPages
-	std::map<int, std::string>::const_iterator it = _config.errorPages.find(errorCode);
-	if (it != _config.errorPages.end()) {
-		return it->second;  // Si une page d'erreur personnalisée existe
-	}
-
-
-	///!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	//	Il faut récupérer plus que le error_message, c'est d'ailleurs le path vers une page entière qui est contenue dans errorPages normalement 
-	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-	// Sinon, retourner des messages d'erreur par défaut
-	switch (errorCode) {
-		case 404:
-			return "Not Found";
-		case 405:
-			return "Method Not Allowed";
-		case 500:
-			return "Internal Server Error";
-		case 403:
-			return "Forbidden";
-		default:
-			return "Unknown Error";
-	}
-}
-
 std::string Server::receiveRequest(int client_fd) {
 	if (client_fd <= 0) {
 		std::cerr << "Invalid client FD before reading: " << client_fd << std::endl;
@@ -138,17 +108,22 @@ void Server::sendResponse(int client_fd, HTTPResponse response) {
 }
 
 // Méthode pour gérer la requête HTTP en fonction de la méthode
-void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response) {
+void Server::handleHttpRequest(int client_fd, const HTTPRequest& request,
+							   HTTPResponse& response) {
 	// Vérifier si le Host correspond au server_name
 	std::string hostHeader = request.getHost();
 	if (!hostHeader.empty()) {
 		// Extraire le nom d'hôte et le port s'il est présent
 		size_t colonPos = hostHeader.find(':');
-		std::string hostName = (colonPos != std::string::npos) ? hostHeader.substr(0, colonPos) : hostHeader;
-		std::string portStr = (colonPos != std::string::npos) ? hostHeader.substr(colonPos + 1) : "";
+		std::string hostName = (colonPos != std::string::npos)
+								   ? hostHeader.substr(0, colonPos)
+								   : hostHeader;
+		std::string portStr = (colonPos != std::string::npos)
+								  ? hostHeader.substr(colonPos + 1)
+								  : "";
 
 		if (hostName != _config.serverName) {
-			sendResponse(client_fd, response.beError(404));  // Not Found
+			sendErrorResponse(client_fd, 404);  // Not Found
 			return;
 		}
 
@@ -156,12 +131,12 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPRe
 		if (!portStr.empty()) {
 			int port = std::atoi(portStr.c_str());
 			if (port != _config.ports.at(0)) {
-				sendResponse(client_fd, response.beError(404));  // Not Found
+				sendErrorResponse(client_fd, 404);  // Not Found
 				return;
 			}
 		}
 	} else {
-		sendResponse(client_fd, response.beError(400));  // Bad Request
+		sendErrorResponse(client_fd, 400);  // Bad Request
 		return;
 	}
 
@@ -171,17 +146,18 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPRe
 	} else if (request.getMethod() == "DELETE") {
 		handleDeleteRequest(client_fd, request);
 	} else {
-		sendResponse(client_fd, response.beError(405));  // Méthode non autorisée
+		sendErrorResponse(client_fd, 405);  // Méthode non autorisée
 	}
 }
 
 // Méthode pour gérer les requêtes GET et POST
-void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response) {
+void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request,
+									HTTPResponse& response) {
 	std::string fullPath = _config.root + request.getPath();
-	//Changer ca pour détecter des vrais extrensions de fichiers...
+	// Changer ça pour détecter des vraies extensions de fichiers...
 	if (fullPath.find(".cgi") != std::string::npos) {
 		if (access(fullPath.c_str(), F_OK) == -1) {
-			sendResponse(client_fd, response.beError(404));
+			sendErrorResponse(client_fd, 404);
 		} else {
 			CGIHandler cgiHandler;
 			std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
@@ -197,10 +173,9 @@ void Server::handleDeleteRequest(int client_fd, const HTTPRequest& request) {
 	std::string fullPath = _config.root + request.getPath();
 	HTTPResponse response;
 	if (access(fullPath.c_str(), F_OK) == -1) {
-		sendResponse(client_fd, response.beError(404));
+		sendErrorResponse(client_fd, 404);
 	} else {
 		if (remove(fullPath.c_str()) == 0) {
-			HTTPResponse response;
 			response.setStatusCode(200);
 			response.setReasonPhrase("OK");
 			response.setHeader("Content-Type", "text/html");
@@ -208,16 +183,16 @@ void Server::handleDeleteRequest(int client_fd, const HTTPRequest& request) {
 			response.setHeader("Content-Length", to_string(body.size()));
 			response.setBody(body);
 
-			std::string responseString = response.toString();
-			write(client_fd, responseString.c_str(), responseString.size());
+			sendResponse(client_fd, response);
 		} else {
-			sendResponse(client_fd, response.beError(500));
+			sendErrorResponse(client_fd, 500);
 		}
 	}
 }
 
 // Méthode pour servir les fichiers statiques
-void Server::serveStaticFile(int client_fd, const std::string& filePath, HTTPResponse& response) {
+void Server::serveStaticFile(int client_fd, const std::string& filePath,
+							 HTTPResponse& response) {
 	struct stat pathStat;
 	if (stat(filePath.c_str(), &pathStat) == 0 && S_ISDIR(pathStat.st_mode)) {
 		// Gérer les répertoires en cherchant un fichier index
@@ -225,7 +200,7 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath, HTTPRes
 		if (access(indexPath.c_str(), F_OK) != -1) {
 			serveStaticFile(client_fd, indexPath, response);
 		} else {
-			sendResponse(client_fd, response.beError(404));
+			sendErrorResponse(client_fd, 404);
 		}
 	} else {
 		std::ifstream file(filePath.c_str(), std::ios::binary);
@@ -242,11 +217,16 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath, HTTPRes
 			size_t extPos = filePath.find_last_of('.');
 			if (extPos != std::string::npos) {
 				std::string extension = filePath.substr(extPos);
-				if (extension == ".css") contentType = "text/css";
-				else if (extension == ".js") contentType = "application/javascript";
-				else if (extension == ".png") contentType = "image/png";
-				else if (extension == ".jpg" || extension == ".jpeg") contentType = "image/jpeg";
-				else if (extension == ".gif") contentType = "image/gif";
+				if (extension == ".css")
+					contentType = "text/css";
+				else if (extension == ".js")
+					contentType = "application/javascript";
+				else if (extension == ".png")
+					contentType = "image/png";
+				else if (extension == ".jpg" || extension == ".jpeg")
+					contentType = "image/jpeg";
+				else if (extension == ".gif")
+					contentType = "image/gif";
 				// Ajoutez d'autres types si nécessaire
 			}
 
@@ -258,19 +238,21 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath, HTTPRes
 
 			response.setBody(content);
 
-			std::cout << std::endl << "Set-Cookie header : " << response.getStrHeader("Set-Cookie") << std::endl << std::endl;
+			std::cout << std::endl
+					  << "Set-Cookie header : " << response.getStrHeader("Set-Cookie")
+					  << std::endl
+					  << std::endl;
 
-
-			std::string responseString = response.toString();
-			write(client_fd, responseString.c_str(), responseString.size());
+			sendResponse(client_fd, response);
 		} else {
-			sendResponse(client_fd, response.beError(404));
+			sendErrorResponse(client_fd, 404);
 		}
 	}
 }
 
 int Server::acceptNewClient(int server_fd) {
-	std::cout << "Tentative d'acceptation d'une nouvelle connexion sur le socket FD: " << server_fd << std::endl;
+	std::cout << "Tentative d'acceptation d'une nouvelle connexion sur le socket FD: "
+			  << server_fd << std::endl;
 
 	if (server_fd <= 0) {
 		std::cerr << "Invalid server FD: " << server_fd << std::endl;
@@ -283,12 +265,14 @@ int Server::acceptNewClient(int server_fd) {
 
 	int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
 	if (client_fd == -1) {
-		std::cerr << "Erreur lors de l'acceptation de la connexion : " << strerror(errno) << " (errno " << errno << ")" << std::endl;
+		std::cerr << "Erreur lors de l'acceptation de la connexion : "
+				  << strerror(errno) << " (errno " << errno << ")" << std::endl;
 		return -1;
 	}
 
 	std::cout << "Connexion acceptée : FD du client : " << client_fd << std::endl;
-	std::cout << "Adresse du client : " << inet_ntoa(client_addr.sin_addr) << " Port : " << ntohs(client_addr.sin_port) << std::endl;
+	std::cout << "Adresse du client : " << inet_ntoa(client_addr.sin_addr)
+			  << " Port : " << ntohs(client_addr.sin_port) << std::endl;
 
 	return client_fd;
 }
@@ -309,7 +293,7 @@ void Server::handleClient(int client_fd) {
 	HTTPResponse response;
 
 	if (!request.parse(requestString)) {
-		sendResponse(client_fd, response.beError(404));  // Mauvaise requête
+		sendErrorResponse(client_fd, 400);  // Mauvaise requête
 		return;
 	}
 
@@ -318,4 +302,30 @@ void Server::handleClient(int client_fd) {
 		response.setHeader("Set-Cookie", session.getSessionId() + "; Path=/; HttpOnly");
 
 	handleHttpRequest(client_fd, request, response);
+}
+
+void Server::sendErrorResponse(int client_fd, int errorCode) {
+	HTTPResponse response;
+	response.setStatusCode(errorCode);
+
+	std::string errorContent;
+	std::map<int, std::string>::const_iterator it = _config.errorPages.find(errorCode);
+	if (it != _config.errorPages.end()) {
+		std::string errorPagePath = _config.root + it->second;  // Chemin complet
+		std::ifstream errorFile(errorPagePath.c_str(), std::ios::binary);
+		if (errorFile) {
+			std::stringstream buffer;
+			buffer << errorFile.rdbuf();
+			errorContent = buffer.str();
+		} else {
+			std::cerr << "Impossible d'ouvrir le fichier d'erreur personnalisé : "
+					  << errorPagePath << std::endl;
+			// Laisser errorContent vide pour utiliser la page d'erreur par défaut
+		}
+	}
+
+	// Passer errorContent à beError, qui utilisera la page par défaut si errorContent
+	// est vide
+	response.beError(errorCode, errorContent);
+	sendResponse(client_fd, response);
 }

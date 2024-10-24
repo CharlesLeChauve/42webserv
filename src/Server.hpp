@@ -33,8 +33,7 @@ public:
     ~Server();
 
     // Méthodes pour la gestion des erreurs et la réception/gestion des requêtes
-    std::string generateErrorPage(int errorCode, const std::string& errorMessage);
-    std::string getErrorMessage(int errorCode);
+    void sendErrorResponse(int client_fd, int errorCode);
 
     // Accepter une nouvelle connexion client
     int acceptNewClient(int server_fd);
@@ -45,9 +44,9 @@ public:
 
 template <typename T>
 std::string to_string(T value) {
-	std::ostringstream oss;
-	oss << value;
-	return oss.str();
+    std::ostringstream oss;
+    oss << value;
+    return oss.str();
 }
 
 #endif

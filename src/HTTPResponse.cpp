@@ -43,19 +43,15 @@ std::string HTTPResponse::generateErrorPage() {
 	return page.str();
 }
 
-HTTPResponse& HTTPResponse::beError(int err_code, std::string infos) {
+HTTPResponse& HTTPResponse::beError(int err_code, const std::string& errorContent) {
 	setStatusCode(err_code);
-	setBody(generateErrorPage(infos));
+	if (!errorContent.empty()) {
+		setBody(errorContent);
+	} else {
+		setBody(generateErrorPage());
+	}
 	setHeader("Content-Type", "text/html");
-	setHeader("Content-Length", to_string(getBody()));
-	return *this;
-}
-
-HTTPResponse& HTTPResponse::beError(int err_code) {
-	setStatusCode(err_code);
-	setBody(generateErrorPage());
-	setHeader("Content-Type", "text/html");
-	setHeader("Content-Length", to_string(getBody()));
+	setHeader("Content-Length", to_string(getBody().size()));
 	return *this;
 }
 
@@ -88,12 +84,11 @@ std::string HTTPResponse::getBody() const {
 }
 
 std::string HTTPResponse::getStrHeader(std::string header) const {
-    std::map<std::string, std::string>::const_iterator it = _headers.find(header);
-    if (it == _headers.end())
-        return ""; // Retourner une chaîne vide si l'en-tête n'existe pas
-    return it->second;
+	std::map<std::string, std::string>::const_iterator it = _headers.find(header);
+	if (it == _headers.end())
+		return ""; // Retourner une chaîne vide si l'en-tête n'existe pas
+	return it->second;
 }
-
 
 std::string HTTPResponse::toString() const {
 	std::ostringstream oss;
