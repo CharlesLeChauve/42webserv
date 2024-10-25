@@ -13,6 +13,7 @@ ServerConfig::ServerConfig(const ServerConfig& other) {
 	errorPages = other.errorPages;
 	locations = other.locations;
 	host = other.host;
+	cgiExtensions = other.cgiExtensions;
 }
 
 ServerConfig& ServerConfig::operator=(const ServerConfig& other) {
@@ -24,6 +25,7 @@ ServerConfig& ServerConfig::operator=(const ServerConfig& other) {
 		errorPages = other.errorPages;
 		locations = other.locations;
 		host = other.host;
+		cgiExtensions = other.cgiExtensions;
 	}
 	return *this;
 }

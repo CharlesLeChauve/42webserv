@@ -64,6 +64,10 @@ int main(int argc, char* argv[]) {
 		sockets.push_back(socket);
 
 		std::cout << "Serveur lancé sur le port " << serverConfigs[i].ports[0] << std::endl;
+		std::cerr << "[DEBUG] Server on port " << serverConfigs[i].ports[0] << " has CGI Extensions:" << std::endl;
+    for (size_t j = 0; j < serverConfigs[i].cgiExtensions.size(); ++j) {
+        std::cerr << " - " << serverConfigs[i].cgiExtensions[j] << std::endl;
+    }
 	}
 
 	while (true) {

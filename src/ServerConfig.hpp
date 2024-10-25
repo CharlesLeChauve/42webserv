@@ -1,3 +1,4 @@
+// ServerConfig.hpp
 #ifndef SERVERCONFIG_HPP
 #define SERVERCONFIG_HPP
 
@@ -8,20 +9,23 @@
 
 class ServerConfig {
 public:
-	std::vector<int> ports;
-	std::vector<std::string> serverNames;
-	std::string root;
-	std::string index;
-	std::map<int, std::string> errorPages;
-	std::vector<Location> locations;
-	std::string host;
+    std::vector<int> ports;
+    std::vector<std::string> serverNames;
+    std::string root;
+    std::string index;
+    std::map<int, std::string> errorPages;
+    std::vector<Location> locations;
+    std::string host;
 
-	ServerConfig();
-	ServerConfig(const ServerConfig& other);
-	ServerConfig& operator=(const ServerConfig& other);
-	~ServerConfig();
+    // Ajout d'un vecteur pour les extensions CGI
+    std::vector<std::string> cgiExtensions;
 
-	bool isValid() const;
+    ServerConfig();
+    ServerConfig(const ServerConfig& other);
+    ServerConfig& operator=(const ServerConfig& other);
+    ~ServerConfig();
+
+    bool isValid() const;
 };
 
 #endif

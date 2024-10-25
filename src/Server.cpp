@@ -8,6 +8,7 @@
 #include <sys/stat.h>  // Pour utiliser la fonction stat
 #include <fcntl.h>
 #include <time.h>
+#include "Utils.hpp"
 
 Server::Server(const ServerConfig& config) : _config(config) {
 	if (!_config.isValid()) {
@@ -117,22 +118,57 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request,
 	}
 }
 
-void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request,
-									HTTPResponse& response) {
-	std::string fullPath = _config.root + request.getPath();
-	// Changer ça pour détecter des vraies extensions de fichiers...
-	if (fullPath.find(".cgi") != std::string::npos) {
-		if (access(fullPath.c_str(), F_OK) == -1) {
-			sendErrorResponse(client_fd, 404);
-		} else {
-			CGIHandler cgiHandler;
-			std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
-			write(client_fd, cgiOutput.c_str(), cgiOutput.length());
-		}
-	} else {
-		serveStaticFile(client_fd, fullPath, response);
-	}
+bool Server::hasCgiExtension(const std::string& path) const {
+    std::cerr << "[DEBUG] CGI Extensions for this server:" << std::endl;
+    for (size_t i = 0; i < _config.cgiExtensions.size(); ++i) {
+        std::cerr << " - \"" << _config.cgiExtensions[i] << "\"" << std::endl;
+    }
+    for (size_t i = 0; i < _config.cgiExtensions.size(); ++i) {
+        if (endsWith(path, _config.cgiExtensions[i])) {
+            std::cerr << "[DEBUG] hasCgiExtension: Matched extension " << _config.cgiExtensions[i] << " for path " << path << std::endl;
+            return true;
+        }
+    }
+    std::cerr << "[DEBUG] hasCgiExtension: No matching CGI extension for path " << path << std::endl;
+    return false;
 }
+
+
+
+bool Server::endsWith(const std::string& str, const std::string& suffix) const {
+    if (str.length() >= suffix.length()) {
+        return (0 == str.compare(str.length() - suffix.length(), suffix.length(), suffix));
+    } else {
+        return false;
+    }
+}
+
+// Modification de la méthode handleGetOrPostRequest
+
+void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response) {
+    std::string fullPath = _config.root + request.getPath();
+
+    // Log pour vérifier le chemin complet
+    std::cerr << "[DEBUG] handleGetOrPostRequest: fullPath = " << fullPath << std::endl;
+
+    // Vérifier si le fichier a une extension CGI (.cgi, .sh, .php)
+    if (hasCgiExtension(fullPath)) {
+        std::cerr << "[DEBUG] CGI extension detected for path: " << fullPath << std::endl;
+        if (access(fullPath.c_str(), F_OK) == -1) {
+            std::cerr << "[DEBUG] CGI script not found: " << fullPath << std::endl;
+            sendErrorResponse(client_fd, 404);
+        } else {
+            CGIHandler cgiHandler;
+            std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
+            write(client_fd, cgiOutput.c_str(), cgiOutput.length());
+        }
+    } else {
+        std::cerr << "[DEBUG] No CGI extension detected for path: " << fullPath << ". Serving as static file." << std::endl;
+        serveStaticFile(client_fd, fullPath, response);
+    }
+}
+
+
 
 void Server::handleDeleteRequest(int client_fd, const HTTPRequest& request) {
 	std::string fullPath = _config.root + request.getPath();

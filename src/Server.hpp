@@ -1,3 +1,4 @@
+// Server.hpp
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
@@ -27,6 +28,10 @@ private:
     void handleDeleteRequest(int client_fd, const HTTPRequest& request);
     void serveStaticFile(int client_fd, const std::string& filePath, HTTPResponse& response);
 
+    // Ajout des méthodes auxiliaires pour gérer les extensions CGI supplémentaires
+    bool hasCgiExtension(const std::string& path) const;
+    bool endsWith(const std::string& str, const std::string& suffix) const;
+
 public:
     // Constructeur pour inclure ServerConfig
     Server(const ServerConfig& config);
@@ -41,12 +46,5 @@ public:
     // Gérer les requêtes d'un client connecté
     void handleClient(int client_fd);
 };
-
-template <typename T>
-std::string to_string(T value) {
-    std::ostringstream oss;
-    oss << value;
-    return oss.str();
-}
 
 #endif
