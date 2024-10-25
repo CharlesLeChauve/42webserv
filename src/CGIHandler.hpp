@@ -18,7 +18,7 @@ public:
 
 private:
     // Setup the environment variables required for CGI execution
-    void setupEnvironment(const std::string& queryString);
+	void setupEnvironment(const HTTPRequest&, std::string scriptPath);
 
     // Méthode auxiliaire pour vérifier l'extension
     bool endsWith(const std::string& str, const std::string& suffix) const;

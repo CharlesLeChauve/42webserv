@@ -57,15 +57,7 @@ std::string CGIHandler::executeCGI(const std::string& scriptPath, const HTTPRequ
         close(pipefd_in[1]);  // Fermer l'extrémité d'écriture du pipe pour stdin
         dup2(pipefd_in[0], STDIN_FILENO);  // Rediriger stdin vers le pipe
 
-        // Définir les variables d'environnement
-        setenv("REQUEST_METHOD", request.getMethod().c_str(), 1);
-        if (request.getMethod() == "POST") {
-            setenv("CONTENT_LENGTH", to_string(request.getBody().size()).c_str(), 1);
-        }
-        setenv("QUERY_STRING", request.getQueryString().c_str(), 1);
-
-        // Définir d'autres variables d'environnement si nécessaire
-        // ...
+        setupEnvironment(request, fullPath);
 
         // Exécuter le script
         if (!interpreter.empty()) {
@@ -123,7 +115,7 @@ std::string CGIHandler::executeCGI(const std::string& scriptPath, const HTTPRequ
 
         // Si aucun en-tête "Status:" n'est trouvé, renvoyer la réponse CGI directement
         if (cgiOutput.find("HTTP/1.1") == std::string::npos) {
-            cgiOutput = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + cgiOutput;
+            cgiOutput = "HTTP/1.1 200 OK\r\nContent-Type: text/html" + cgiOutput;
         }
 
         std::cerr << "[DEBUG] executeCGI: CGI Output:\n" << cgiOutput << std::endl;
@@ -136,6 +128,24 @@ std::string CGIHandler::executeCGI(const std::string& scriptPath, const HTTPRequ
 }
 
 
-void CGIHandler::setupEnvironment(const std::string& queryString) {
-    setenv("QUERY_STRING", queryString.c_str(), 1);
+void CGIHandler::setupEnvironment(const HTTPRequest& request, std::string scriptPath) {
+	if (request.getMethod() == "POST") {
+		setenv("REQUEST_METHOD", "POST", 1);  // Définir POST comme méthode
+		setenv("CONTENT_TYPE", "application/x-www-form-urlencoded", 1); // Valeur par défaut
+		setenv("CONTENT_LENGTH", to_string(request.getBody().size()).c_str(), 1);  // Définir la taille du corps de la requête
+	} else {
+		setenv("REQUEST_METHOD", "GET", 1);  // Définir GET comme méthode par défaut
+	}
+    setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
+    setenv("REQUEST_METHOD", request.getMethod().c_str(), 1);
+    setenv("SCRIPT_FILENAME", scriptPath.c_str(), 1);
+    setenv("SCRIPT_NAME", scriptPath.c_str(), 1);
+    setenv("QUERY_STRING", request.getQueryString().c_str(), 1);
+    setenv("CONTENT_TYPE", request.getStrHeader("Content-Type").c_str(), 1);
+    setenv("CONTENT_LENGTH", std::to_string(request.getBody().size()).c_str(), 1);
+    setenv("REDIRECT_STATUS", "200", 1); // Nécessaire pour php-cgi
+    setenv("SERVER_PROTOCOL", "HTTP/1.1", 1);
+    //setenv("REMOTE_ADDR", request.getClientIP().c_str(), 1);
+    setenv("SERVER_NAME", request.getStrHeader("Host").c_str(), 1);
+    //setenv("SERVER_PORT", request.getPort().c_str(), 1);
 }
