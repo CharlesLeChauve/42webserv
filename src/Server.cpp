@@ -82,18 +82,18 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request,
 								  ? hostHeader.substr(colonPos + 1)
 								  : "";
 
-		bool hostMatch = false;
-		for (size_t i = 0; i < _config.serverNames.size(); ++i) {
-			if (hostName == _config.serverNames[i]) {
-				hostMatch = true;
-				break;
-			}
-		}
+		// bool hostMatch = false;
+		// for (size_t i = 0; i < _config.serverNames.size(); ++i) {
+		// 	if (hostName == _config.serverNames[i]) {
+		// 		hostMatch = true;
+		// 		break;
+		// 	}
+		// }
 
-		if (!hostMatch) {
-			sendErrorResponse(client_fd, 404);  // Not Found
-			return;
-		}
+		// if (!hostMatch) {
+		// 	sendErrorResponse(client_fd, 404);  // Not Found
+		// 	return;
+		// }
 
 		// Optionnel : Vérifier le port
 		if (!portStr.empty()) {

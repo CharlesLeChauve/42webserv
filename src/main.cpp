@@ -21,13 +21,14 @@ void initialize_random_generator() {
 }
 
 int main(int argc, char* argv[]) {
-	if (argc < 2) {
-		std::cerr << "Usage: " << argv[0] << " <chemin_vers_le_fichier_de_configuration>" << std::endl;
+	std::string configFile;
+	if (argc > 2) {
+		std::cerr << "Usage: " << argv[0] << " [path/to/file]" << std::endl;
 		return 1;
+	} else if (argc == 1) {
+		configFile = (argc == 1 ? "config/server.conf" : argv[1]);
 	}
-
 	initialize_random_generator();
-	std::string configFile = argv[1];
 	ConfigParser configParser;
 
 	try {
