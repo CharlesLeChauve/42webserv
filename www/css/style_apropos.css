@@ -38,7 +38,7 @@ button a {
     text-decoration: none;            /* Enlève le soulignement du lien */
     color: white;                    /* Couleur du texte */
     display: inline-block;            /* Pour que le lien agisse comme un bloc */
-    padding: 10px 20px;               /* Ajoute du padding pour agrandir la zone du lien */
+    padding: 2px 10px;               /* Ajoute du padding pour agrandir la zone du lien */
     transition: transform 0.3s ease;  /* Animation fluide pour le changement de taille */
 }
 
@@ -50,7 +50,7 @@ button a:hover {
     display: flex;
     justify-content: space-around;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: wrap; /* Permet de cartes de passer a la ligne si necessaire */
     padding: 50px;
     background-color: #e8f5e8;
 }
@@ -59,14 +59,14 @@ button a:hover {
     background-color: #4caf50;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: transform 0.8s ease, box-shadow 0.8s ease;
     margin: 20px;
     width: 250px;
     text-align: center;
 }
 
 .card:hover {
-    transform: scale(1.05);
+    transform: scale(1.5);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
 }
 

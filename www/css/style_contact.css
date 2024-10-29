@@ -1,7 +1,7 @@
 
 header {
-    background-color: pink;
-    color: white;
+    background-color: rgb(255, 144, 52);
+    color: beige;
     padding: 50px;
     font-size: 2rem;
     text-align: center;
@@ -9,48 +9,19 @@ header {
 
 header p {
     font-size: 1.3rem;
-    color: black;
+    color: bisque;
+    font-weight: bold;
 }
 
 form {
     max-width: 600px;
-    margin: 0 auto; /* Centre le form sur la page */
+    margin: auto; /* Centre le form sur la page */
     padding: 20px; /* Espace à l'intérieur du form */
-    background-color: #f4f4f4;
+    /* background-color: rgb(255, 164, 89); */
+    background-image: linear-gradient( 90deg ,#FFA500, #f85b30);
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     box-sizing: border-box; /* Inclure le padding et la bordure dans la largeur totale de l'élément */
-}
-
-input[type="text"], input[type="email"], input[type="number"], textarea {
-    width: 100%; /* Champs prennent toute la largeur */
-    padding: 10px;
-    margin-bottom: 20px; /* Espace en bas */
-    border: 1px solid #ccc; /* bordure fine */
-    border-radius: 5px;
-    background-color: white; /* Fond champs */
-    box-sizing: border-box;
-}
-
-/* :focus or :hover > Modifier le design quand le user interagit avec le champ */
-input[type="text"]:focus, input[type="email"]:focus, input[type="number"]:focus, textarea:focus {
-    border-color: #4caf50;
-    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5) /* Check placement ombre */;
-}
-
-button {
-    background-color: #4caf50;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.3s ease; /* Transition */
-}
-
-button:hover {
-    background-color: #45a049;
-    transform: scale(1.05); /* Plus grand au survol */
 }
 
 /* Styliser les labels */
@@ -60,10 +31,46 @@ label {
     margin-bottom: 5px;
 }
 
+input[type="text"], input[type="email"], input[type="number"], textarea {
+    width: 100%; /* Champs prennent toute la largeur */
+    padding: 10px;
+    margin-bottom: 20px; /* Espace en bas */
+    border: 1px solid #ccc; /* bordure fine */
+    border-radius: 5px;
+    background-color: white; /* Fond champs */
+    box-sizing: border-box; /* Pour ne pas depasser de la largeur totale de la "box", de son conteneur */
+}
+
+/* :focus or :hover > Modifier le design quand le user interagit avec le champ */
+input[type="text"]:hover,
+input[type="email"]:hover,
+input[type="number"]:hover,
+textarea:hover {
+    border-color: orangered;
+    box-shadow: 0 0 5px black; /* Check placement ombre */
+}
+
+button {
+    background-color: rgb(189, 86, 0);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease; /* Transition */
+}
+
+button:hover {
+    background-color: rgb(255, 188, 132);
+    transform: scale(1.05); /* Plus grand au survol */
+    color: black;
+}
+
 footer {
     text-align: center;
     padding: 20px;
-    background-color: #45a049;
-    color: white;
+    background-color: rgb(255, 188, 132);
+    color: rgb(189, 86, 0);
+    font-weight: bold;
     margin-top: 50px;
 }

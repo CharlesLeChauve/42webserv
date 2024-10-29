@@ -102,7 +102,7 @@ std::string CGIHandler::executeCGI(const std::string& scriptPath, const HTTPRequ
         if (statusPos != std::string::npos) {
             size_t endOfStatusLine = cgiOutput.find("\r\n", statusPos);
             std::string statusLine = cgiOutput.substr(statusPos, endOfStatusLine - statusPos);
-            int statusCode = std::stoi(statusLine.substr(8, 3));
+            int statusCode = std::atoi(statusLine.substr(8, 3).c_str());
 
             std::string errorMessage;
             size_t messageStartPos = statusLine.find(" ");
@@ -142,7 +142,7 @@ void CGIHandler::setupEnvironment(const HTTPRequest& request, std::string script
     setenv("SCRIPT_NAME", scriptPath.c_str(), 1);
     setenv("QUERY_STRING", request.getQueryString().c_str(), 1);
     setenv("CONTENT_TYPE", request.getStrHeader("Content-Type").c_str(), 1);
-    setenv("CONTENT_LENGTH", std::to_string(request.getBody().size()).c_str(), 1);
+    setenv("CONTENT_LENGTH", to_string(request.getBody().size()).c_str(), 1);
     setenv("REDIRECT_STATUS", "200", 1); // Nécessaire pour php-cgi
     setenv("SERVER_PROTOCOL", "HTTP/1.1", 1);
     //setenv("REMOTE_ADDR", request.getClientIP().c_str(), 1);

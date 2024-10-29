@@ -65,6 +65,12 @@ button {
 	padding: 10px 20px;
 	font-size: 1rem;
 	cursor: pointer; /* Curseur en forme de main */
+	transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+button:hover {
+	background-color: brown;
+	transform: scale(1.05);
 }
 
 button a {
@@ -74,6 +80,7 @@ button a {
 
 a:hover {
 	text-decoration: underline;
+	color: white;
 }
 
 section.content {
@@ -113,6 +120,76 @@ section.content {
 	font-size: 1rem; /* Taille du texte */
 	color: white;
 }
+
+section.carousel-wrapper {
+	height: 100vh;
+	background-color: #090909;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+  }
+  
+  .carousel-wrapper {
+	width: 100%;
+	max-width: 900px;
+	aspect-ratio: 16/9;
+	overflow: hidden;
+	margin: auto;
+	position: relative;
+  }
+  
+  .slide {
+	width: 100%;
+	height: 100%;
+	border-radius: 12px;
+	position: absolute;
+	transition: transform 300ms ease-out;
+	/* text-align: center;
+	color: black; */
+  }
+  
+  .slide img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	border-radius: inherit;
+  }
+
+  .slide figcaption {
+	color: wheat;
+	font-size: 1.5rem; /* Définit la taille du texte de la légende, ici 1.5rem, soit 1,5 fois la taille de la police par défaut. */
+	background-color: rgba(0, 0, 0, 0.5); /* Applique une couleur de fond noire semi-transparente (50% d'opacité) pour que la légende soit lisible sans cacher complètement l'image en arrière-plan. */
+	text-align: center; /* Centre horizontalement le texte à l'intérieur de la légende pour un alignement esthétique. */
+	padding: 10px;
+	position: absolute; /* Positionne l'élément en position absolue dans son conteneur parent. Ici, cela permet de placer la légende où l’on souhaite par rapport au conteneur de l’image. */
+	bottom: 5px; /* Place la légende à 5 pixels du bas de son conteneur parent, la positionnant ainsi au bas de l'image de la slide. */
+	width: 89%; /* Définit la largeur de la légende, +background, à 89% du conteneur parent pour qu’elle couvre presque toute la largeur de l'image, laissant un petit espace de chaque côté. */
+  }
+  
+  .carousel-wrapper .btn {
+	font-size: 2rem;
+	background: rgba(0, 0, 0, 0.7);
+	color: #00c2d8;
+	padding: 8px 10px;
+	border-radius: 50%;
+	border: none;
+	margin: 10px;
+	position: absolute;
+	transform: translateY(-50%);
+	cursor: pointer;
+  }
+  .carousel-wrapper .btn:hover {
+	background: orangered;
+  }
+  
+  .btn.previous {
+	top: 50%;
+	left: 0;
+  }
+  .btn.next {
+	top: 50%;
+	right: 0;
+  }
 
 footer {
 	background-color: #8B4513;

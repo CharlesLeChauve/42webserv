@@ -1,15 +1,17 @@
 <html>
 	<head>
 		<meta charset="UTF-8">
-		<link rel="stylesheet" href="css/style.css">
+		<title>Carousel</title>
+		<link rel="stylesheet" href="/css/style.css">
+		<script src="/script.js" defer></script>
 	</head>
 	<header>
 		<h1>Super Titre pour un super site</h1>
 		<nav>
 			<ul>
-				<li><a href="#section1">A propos</a></li>
-            	<li><a href="#section2">Marchandise</a></li>
-            	<li><a href="#section3">Contact</a></li>
+				<li><a href="/apropos.html">A propos</a></li>
+            	<li><a href="/error.html">Marchandise</a></li>
+            	<li><a href="/contact.html">Contact</a></li>
 			</ul>
 		</nav>
 	</header>
@@ -19,7 +21,7 @@
 			Decouvrez nos contenus interessants et engageants.
 		</p>
 		<button>
-			<a href="apropos.html"> Decouvrez nous !</a>
+			<a href="/apropos.html"> Decouvrez nous !</a>
 		</button>
 	</section>
 	<section class="content">
@@ -48,16 +50,59 @@
 			</div>
 		</div>
 	</section>
+	<section>
+		<div class="carousel-wrapper">
+			<!-- Slides -->
+			<div class="slide" data-slide>
+				<figure>
+					<img src="/images/fleur.jpg" alt="Fleur weed">
+					<figcaption>
+						<h5>Une belle fleur qui pousse !</h5>
+					</figcaption>
+				</figure>
+			</div>
+			<div class="slide" data-slide>
+				<figure>
+					<img src="/images/recolte.avif" alt="Recolte">
+					<figcaption>
+						<h5>Maintenant on recolte pour se la coller !</h5>
+					</figcaption>
+				</figure>
+			</div>
+			<div class="slide" data-slide>
+				<figure>
+					<img src="/images/conso.jpg" alt="consommation">
+					<figcaption>
+						<h5>Plus qu'a grinder cette petite merveille !</h5>
+					</figcaption>
+				</figure>
+			</div>
+			<div class="slide" data-slide>
+				<figure>
+					<img src="/images/fume.jpg" alt="Fumer">
+					<figcaption>
+						<h5>Et maintenant on s'assoit, on se detend et on fume un gros splif !</h5>
+					</figcaption>
+				</figure>
+			</div>
+
+			<!-- Next and Previous Buttons -->
+			<button class="btn previous" data-button="previous">
+				<i class="bi bi-chevron-left"></i>
+			</button>
+			<button class="btn next" data-button="next">
+				<i class="bi bi-chevron-right"></i>
+			</button>
+		</div>
+	</section>
 	<footer>
 		<p>
 			&copy; 2024 Mon Site Web. Tous droits réservés.
 		</p>
 		<p>
-			<a href="contact.html"> Contactez-nous ! </a>
+			<a href="/contact.html"> Contactez-nous ! </a>
 		</p>
 	</footer>
-		<a href="mapage.html">ma page</a>
-	</body>
 </html>
 
 
