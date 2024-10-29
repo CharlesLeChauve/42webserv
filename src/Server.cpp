@@ -52,11 +52,7 @@ std::string Server::receiveRequest(int client_fd) {
 		std::cerr << "Client closed the connection: FD " << client_fd << std::endl;
 		return "";
 	} else if (bytes_received < 0) {
-		if (errno == EAGAIN || errno == EWOULDBLOCK) {
-
-			return "";
-		}
-		std::cerr << "Error reading from client: " << strerror(errno) << std::endl;
+		std::cerr << "Error reading from client. Please check the connection." << std::endl;
 		return "";
 	}
 
@@ -65,7 +61,7 @@ std::string Server::receiveRequest(int client_fd) {
 
 void Server::sendResponse(int client_fd, HTTPResponse response) {
 	std::string responseString = response.toString();
-	write(client_fd, responseString.c_str(), responseString.size());
+	write(client_fd, responseString.c_str(), responseString.size()); // Check error : 0 / -1
 }
 
 void Server::handleHttpRequest(int client_fd, const HTTPRequest& request,
@@ -160,7 +156,7 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
         } else {
             CGIHandler cgiHandler;
             std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
-            write(client_fd, cgiOutput.c_str(), cgiOutput.length());
+            write(client_fd, cgiOutput.c_str(), cgiOutput.length()); //CHECK ERROR : 0 / -1
         }
     } else {
         std::cerr << "[DEBUG] No CGI extension detected for path: " << fullPath << ". Serving as static file." << std::endl;
