@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
 	if (argc > 2) {
 		std::cerr << "Usage: " << argv[0] << " [path/to/file]" << std::endl;
 		return 1;
-	} else if (argc == 1) {
+	} else {
 		configFile = (argc == 1 ? "config/server.conf" : argv[1]);
 	}
 	initialize_random_generator();
