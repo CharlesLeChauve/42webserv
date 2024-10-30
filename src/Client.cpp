@@ -28,7 +28,7 @@ void Client::connect_to_server() {
 }
 
 void Client::send_message(const std::string& message) {
-    int bytes_sent = send(_client_socket, message.c_str(), message.size(), 0);
+    int bytes_sent = send(_client_socket, message.c_str(), message.size(), 0); // CHECK ERROR : 0
     if (bytes_sent == -1) {
         std::cout << "Failed to send message to server." << std::endl;
         close_connection();
@@ -39,7 +39,7 @@ void Client::send_message(const std::string& message) {
 
 void Client::receive_message() {
     char    buffer[1024] = {0};
-    int bytes_rcv = recv(_client_socket, buffer, 1024, 0);
+    int bytes_rcv = recv(_client_socket, buffer, 1024, 0); // CHECK ERROR : 0
     if (bytes_rcv == -1) {
         std::cout << "Failed to receive response from server." << std::endl;
         close_connection();
