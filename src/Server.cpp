@@ -5,6 +5,7 @@
 #include "HTTPResponse.hpp"
 #include "CGIHandler.hpp"
 #include "ServerConfig.hpp"
+#include "UploadHandler.hpp"
 #include <sys/stat.h>  // Pour utiliser la fonction stat
 #include <fcntl.h>
 #include <time.h>
@@ -139,8 +140,58 @@ bool Server::endsWith(const std::string& str, const std::string& suffix) const {
     }
 }
 
-void	handleFileUpload(int cliend_fd, const HTTPRequest& request, HTTPResponse& response, std::string boundary) {
-	
+void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response, const std::string& boundary) {
+    std::string requestBody = request.getBody();
+    std::string boundaryMarker = "--" + boundary;
+    size_t pos = 0;
+    size_t endPos = 0;
+
+
+    while ((pos = requestBody.find(boundaryMarker, endPos)) != std::string::npos) {
+        pos += boundaryMarker.length();
+        if (requestBody.substr(pos, 2) == "--") // Fin du multipart
+            break;
+        // Extraire les en-têtes de la partie
+        size_t headersEnd = requestBody.find("\r\n\r\n", pos);
+        if (headersEnd == std::string::npos)
+            break;
+        std::string partHeaders = requestBody.substr(pos, headersEnd - pos);
+        pos = headersEnd + 4; // Position du début du contenu
+
+        // Vérifier si c'est un fichier
+        if (partHeaders.find("Content-Disposition") != std::string::npos &&
+            partHeaders.find("filename=\"") != std::string::npos) {
+            // Extraire le nom du fichier
+            size_t filenamePos = partHeaders.find("filename=\"") + 10;
+            size_t filenameEnd = partHeaders.find("\"", filenamePos);
+            std::string filename = partHeaders.substr(filenamePos, filenameEnd - filenamePos);
+            // Trouver la fin du contenu du fichier
+            endPos = requestBody.find(boundaryMarker, pos);
+			std::cerr << "Request body = " << request.getBody() << std::endl;
+            if (endPos == std::string::npos) {
+				std::cerr << "*** Here ***" << std::endl;
+                break;
+			}
+            std::string fileContent = requestBody.substr(pos, endPos - pos - 2); // -2 pour retirer le \r\n avant le boundary
+            std::istringstream fileStream(fileContent);
+            try {
+                UploadHandler uploadHandler("../www/uploads" + filename, fileStream, this->_config);
+				response.setStatusCode(201);
+            } catch (const std::exception& e) {
+                // Gérer l'erreur d'upload
+                response.setStatusCode(500);
+                response.setBody("Erreur lors de l'upload du fichier.");
+                return;
+            }
+        } else {
+            // Gérer les autres champs du formulaire si nécessaire
+            endPos = pos;
+        }
+    }
+
+    // Répondre avec succès
+    response.setStatusCode(200);
+    response.setBody("Fichier uploadé avec succès.");
 }
 
 // Modification de la méthode handleGetOrPostRequest
@@ -162,22 +213,24 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
             std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
             write(client_fd, cgiOutput.c_str(), cgiOutput.length()); //CHECK ERROR : 0 / -1
         }
+	}
 	else if (request.getMethod() == "POST" && request.hasHeader("Content-Type")) {
-		std::string	contentType = request.getStrHeader("Content-Type");
-
+		std::string contentType = request.getStrHeader("Content-Type");
 		if (contentType.find("multipart/form-data") != std::string::npos) {
-		// Recherche du boundary dans le Content-Type avec find + check if end
-		// Si ce n'est pas la fin extraire 
-			size_t	boundaryPos = contentType.find("boundary=");
+			// Recherche du boundary dans le Content-Type avec find + check if end
+			// Si ce n'est pas la fin extraire 
+			size_t boundaryPos = contentType.find("boundary=");
 			if (boundaryPos != std::string::npos) {
 				std::string boundary = contentType.substr(boundaryPos + 9);
-				handleFileUpload(client_fd, request, response, boundary);
+				handleFileUpload(request, response, boundary);
+			} else {
+				sendErrorResponse(client_fd, 400); // Bad request
 			}
+		} else {
+			sendErrorResponse(client_fd, 400); // Bad request
 		}
-		else
-			sendErrorResponse(client_fd, 400) // Bad request
 	}
-    } else {
+    else {
         std::cerr << "[DEBUG] No CGI extension detected for path: " << fullPath << ". Serving as static file." << std::endl;
         serveStaticFile(client_fd, fullPath, response);
     }
