@@ -1,0 +1,17 @@
+body {
+	background-color: aquamarine;
+}
+
+h1 {
+	font-size: 3rem;
+	color: brown;
+}
+
+p::after {
+    content: "";
+    display: block;
+    width: 50vw; /* 50% de la largeur de la fenêtre */
+    height: 2px; /* épaisseur de la ligne */
+    background-color: #000; /* couleur de la ligne */
+    margin: 20px auto; /* espace autour de la ligne, centré horizontalement */
+}
