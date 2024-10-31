@@ -139,6 +139,10 @@ bool Server::endsWith(const std::string& str, const std::string& suffix) const {
     }
 }
 
+void	handleFileUpload(int cliend_fd, const HTTPRequest& request, HTTPResponse& response, std::string boundary) {
+	
+}
+
 // Modification de la méthode handleGetOrPostRequest
 
 void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response) {
@@ -158,6 +162,21 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
             std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
             write(client_fd, cgiOutput.c_str(), cgiOutput.length()); //CHECK ERROR : 0 / -1
         }
+	else if (request.getMethod() == "POST" && request.hasHeader("Content-Type")) {
+		std::string	contentType = request.getStrHeader("Content-Type");
+
+		if (contentType.find("multipart/form-data") != std::string::npos) {
+		// Recherche du boundary dans le Content-Type avec find + check if end
+		// Si ce n'est pas la fin extraire 
+			size_t	boundaryPos = contentType.find("boundary=");
+			if (boundaryPos != std::string::npos) {
+				std::string boundary = contentType.substr(boundaryPos + 9);
+				handleFileUpload(client_fd, request, response, boundary);
+			}
+		}
+		else
+			sendErrorResponse(client_fd, 400) // Bad request
+	}
     } else {
         std::cerr << "[DEBUG] No CGI extension detected for path: " << fullPath << ". Serving as static file." << std::endl;
         serveStaticFile(client_fd, fullPath, response);
