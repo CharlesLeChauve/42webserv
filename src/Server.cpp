@@ -208,14 +208,13 @@ bool	handleFileUpload(const HTTPRequest& request, HTTPResponse& response, std::s
 	std::string	body = request.getBody();
 	std::string newBoundary = "--" + boundary;
 	size_t start_pos = 0;
-	// Should we add two -- for the boundary that we took in headers ?
 
 	while (true) {
 		start_pos = body.find(newBoundary, start_pos);
 		if (start_pos == std::string::npos) // check if error mana is good
 			break ;
 		std::cerr << "BODY" << body << std::endl;
-		start_pos += newBoundary.length(); // 
+		start_pos += newBoundary.length(); 
 
 		// Trouver la fin de cette partie
 		size_t end_pos = body.find(newBoundary, start_pos);
