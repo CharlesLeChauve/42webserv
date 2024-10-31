@@ -46,19 +46,84 @@ std::string Server::receiveRequest(int client_fd) {
 		return "";
 	}
 
-	char buffer[1024] = {0};
-	int bytes_received = read(client_fd, buffer, sizeof(buffer) - 1);
+	std::string request;
+	char buffer[1024];
+	int bytes_received;
+	size_t content_length = 0;
+	bool headers_received = false;
 
-	if (bytes_received == 0) {
-		std::cerr << "Client closed the connection: FD " << client_fd << std::endl;
-		return "";
-	} else if (bytes_received < 0) {
-		std::cerr << "Error reading from client. Please check the connection." << std::endl;
-		return "";
+	while (true) {
+		bytes_received = read(client_fd, buffer, sizeof(buffer));
+		if (bytes_received == 0) {
+			// Client closed the connection
+			std::cerr << "Client closed the connection: FD " << client_fd << std::endl;
+			break;
+		} else if (bytes_received < 0) {
+			// Error reading from client
+			std::cerr << "Error reading from client. Please check the connection." << std::endl;
+			break;
+		}
+
+		request.append(buffer, bytes_received);
+
+		if (!headers_received) {
+			// Check if we have received the full headers
+			size_t header_end_pos = request.find("\r\n\r\n");
+			if (header_end_pos != std::string::npos) {
+				headers_received = true;
+
+				// Parse headers to find Content-Length
+				std::string headers = request.substr(0, header_end_pos);
+				std::istringstream headers_stream(headers);
+				std::string header_line;
+				while (std::getline(headers_stream, header_line)) {
+					// Remove any trailing \r
+					if (!header_line.empty() && header_line[header_line.size() - 1] == '\r') {
+						header_line.erase(header_line.size() - 1);
+					}
+					size_t colon_pos = header_line.find(":");
+					if (colon_pos != std::string::npos) {
+						std::string header_name = header_line.substr(0, colon_pos);
+						std::string header_value = header_line.substr(colon_pos + 1);
+						// Trim whitespace
+						header_name.erase(0, header_name.find_first_not_of(" \t"));
+						header_name.erase(header_name.find_last_not_of(" \t") + 1);
+						header_value.erase(0, header_value.find_first_not_of(" \t"));
+						header_value.erase(header_value.find_last_not_of(" \t") + 1);
+
+						if (header_name == "Content-Length") {
+							content_length = static_cast<size_t>(atoi(header_value.c_str()));
+							break;
+						}
+					}
+				}
+
+				// If there is a body, calculate how many more bytes to read
+				if (content_length > 0) {
+					size_t body_received = request.size() - (header_end_pos + 4);
+					if (body_received >= content_length) {
+						// We have received the entire request
+						break;
+					}
+				} else {
+					// No Content-Length, so no body, we are done
+					break;
+				}
+			}
+		} else {
+			// We have already received headers, check if we have received the entire body
+			size_t header_end_pos = request.find("\r\n\r\n");
+			size_t body_received = request.size() - (header_end_pos + 4);
+			if (body_received >= content_length) {
+				// We have received the entire request
+				break;
+			}
+		}
 	}
 
-	return std::string(buffer, bytes_received);
+	return request;
 }
+
 
 void Server::sendResponse(int client_fd, HTTPResponse response) {
 	std::string responseString = response.toString();
@@ -116,109 +181,109 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request,
 }
 
 bool Server::hasCgiExtension(const std::string& path) const {
-    std::cerr << "[DEBUG] CGI Extensions for this server:" << std::endl;
-    for (size_t i = 0; i < _config.cgiExtensions.size(); ++i) {
-        std::cerr << " - \"" << _config.cgiExtensions[i] << "\"" << std::endl;
-    }
-    for (size_t i = 0; i < _config.cgiExtensions.size(); ++i) {
-        if (endsWith(path, _config.cgiExtensions[i])) {
-            std::cerr << "[DEBUG] hasCgiExtension: Matched extension " << _config.cgiExtensions[i] << " for path " << path << std::endl;
-            return true;
-        }
-    }
-    std::cerr << "[DEBUG] hasCgiExtension: No matching CGI extension for path " << path << std::endl;
-    return false;
+	std::cerr << "[DEBUG] CGI Extensions for this server:" << std::endl;
+	for (size_t i = 0; i < _config.cgiExtensions.size(); ++i) {
+		std::cerr << " - \"" << _config.cgiExtensions[i] << "\"" << std::endl;
+	}
+	for (size_t i = 0; i < _config.cgiExtensions.size(); ++i) {
+		if (endsWith(path, _config.cgiExtensions[i])) {
+			std::cerr << "[DEBUG] hasCgiExtension: Matched extension " << _config.cgiExtensions[i] << " for path " << path << std::endl;
+			return true;
+		}
+	}
+	std::cerr << "[DEBUG] hasCgiExtension: No matching CGI extension for path " << path << std::endl;
+	return false;
 }
 
 
 
 bool Server::endsWith(const std::string& str, const std::string& suffix) const {
-    if (str.length() >= suffix.length()) {
-        return (0 == str.compare(str.length() - suffix.length(), suffix.length(), suffix));
-    } else {
-        return false;
-    }
+	if (str.length() >= suffix.length()) {
+		return (0 == str.compare(str.length() - suffix.length(), suffix.length(), suffix));
+	} else {
+		return false;
+	}
 }
 
 void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response, const std::string& boundary) {
-    std::string requestBody = request.getBody();
-    std::string boundaryMarker = "--" + boundary;
-    size_t pos = 0;
-    size_t endPos = 0;
+	std::string requestBody = request.getBody();
+	std::string boundaryMarker = "--" + boundary;
+	size_t pos = 0;
+	size_t endPos = 0;
 
 
-    while ((pos = requestBody.find(boundaryMarker, endPos)) != std::string::npos) {
-        pos += boundaryMarker.length();
-        if (requestBody.substr(pos, 2) == "--") // Fin du multipart
-            break;
-        // Extraire les en-têtes de la partie
-        size_t headersEnd = requestBody.find("\r\n\r\n", pos);
-        if (headersEnd == std::string::npos)
-            break;
-        std::string partHeaders = requestBody.substr(pos, headersEnd - pos);
-        pos = headersEnd + 4; // Position du début du contenu
+	while ((pos = requestBody.find(boundaryMarker, endPos)) != std::string::npos) {
+		pos += boundaryMarker.length();
+		if (requestBody.substr(pos, 2) == "--") // Fin du multipart
+			break;
+		// Extraire les en-têtes de la partie
+		size_t headersEnd = requestBody.find("\r\n\r\n", pos);
+		if (headersEnd == std::string::npos)
+			break;
+		std::string partHeaders = requestBody.substr(pos, headersEnd - pos);
+		pos = headersEnd + 4; // Position du début du contenu
 
-        // Vérifier si c'est un fichier
-        if (partHeaders.find("Content-Disposition") != std::string::npos &&
-            partHeaders.find("filename=\"") != std::string::npos) {
-            // Extraire le nom du fichier
-            size_t filenamePos = partHeaders.find("filename=\"") + 10;
-            size_t filenameEnd = partHeaders.find("\"", filenamePos);
-            std::string filename = partHeaders.substr(filenamePos, filenameEnd - filenamePos);
-            // Trouver la fin du contenu du fichier
-            endPos = requestBody.find(boundaryMarker, pos);
+		// Vérifier si c'est un fichier
+		if (partHeaders.find("Content-Disposition") != std::string::npos &&
+			partHeaders.find("filename=\"") != std::string::npos) {
+			// Extraire le nom du fichier
+			size_t filenamePos = partHeaders.find("filename=\"") + 10;
+			size_t filenameEnd = partHeaders.find("\"", filenamePos);
+			std::string filename = partHeaders.substr(filenamePos, filenameEnd - filenamePos);
+			// Trouver la fin du contenu du fichier
+			endPos = requestBody.find(boundaryMarker, pos);
 			std::cerr << "Request body = " << request.getBody() << std::endl;
-            if (endPos == std::string::npos) {
+			if (endPos == std::string::npos) {
 				std::cerr << "*** Here ***" << std::endl;
-                break;
+				break;
 			}
-            std::string fileContent = requestBody.substr(pos, endPos - pos - 2); // -2 pour retirer le \r\n avant le boundary
-            std::istringstream fileStream(fileContent);
-            try {
-                UploadHandler uploadHandler("../www/uploads" + filename, fileStream, this->_config);
+			std::string fileContent = requestBody.substr(pos, endPos - pos - 2); // -2 pour retirer le \r\n avant le boundary
+			std::istringstream fileStream(fileContent);
+			try {
+				UploadHandler uploadHandler("../www/uploads" + filename, fileStream, this->_config);
 				response.setStatusCode(201);
-            } catch (const std::exception& e) {
-                // Gérer l'erreur d'upload
-                response.setStatusCode(500);
-                response.setBody("Erreur lors de l'upload du fichier.");
-                return;
-            }
-        } else {
-            // Gérer les autres champs du formulaire si nécessaire
-            endPos = pos;
-        }
-    }
+			} catch (const std::exception& e) {
+				// Gérer l'erreur d'upload
+				response.setStatusCode(500);
+				response.setBody("Erreur lors de l'upload du fichier.");
+				return;
+			}
+		} else {
+			// Gérer les autres champs du formulaire si nécessaire
+			endPos = pos;
+		}
+	}
 
-    // Répondre avec succès
-    response.setStatusCode(200);
-    response.setBody("Fichier uploadé avec succès.");
+	// Répondre avec succès
+	response.setStatusCode(200);
+	response.setBody("Fichier uploadé avec succès.");
 }
 
 // Modification de la méthode handleGetOrPostRequest
 
 void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response) {
-    std::string fullPath = _config.root + request.getPath();
+	std::string fullPath = _config.root + request.getPath();
 
-    // Log pour vérifier le chemin complet
-    std::cerr << "[DEBUG] handleGetOrPostRequest: fullPath = " << fullPath << std::endl;
+	// Log pour vérifier le chemin complet
+	std::cerr << "[DEBUG] handleGetOrPostRequest: fullPath = " << fullPath << std::endl;
 
-    // Vérifier si le fichier a une extension CGI (.cgi, .sh, .php)
-    if (hasCgiExtension(fullPath)) {
-        std::cerr << "[DEBUG] CGI extension detected for path: " << fullPath << std::endl;
-        if (access(fullPath.c_str(), F_OK) == -1) {
-            std::cerr << "[DEBUG] CGI script not found: " << fullPath << std::endl;
-            sendErrorResponse(client_fd, 404);
-        } else {
-            CGIHandler cgiHandler;
-            std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
-            write(client_fd, cgiOutput.c_str(), cgiOutput.length()); //CHECK ERROR : 0 / -1
-        }
+	// Vérifier si le fichier a une extension CGI (.cgi, .sh, .php)
+	if (hasCgiExtension(fullPath)) {
+		std::cerr << "[DEBUG] CGI extension detected for path: " << fullPath << std::endl;
+		if (access(fullPath.c_str(), F_OK) == -1) {
+			std::cerr << "[DEBUG] CGI script not found: " << fullPath << std::endl;
+			sendErrorResponse(client_fd, 404);
+		} else {
+			CGIHandler cgiHandler;
+			std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
+			write(client_fd, cgiOutput.c_str(), cgiOutput.length()); //CHECK ERROR : 0 / -1
+		}
 	}
 	else if (request.getMethod() == "POST" && request.hasHeader("Content-Type")) {
 		std::string contentType = request.getStrHeader("Content-Type");
 		if (contentType.find("multipart/form-data") != std::string::npos) {
 			// Recherche du boundary dans le Content-Type avec find + check if end
-			// Si ce n'est pas la fin extraire 
+			// Si ce n'est pas la fin extraire
 			size_t boundaryPos = contentType.find("boundary=");
 			if (boundaryPos != std::string::npos) {
 				std::string boundary = contentType.substr(boundaryPos + 9);
@@ -230,10 +295,10 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
 			sendErrorResponse(client_fd, 400); // Bad request
 		}
 	}
-    else {
-        std::cerr << "[DEBUG] No CGI extension detected for path: " << fullPath << ". Serving as static file." << std::endl;
-        serveStaticFile(client_fd, fullPath, response);
-    }
+	else {
+		std::cerr << "[DEBUG] No CGI extension detected for path: " << fullPath << ". Serving as static file." << std::endl;
+		serveStaticFile(client_fd, fullPath, response);
+	}
 }
 
 
