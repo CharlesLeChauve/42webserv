@@ -18,6 +18,6 @@ public:
 
 	bool checkDestPath(std::string path);
 
-    UploadHandler(const std::string& destPath, std::istream& fileContent, const ServerConfig& config);
+    UploadHandler(const std::string& destPath, const std::string& fileContent, const ServerConfig& config);
     ~UploadHandler();
 };

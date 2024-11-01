@@ -12,6 +12,7 @@ void HTTPResponse::setStatusCode(int code) {
 	// Vous pouvez définir la raison en fonction du code
 	switch (code) {
 		case 200: _reasonPhrase = "OK"; break;
+		case 201: _reasonPhrase = "Created"; break;
 		case 404: _reasonPhrase = "Not Found"; break;
 		case 500: _reasonPhrase = "Internal Server Error"; break;
 		case 400: _reasonPhrase = "Bad Request"; break;
@@ -24,7 +25,7 @@ void HTTPResponse::setStatusCode(int code) {
 std::string HTTPResponse::generateErrorPage(std::string infos) {
 	std::stringstream page;
 	page << "<html><head><title>Error " << _statusCode << "</title>";
-	page << "<link rel=\"stylesheet\" href=\"css/err_style.css\"></head>";
+	page << "<link rel=\"stylesheet\" href=\"css/err_style.css\"><meta charset=UTF-8></head>";
 	page << "<body><h1>Error " << _statusCode << ": " << _reasonPhrase << "</h1>";
 	page << "<h3>" + infos + "</h3>";
 	page << "<img src=\"" << getSorryPath() << "\" alt=\"Error Image\">";
@@ -36,9 +37,10 @@ std::string HTTPResponse::generateErrorPage(std::string infos) {
 std::string HTTPResponse::generateErrorPage() {
 	std::stringstream page;
 	page << "<html><head><title>Error " << _statusCode << "</title>";
-	page << "<link rel=\"stylesheet\" href=\"css/err_style.css\"></head>";
+	page << "<link rel=\"stylesheet\" href=\"css/err_style.css\"><meta charset=UTF-8></head>";
 	page << "<body><h1>Error " << _statusCode << ": " << _reasonPhrase << "</h1>";
 	page << "<img src=\"" << getSorryPath() << "\" alt=\"Error Image\">";
+	page << "<a href=\"index.html\">Retour à l'accueil</a>";
 	page << "<p>The server encountered an issue processing your request.</p>";
 	page << "</body></html>";
 	return page.str();

@@ -10,9 +10,10 @@ bool UploadHandler::checkDestPath(std::string path)
 	return false;
 }
 
-UploadHandler::UploadHandler(const std::string& destPath, std::istream& fileContent, const ServerConfig& config)	: _destPath(destPath) {
+UploadHandler::UploadHandler(const std::string& destPath, const std::string& fileContent, const ServerConfig& config)
+    : _destPath(destPath) {
     (void)config;
-	if (checkDestPath(destPath)) {
+    if (!checkDestPath(destPath)) {
         throw forbiddenDest();
     }
     std::ofstream destFile(destPath.c_str(), std::ios::binary);
@@ -20,7 +21,7 @@ UploadHandler::UploadHandler(const std::string& destPath, std::istream& fileCont
         throw std::runtime_error("Failed to open destination file.");
     }
 
-    destFile << fileContent.rdbuf();
+    destFile.write(fileContent.c_str(), fileContent.size());
 
     std::cerr << "Fichier enregistré à : " << destPath << std::endl;
 
