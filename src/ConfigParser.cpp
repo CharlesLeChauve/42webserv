@@ -59,7 +59,6 @@ void ConfigParser::validateDirectiveValue(const std::string &directive, const st
             if (port <= 0 || port > 65535) {
                 throw ConfigParserException("Invalid port: " + portStr);
             }
-            // Store the IP address later if needed
         } else {
             int port = std::atoi(value.c_str());
             if (port <= 0 || port > 65535) {
@@ -89,7 +88,6 @@ void ConfigParser::validateDirectiveValue(const std::string &directive, const st
         if (value.empty() || value.length() > 255) {
             throw ConfigParserException("Invalid server name: " + value);
         }
-        // Pas de vérification supplémentaire ici car on peut avoir plusieurs noms
     } else if (directive == "method") {
         std::string validMethodsArray[] = {"GET", "POST", "DELETE"};
         std::vector<std::string> validMethods(validMethodsArray, validMethodsArray + 3);
@@ -106,8 +104,8 @@ void ConfigParser::validateDirectiveValue(const std::string &directive, const st
             throw ConfigParserException("Invalid CGI extension: " + value);
         }
     }
-    // Add more validations as needed
 }
+
 
 void ConfigParser::processServerDirective(std::ifstream &file, const std::string &line, ServerConfig &serverConfig) {
     std::string directive_line = line;
@@ -235,7 +233,6 @@ void ConfigParser::processLocationBlock(std::ifstream &file, const std::string& 
         validateDirectiveValue(directive, value);
 
         if (directive == "cgi_extension") {
-            // Traiter les extensions CGI spécifiées dans le bloc location
             std::istringstream valueStream(value);
             std::string ext;
             while (valueStream >> ext) {
@@ -243,14 +240,21 @@ void ConfigParser::processLocationBlock(std::ifstream &file, const std::string& 
                 serverConfig.cgiExtensions.push_back(ext);
                 std::cerr << "[DEBUG] Loaded CGI extension from location: " << ext << std::endl;
             }
+        } else if (directive == "method") {
+            std::istringstream valueStream(value);
+            std::string method;
+            while (valueStream >> method) {
+                validateDirectiveValue(directive, method);
+                location.allowedMethods.push_back(method);
+            }
         } else {
-            // Traiter les autres directives du bloc location
             location.options[directive] = value;
         }
     }
 
     throw ConfigParserException("Error: unexpected end of file in location block.");
 }
+
 
 
 void ConfigParser::trim(std::string &s) {

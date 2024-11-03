@@ -128,55 +128,45 @@ void Server::sendResponse(int client_fd, HTTPResponse response) {
 	write(client_fd, responseString.c_str(), responseString.size()); // Check error : 0 / -1
 }
 
-void Server::handleHttpRequest(int client_fd, const HTTPRequest& request,
-							   HTTPResponse& response) {
-	// Vérifier si le Host correspond à l'un des server_names
-	std::string hostHeader = request.getHost();
-	if (!hostHeader.empty()) {
-		// Extraire le nom d'hôte et le port s'il est présent
-		size_t colonPos = hostHeader.find(':');
-		std::string hostName = (colonPos != std::string::npos)
-								   ? hostHeader.substr(0, colonPos)
-								   : hostHeader;
-		std::string portStr = (colonPos != std::string::npos)
-								  ? hostHeader.substr(colonPos + 1)
-								  : "";
+void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response) {
+    const Location* location = findLocation(request.getPath());
 
-		// bool hostMatch = false;
-		// for (size_t i = 0; i < _config.serverNames.size(); ++i) {
-		// 	if (hostName == _config.serverNames[i]) {
-		// 		hostMatch = true;
-		// 		break;
-		// 	}
-		// }
+    if (location && !location->allowedMethods.empty()) {
+        if (std::find(location->allowedMethods.begin(), location->allowedMethods.end(), request.getMethod()) == location->allowedMethods.end()) {
+            sendErrorResponse(client_fd, 405); // Méthode non autorisée
+            return;
+        }
+    }
 
-		// if (!hostMatch) {
-		// 	sendErrorResponse(client_fd, 404);  // Not Found
-		// 	return;
-		// }
+    // Vérification de l'hôte et du port (code existant)
+    std::string hostHeader = request.getHost();
+    if (!hostHeader.empty()) {
+        size_t colonPos = hostHeader.find(':');
+        std::string hostName = (colonPos != std::string::npos) ? hostHeader.substr(0, colonPos) : hostHeader;
+        std::string portStr = (colonPos != std::string::npos) ? hostHeader.substr(colonPos + 1) : "";
 
-		// Optionnel : Vérifier le port
-		if (!portStr.empty()) {
-			int port = std::atoi(portStr.c_str());
-			if (port != _config.ports.at(0)) {
-				sendErrorResponse(client_fd, 404);  // Not Found
-				return;
-			}
-		}
-	} else {
-		sendErrorResponse(client_fd, 400);  // Bad Request
-		return;
-	}
+        if (!portStr.empty()) {
+            int port = std::atoi(portStr.c_str());
+            if (port != _config.ports.at(0)) {
+                sendErrorResponse(client_fd, 404); // Not Found
+                return;
+            }
+        }
+    } else {
+        sendErrorResponse(client_fd, 400); // Mauvaise requête
+        return;
+    }
 
-	// Traiter la requête en fonction de la méthode
-	if (request.getMethod() == "GET" || request.getMethod() == "POST") {
-		handleGetOrPostRequest(client_fd, request, response);
-	} else if (request.getMethod() == "DELETE") {
-		handleDeleteRequest(client_fd, request);
-	} else {
-		sendErrorResponse(client_fd, 405);  // Méthode non autorisée
-	}
+    // Traitement de la requête selon la méthode
+    if (request.getMethod() == "GET" || request.getMethod() == "POST") {
+        handleGetOrPostRequest(client_fd, request, response);
+    } else if (request.getMethod() == "DELETE") {
+        handleDeleteRequest(client_fd, request);
+    } else {
+        sendErrorResponse(client_fd, 405); // Méthode non autorisée
+    }
 }
+
 
 bool Server::hasCgiExtension(const std::string& path) const {
     std::cerr << "[DEBUG] CGI Extensions for this server:" << std::endl;
@@ -203,113 +193,119 @@ bool Server::endsWith(const std::string& str, const std::string& suffix) const {
     }
 }
 
-bool	handleFileUpload(const HTTPRequest& request, HTTPResponse& response, std::string boundary) {
-	
-	std::string	body = request.getBody();
-	std::string newBoundary = "--" + boundary;
-	size_t start_pos = 0;
+bool handleFileUpload(const HTTPRequest& request, HTTPResponse& response, std::string boundary) {
 
-	while (true) {
-		start_pos = body.find(newBoundary, start_pos);
-		if (start_pos == std::string::npos) // check if error mana is good
-			break ;
-		std::cerr << "BODY" << body << std::endl;
-		start_pos += newBoundary.length(); 
+    std::string body = request.getBody();
+    std::string newBoundary = "--" + boundary;
+    size_t start_pos = 0;
 
-		// Trouver la fin de cette partie
-		size_t end_pos = body.find(newBoundary, start_pos);
-		// Si le prochain boundary n'est pas trouvé, on est à la fin
-		if (end_pos == std::string::npos) // Fin du corps atteint
-			break;
+    while (true) {
+        start_pos = body.find(newBoundary, start_pos);
+        if (start_pos == std::string::npos)
+            break;
+        start_pos += newBoundary.length();
 
-		// Extraire la partie entre start_pos et end_pos
-		std::string content = body.substr(start_pos, end_pos - start_pos);
-		std::cerr << "CONTENT" << content << std::endl;
-		size_t positionDispo = content.find("Content-Disposition");
-		// Vérifier si l'en-tête Content-Disposition est présent dans cette partie
-		if ( positionDispo != std::string::npos) {
-			// Extraire les informations nécessaires (nom, type de fichier, etc.)
-			size_t positionFichier = content.find("filename=\"", positionDispo);
+        // Skip any leading CRLF
+        if (body.compare(start_pos, 2, "\r\n") == 0)
+            start_pos += 2;
 
-			std::string fileName;
-			if (positionFichier != std::string::npos) {
-				size_t positionFichierDebut = positionFichier + std::string("filename=\"").length();
-				size_t positionFichierFin = content.find("\"", positionFichierDebut);
+        // Find the end of this part
+        size_t end_pos = body.find(newBoundary, start_pos);
+        if (end_pos == std::string::npos)
+            end_pos = body.size();
 
-				fileName = content.substr(positionFichierDebut, positionFichierFin - positionFichierDebut);
-			}
+        // Extract the part between start_pos and end_pos
+        std::string content = body.substr(start_pos, end_pos - start_pos);
 
-			// Trouver la fin des en-tetes
-			size_t positionFinDesEnTetes = content.find("\r\n\r\n", positionDispo);
-			std::string fileContent;
-			if (positionFinDesEnTetes != std::string::npos) {
-				size_t debutDeContenu = positionFinDesEnTetes + 4;
-				fileContent = content.substr(debutDeContenu);
-				std::cerr << "FILENAME : " << fileName << std::endl;
-				std::cerr << "FILECONTENT: " << fileContent << std::endl;
-				if (fileName.empty() || fileContent.empty()) {
-					std::cerr << "File error" << std::endl;
-					break ;
-				}
-				else {
-					// Enregistrer le fichier avec le contenu extrait
-					std::string path = "www/upload/" + fileName;
-					std::ofstream file(path.c_str(), std::ios::binary);
-					if (file.is_open()) {
-						file.write(fileContent.c_str(), fileContent.size());
-						file.close();
-						response.setStatusCode(201);
-						response.setReasonPhrase("Created");
-						return true;
-					}
-					else {
-						std::cerr << "Erreur : impossible de créer le fichier." << std::endl;
-						response.setStatusCode(500);
-						response.setReasonPhrase("Internal Server Error");
-						return false;
-					}
-					
-				}
-			}
-		}
-		start_pos = end_pos;
-	}
-	response.setStatusCode(400); // Mauvaise requête si rien n'est trouvé
-    response.setReasonPhrase("Bad Request");
+        size_t positionDispo = content.find("Content-Disposition");
+        // Check if "Content-Disposition" header is present in this part
+        if (positionDispo != std::string::npos) {
+            // Extract necessary information (name, filename, etc.)
+            size_t positionFichier = content.find("filename=\"", positionDispo);
+
+            std::string fileName;
+            if (positionFichier != std::string::npos) {
+                size_t positionFichierDebut = positionFichier + std::string("filename=\"").length();
+                size_t positionFichierFin = content.find("\"", positionFichierDebut);
+
+                fileName = content.substr(positionFichierDebut, positionFichierFin - positionFichierDebut);
+            }
+
+            // Find the end of headers
+            size_t positionFinDesEnTetes = content.find("\r\n\r\n", positionDispo);
+            if (positionFinDesEnTetes != std::string::npos) {
+                size_t debutDeContenu = positionFinDesEnTetes + 4;
+                // Extract file content up to the end of this part
+                size_t contentLength = content.size() - debutDeContenu;
+                std::string fileContent = content.substr(debutDeContenu, contentLength);
+
+                std::cerr << "FILENAME : " << fileName << std::endl;
+
+                if (fileName.empty() || fileContent.empty()) {
+                    std::cerr << "File error" << std::endl;
+                    response.beError(400, "Bad Request: Missing file name or content.");
+                    return false;
+                } else {
+                    // Save the file with the extracted content
+                    std::string path = "www/upload/" + fileName;
+                    std::ofstream file(path.c_str(), std::ios::binary);
+                    if (file.is_open()) {
+                        file.write(fileContent.c_str(), fileContent.size());
+                        file.close();
+
+                        response.setStatusCode(201);
+                        response.setReasonPhrase("Created");
+                        std::string body = "<html><body><h1>File uploaded successfully</h1></body></html>";
+                        response.setBody(body);
+                        response.setHeader("Content-Type", "text/html");
+                        response.setHeader("Content-Length", to_string(body.size()));
+                        return true;
+                    } else {
+                        std::cerr << "Erreur : impossible de créer le fichier." << std::endl;
+                        response.beError(500, "Internal Server Error: Unable to create file.");
+                        return false;
+                    }
+                }
+            }
+        }
+        start_pos = end_pos;
+    }
+    response.beError(400, "Bad Request: Invalid multipart data.");
     return false;
 }
 
-// Modification de la méthode handleGetOrPostRequest
 
+// Modification de la méthode handleGetOrPostRequest
 void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response) {
     std::string fullPath = _config.root + request.getPath();
 
-    // Log pour vérifier le chemin complet
+    // Log to verify the complete path
     std::cerr << "[DEBUG] handleGetOrPostRequest: fullPath = " << fullPath << std::endl;
 
-    // Vérifier si le fichier a une extension CGI (.cgi, .sh, .php)
-	if (request.getMethod() == "POST" && request.hasHeader("Content-Type")) {
-		std::string	contentType = request.getStrHeader("Content-Type");
+    // Check if the file has a CGI extension (.cgi, .sh, .php)
+    if (request.getMethod() == "POST" && request.hasHeader("Content-Type")) {
+        std::string contentType = request.getStrHeader("Content-Type");
 
-		if (contentType.find("multipart/form-data") != std::string::npos) {
-		// Recherche du boundary dans le Content-Type avec find + check if end
-		// Si ce n'est pas la fin extraire 
-			size_t	boundaryPos = contentType.find("boundary=");
-			if (boundaryPos != std::string::npos) {
-				std::string boundary = contentType.substr(boundaryPos + 9);
-				bool uploadSuccess = handleFileUpload(request, response, boundary);
-				if (uploadSuccess == false) {
-					sendErrorResponse(client_fd, 400);
-				}
-                std::string responseText = response.toString();  // Assure-toi que response.toString() génère la réponse complète
-                write(client_fd, responseText.c_str(), responseText.length());  // Envoie la réponse
+        if (contentType.find("multipart/form-data") != std::string::npos) {
+            size_t boundaryPos = contentType.find("boundary=");
+            if (boundaryPos != std::string::npos) {
+                std::string boundary = contentType.substr(boundaryPos + 9);
+                bool uploadSuccess = handleFileUpload(request, response, boundary);
+                if (uploadSuccess) {
+                    sendResponse(client_fd, response);
+                } else {
+                    sendErrorResponse(client_fd, response.getStatusCode());
+                }
                 return;
-			}
-		}
-		else
-			sendErrorResponse(client_fd, 400); // Bad request
-	}
-	else if (hasCgiExtension(fullPath)) {
+            } else {
+                sendErrorResponse(client_fd, 400); // Bad Request: Boundary not found
+                return;
+            }
+        } else {
+            sendErrorResponse(client_fd, 400); // Bad Request: Unsupported Content-Type
+            return;
+        }
+    } else if (hasCgiExtension(fullPath)) {
         std::cerr << "[DEBUG] CGI extension detected for path: " << fullPath << std::endl;
         if (access(fullPath.c_str(), F_OK) == -1) {
             std::cerr << "[DEBUG] CGI script not found: " << fullPath << std::endl;
@@ -317,14 +313,22 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
         } else {
             CGIHandler cgiHandler;
             std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
-            write(client_fd, cgiOutput.c_str(), cgiOutput.length()); //CHECK ERROR : 0 / -1
+
+            // Send the CGI output as response
+            HTTPResponse cgiResponse;
+            cgiResponse.setStatusCode(200);
+            cgiResponse.setReasonPhrase("OK");
+            cgiResponse.setBody(cgiOutput);
+            cgiResponse.setHeader("Content-Type", "text/html");
+            cgiResponse.setHeader("Content-Length", to_string(cgiOutput.size()));
+            sendResponse(client_fd, cgiResponse);
         }
-	}
-    else {
+    } else {
         std::cerr << "[DEBUG] No CGI extension detected for path: " << fullPath << ". Serving as static file." << std::endl;
         serveStaticFile(client_fd, fullPath, response);
     }
 }
+
 
 
 
@@ -482,4 +486,14 @@ void Server::sendErrorResponse(int client_fd, int errorCode) {
 	// est vide
 	response.beError(errorCode, errorContent);
 	sendResponse(client_fd, response);
+}
+
+const Location* Server::findLocation(const std::string& path) {
+    for (size_t i = 0; i < _config.locations.size(); ++i) {
+        // Vérifie une correspondance exacte ou un chemin avec un '/' final pour les répertoires
+        if (path == _config.locations[i].path || path == _config.locations[i].path + "/") {
+            return &_config.locations[i];
+        }
+    }
+    return NULL; // Aucune location correspondante trouvée
 }
