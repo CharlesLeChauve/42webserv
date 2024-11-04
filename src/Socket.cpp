@@ -36,20 +36,20 @@ void Socket::socket_creation() {
 	// std::cout << "Socket successfully created with FD: " << _socket_fd << " for port: " << _port << std::endl;
 
 	// Rendre le socket non bloquant
-	int flags = fcntl(_socket_fd, F_GETFL, 0);
-	if (flags == -1) {
-		std::cerr << "fcntl(F_GETFL) failed for FD: " << _socket_fd << " Error: " << strerror(errno) << std::endl;
-		close(_socket_fd);
-		_socket_fd = -1;
-		return;
-	}
+	// int flags = fcntl(_socket_fd, F_GETFL, 0);
+	// if (flags == -1) {
+	// 	std::cerr << "fcntl(F_GETFL) failed for FD: " << _socket_fd << " Error: " << strerror(errno) << std::endl;
+	// 	close(_socket_fd);
+	// 	_socket_fd = -1;
+	// 	return;
+	// }
 
-	if (fcntl(_socket_fd, F_SETFL, flags | O_NONBLOCK) == -1) {
-		std::cerr << "fcntl(F_SETFL) failed for FD: " << _socket_fd << " Error: " << strerror(errno) << std::endl;
-		close(_socket_fd);
-		_socket_fd = -1;
-		return;
-	}
+	// if (fcntl(_socket_fd, F_SETFL, flags | O_NONBLOCK) == -1) {
+	// 	std::cerr << "fcntl(F_SETFL) failed for FD: " << _socket_fd << " Error: " << strerror(errno) << std::endl;
+	// 	close(_socket_fd);
+	// 	_socket_fd = -1;
+	// 	return;
+	// }
 	// std::cout << "Socket FD: " << _socket_fd << " set to non-blocking mode." << std::endl;
 }
 
