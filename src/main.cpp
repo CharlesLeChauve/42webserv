@@ -2,7 +2,9 @@
 #include "ConfigParser.hpp"
 #include "Socket.hpp"
 #include "Server.hpp"
+#include "Utils.hpp"
 #include <iostream>
+#include "Logger.hpp"
 #include "ServerConfig.hpp"
 #include <poll.h>
 #include <unistd.h>
@@ -22,6 +24,7 @@ void initialize_random_generator() {
 }
 
 int main(int argc, char* argv[]) {
+	Logger::instance().log(INFO, "Lancement du main");
 	std::string configFile;
 	if (argc > 2) {
 		std::cerr << "Usage: " << argv[0] << " [path/to/file]" << std::endl;

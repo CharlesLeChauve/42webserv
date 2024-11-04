@@ -6,6 +6,7 @@
 #include <sys/wait.h>  // For waitpid
 #include <iostream>
 #include <cstring>  // For strerror
+#include "Logger.hpp"
 #include "Utils.hpp"
 
 CGIHandler::CGIHandler() /*: _server(server)*/ {}
@@ -23,7 +24,6 @@ bool CGIHandler::endsWith(const std::string& str, const std::string& suffix) con
 
 std::string CGIHandler::executeCGI(const std::string& scriptPath, const HTTPRequest& request) {
     std::cerr << "[DEBUG] executeCGI: Executing script: " << scriptPath << std::endl;
-
     std::string interpreter = "";
     if (endsWith(scriptPath, ".sh")) {
         interpreter = "/opt/homebrew/bin/bash";  // Chemin correct vers bash

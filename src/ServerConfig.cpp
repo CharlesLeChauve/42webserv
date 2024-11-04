@@ -16,6 +16,17 @@ ServerConfig::ServerConfig(const ServerConfig& other) {
 	cgiExtensions = other.cgiExtensions;
 }
 
+
+const Location* ServerConfig::findLocation(const std::string& path) const {
+    for (size_t i = 0; i < locations.size(); ++i) {
+        // Vérifie une correspondance exacte ou un chemin avec un '/' final pour les répertoires
+        if (path == locations[i].path || path == locations[i].path + "/") {
+            return &locations[i];
+        }
+    }
+    return NULL; // Aucune location correspondante trouvée
+}
+
 ServerConfig& ServerConfig::operator=(const ServerConfig& other) {
 	if (this != &other) {
 		ports = other.ports;

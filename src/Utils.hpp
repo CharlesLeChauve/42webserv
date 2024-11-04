@@ -11,4 +11,6 @@ std::string to_string(T value) {
     return oss.str();
 }
 
+enum LoggerLevel { DEBUG, INFO, WARNING, ERROR };
+
 #endif

@@ -25,6 +25,7 @@ public:
     ServerConfig& operator=(const ServerConfig& other);
     ~ServerConfig();
 
+    const Location* findLocation(const std::string& path) const;
     bool isValid() const;
 };
 

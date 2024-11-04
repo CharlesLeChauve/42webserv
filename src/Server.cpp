@@ -130,7 +130,7 @@ void Server::sendResponse(int client_fd, HTTPResponse response) {
 }
 
 void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response) {
-    const Location* location = findLocation(request.getPath());
+    const Location* location = _config.findLocation(request.getPath());
 
     if (location && !location->allowedMethods.empty()) {
         if (std::find(location->allowedMethods.begin(), location->allowedMethods.end(), request.getMethod()) == location->allowedMethods.end()) {
@@ -475,12 +475,3 @@ void Server::sendErrorResponse(int client_fd, int errorCode) {
 	sendResponse(client_fd, response);
 }
 
-const Location* Server::findLocation(const std::string& path) {
-    for (size_t i = 0; i < _config.locations.size(); ++i) {
-        // Vérifie une correspondance exacte ou un chemin avec un '/' final pour les répertoires
-        if (path == _config.locations[i].path || path == _config.locations[i].path + "/") {
-            return &_config.locations[i];
-        }
-    }
-    return NULL; // Aucune location correspondante trouvée
-}
