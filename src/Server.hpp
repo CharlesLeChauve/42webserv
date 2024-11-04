@@ -29,7 +29,6 @@ private:
     void serveStaticFile(int client_fd, const std::string& filePath, HTTPResponse& response);
     void handleFileUpload(const HTTPRequest& request, HTTPResponse& response, const std::string& boundary);
 	const Location* findLocation(const std::string& path);
-	const Location* findLocation(const std::string& path);
 
     // Ajout des méthodes auxiliaires pour gérer les extensions CGI supplémentaires
     bool hasCgiExtension(const std::string& path) const;
