@@ -1,4 +1,5 @@
 #include "ServerConfig.hpp"
+#include "Logger.hpp"
 #include <iostream>
 
 ServerConfig::ServerConfig() : root("www/"), index("index.html"), host("0.0.0.0") {
@@ -45,11 +46,11 @@ ServerConfig::~ServerConfig() {}
 
 bool ServerConfig::isValid() const {
 	if (ports.empty()) {
-		std::cerr << "Erreur : Aucun port n'est spécifié." << std::endl;
+		Logger::instance().log(ERROR, "Erreur : Aucun port n'est spécifié.");
 		return false;
 	}
 	if (root.empty()) {
-		std::cerr << "Erreur : Le chemin racine est vide." << std::endl;
+		Logger::instance().log(ERROR, "Erreur : Le chemin racine est vide.");
 		return false;
 	}
 	return true;

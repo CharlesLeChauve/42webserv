@@ -397,22 +397,18 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath,
 }
 
 int Server::acceptNewClient(int server_fd) {
-	std::cout << "Tentative d'acceptation d'une nouvelle connexion sur le socket FD: "
-			  << server_fd << std::endl;
-
+    Logger::instance().log(INFO, "Tentative d'acceptation d'une nouvelle connexion sur le socket FD: " + to_string(server_fd));
 	if (server_fd <= 0) {
-		std::cerr << "Invalid server FD: " << server_fd << std::endl;
+        Logger::instance().log(ERROR, "Invalid server FD: " + to_string(server_fd));
 		return -1;
 	}
-
 	sockaddr_in client_addr;
 	memset(&client_addr, 0, sizeof(client_addr));
 	socklen_t client_len = sizeof(client_addr);
 
 	int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
 	if (client_fd == -1) {
-		std::cerr << "Erreur lors de l'acceptation de la connexion : "
-				  << strerror(errno) << " (errno " << errno << ")" << std::endl;
+        Logger::instance().log(ERROR, std::string("Erreur lors de l'acceptation de la connexion : ") + strerror(errno));
 		return -1;
 	}
 
@@ -421,13 +417,12 @@ int Server::acceptNewClient(int server_fd) {
 
 void Server::handleClient(int client_fd) {
 	if (client_fd <= 0) {
-		std::cerr << "Invalid client FD: " << client_fd << std::endl;
+        Logger::instance().log(ERROR, "Invalid client FD: " + to_string(client_fd));
 		return;
 	}
-
 	std::string requestString = receiveRequest(client_fd);
 	if (requestString.empty()) {
-		std::cerr << "Erreur lors de la réception de la requête." << std::endl;
+        Logger::instance().log(ERROR, "Erreur lors de la réception de la requête.");
 		return;
 	}
 
@@ -460,8 +455,7 @@ void Server::sendErrorResponse(int client_fd, int errorCode) {
 			buffer << errorFile.rdbuf();
 			errorContent = buffer.str();
 		} else {
-			std::cerr << "Impossible d'ouvrir le fichier d'erreur personnalisé : "
-					  << errorPagePath << std::endl;
+            Logger::instance().log(WARNING, "Impossible d'ouvrir le fichier d'erreur personnalisé : " + errorPagePath);
 			// Laisser errorContent vide pour utiliser la page d'erreur par défaut
 		}
 	}

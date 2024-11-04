@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include "Logger.hpp"
 #include "ServerConfig.hpp"
 #include "UploadHandler.hpp"
 
@@ -22,8 +23,7 @@ UploadHandler::UploadHandler(const std::string& destPath, const std::string& fil
     }
 
     destFile.write(fileContent.c_str(), fileContent.size());
-
-    std::cerr << "Fichier enregistré à : " << destPath << std::endl;
+    Logger::instance().log(INFO, "Fichier enregistré à : " + destPath);
 
     destFile.close();
 }

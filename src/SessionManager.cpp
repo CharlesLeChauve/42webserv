@@ -6,11 +6,11 @@ SessionManager::SessionManager(std::string session_id)
 	if (session_id.size() > 0) {
 		_session_id = session_id;
 		_first_con = false;
-		std::cout << "!!!!!!!!!!!!!!!!" << std::endl << "Welcome_back User : " << _session_id << std::endl <<  "!!!!!!!!!!!!!!!!" << std::endl;
+		std::cout << "Welcome_back User : " << _session_id << std::endl;
 	 } else {
 		_session_id = generate_session_id();
 		_first_con = true;
-		std::cout << "!!!!!!!!!!!!!!!!" << std::endl << "Welcome to User : " << _session_id << " for his first connection !" << std::endl <<  "!!!!!!!!!!!!!!!!" << std::endl;
+		std::cout << "Welcome to User : " << _session_id << " for his first connection !" << std::endl;
 	}
 }
 

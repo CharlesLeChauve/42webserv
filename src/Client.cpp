@@ -1,10 +1,11 @@
 
 #include "Client.hpp"
+#include "Logger.hpp"
 
 Client::Client(int p_port) : _client_socket(0), _port(p_port) {
     _client_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (_client_socket == -1) {
-        std::cout << "Failed to create client socket." << std::endl;
+        Logger::instance().log(ERROR, "Failed to create client socket.");
 		exit(EXIT_FAILURE) ;
     }
 
@@ -21,16 +22,16 @@ Client::~Client() {
 void Client::connect_to_server() {
     int connect = connect(_client_socket, (struct sockaddr*)&_server_address, sizeof(_server_address));
     if (connect == -1) {
-        std::cout << "Connection to server failed." << std::endl;
+        Logger::instance().log(ERROR, "Connection to server failed.");
         exit(EXIT_FAILURE);
     }
-    std::cout << "Connection to server." << std::endl;
+    Logger::instance().log(INFO, "Connection to server." )
 }
 
 void Client::send_message(const std::string& message) {
     int bytes_sent = send(_client_socket, message.c_str(), message.size(), 0); // CHECK ERROR : 0
     if (bytes_sent == -1) {
-        std::cout << "Failed to send message to server." << std::endl;
+        Logger::instance().log(ERROR, "Failed to send message to server.")
         close_connection();
         exit(EXIT_FAILURE);
     }

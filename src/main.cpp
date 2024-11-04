@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
     }
 
     const std::vector<ServerConfig>& serverConfigs = configParser.getServerConfigs();
-    std::cout << "Nombre de serveurs configurés : " << serverConfigs.size() << std::endl;
+	Logger::instance().log(INFO, "Nombre de serveurs configurés : " + to_string(serverConfigs.size()));
 
     std::vector<Server*> servers;
     std::vector<Socket*> sockets;
@@ -70,7 +70,7 @@ int main(int argc, char* argv[]) {
         servers.push_back(server);
         sockets.push_back(socket);
 
-        std::cout << "Serveur lancé sur le port " << serverConfigs[i].ports[0] << std::endl;
+		Logger::instance().log(INFO, "Serveur lancé sur le port " + to_string(serverConfigs[i].ports[0]));
     }
 
     while (true) {
