@@ -1,4 +1,6 @@
 #include "HTTPRequest.hpp"
+#include "Utils.hpp"
+#include "Logger.hpp"
 #include <sstream>
 #include <iostream>
 #include <cstdlib>
@@ -24,7 +26,7 @@ std::string HTTPRequest::getStrHeader(std::string header) const {
 bool HTTPRequest::parse(const std::string& raw_request) {
 	size_t header_end_pos = raw_request.find("\r\n\r\n");
 	if (header_end_pos == std::string::npos) {
-		std::cerr << "Invalid HTTP request: missing header-body separator." << std::endl;
+		Logger::instance().log(ERROR, "Invalid HTTP request: missing header-body separator.");
 		return false;
 	}
 
@@ -39,7 +41,7 @@ bool HTTPRequest::parse(const std::string& raw_request) {
 			return false;
 		}
 	} else {
-		std::cerr << "Invalid HTTP request: missing request line." << std::endl;
+		Logger::instance().log(ERROR, "Invalid HTTP request: missing request line.");
 		return false;
 	}
 
@@ -53,7 +55,7 @@ bool HTTPRequest::parse(const std::string& raw_request) {
 	if (it != _headers.end()) {
 		int content_length = std::atoi(it->second.c_str());
 		if (body_part.size() < static_cast<size_t>(content_length)) {
-			std::cerr << "Failed to read the entire body." << std::endl;
+			Logger::instance().log(ERROR, "Failed to read the entire body");
 			return false;
 		}
 		parseBody(body_part.substr(0, content_length));
@@ -69,7 +71,7 @@ bool HTTPRequest::parseRequestLine(const std::string& line) {
 	iss >> _method >> _path >> version;
 
 	if (_method.empty() || _path.empty() || version.empty()) {
-		std::cerr << "Invalid HTTP request line." << std::endl;
+		Logger::instance().log(ERROR, "Invalid HTTP Request");
 		return false;
 	}
 
@@ -77,7 +79,7 @@ bool HTTPRequest::parseRequestLine(const std::string& line) {
 	parseQueryString();
 
 	if (version != "HTTP/1.1") {
-		std::cerr << "Unsupported HTTP version: " << version << std::endl;
+		Logger::instance().log(ERROR, "Unsupported Http version: " + version);
 		return false;
 	}
 	return true;

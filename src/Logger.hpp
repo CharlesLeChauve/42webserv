@@ -32,6 +32,8 @@ private:
     std::ofstream infoFile;
     std::ofstream warningFile;
     std::ofstream errorFile;
+
+	bool logToStderr;
 };
 
 #endif // LOGGER_HPP

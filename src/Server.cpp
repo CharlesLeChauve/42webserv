@@ -6,7 +6,9 @@
 #include "CGIHandler.hpp"
 #include "ServerConfig.hpp"
 #include "UploadHandler.hpp"
+#include "Logger.hpp"
 #include <sys/stat.h>  // Pour utiliser la fonction stat
+#include <sstream>
 #include <fcntl.h>
 #include <time.h>
 #include "Utils.hpp"
@@ -168,20 +170,29 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPRe
     }
 }
 
-
 bool Server::hasCgiExtension(const std::string& path) const {
-	std::cerr << "[DEBUG] CGI Extensions for this server:" << std::endl;
-	for (size_t i = 0; i < _config.cgiExtensions.size(); ++i) {
-		std::cerr << " - \"" << _config.cgiExtensions[i] << "\"" << std::endl;
-	}
-	for (size_t i = 0; i < _config.cgiExtensions.size(); ++i) {
-		if (endsWith(path, _config.cgiExtensions[i])) {
-			std::cerr << "[DEBUG] hasCgiExtension: Matched extension " << _config.cgiExtensions[i] << " for path " << path << std::endl;
-			return true;
-		}
-	}
-	std::cerr << "[DEBUG] hasCgiExtension: No matching CGI extension for path " << path << std::endl;
-	return false;
+    // Logger le message initial
+    std::ostringstream oss;
+    Logger::instance().log(DEBUG, "CGI Extensions for this server:");
+    oss << "CGI Extensions for this server:" << std::endl;
+    // Logger les extensions CGI disponibles
+    for (size_t i = 0; i < _config.cgiExtensions.size(); ++i) {
+        oss << " - \"" << _config.cgiExtensions[i] << "\"";
+    }
+
+    // Vérifier si le chemin correspond à une extension CGI
+    for (size_t i = 0; i < _config.cgiExtensions.size(); ++i) {
+        if (endsWith(path, _config.cgiExtensions[i])) {
+            oss << "hasCgiExtension: Matched extension " << _config.cgiExtensions[i]
+                << " for path " << path;
+            return true;
+        }
+    }
+
+    // Logger le fait qu'aucune extension correspondante n'a été trouvée
+    oss << "hasCgiExtension: No matching CGI extension for path " << path;
+    Logger::instance().log(DEBUG, oss.str());
+    return false;
 }
 
 
@@ -272,7 +283,7 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
     std::string fullPath = _config.root + request.getPath();
 
     // Log to verify the complete path
-    std::cerr << "[DEBUG] handleGetOrPostRequest: fullPath = " << fullPath << std::endl;
+    Logger::instance().log(DEBUG, "handleGetOrPostRequest: fullPath =" + fullPath);
 
     // Vérifier si le fichier a une extension CGI (.cgi, .sh, .php)
 	if (request.getMethod() == "POST" && request.getPath() == "/uploads" && request.hasHeader("Content-Type")) {
@@ -293,9 +304,9 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
 			sendErrorResponse(client_fd, 400); // Bad request
 	}
 	else if (hasCgiExtension(fullPath)) {
-        std::cerr << "[DEBUG] CGI extension detected for path: " << fullPath << std::endl;
+        Logger::instance().log(DEBUG, "CGI extension detected for path: " + fullPath);
         if (access(fullPath.c_str(), F_OK) == -1) {
-            std::cerr << "[DEBUG] CGI script not found: " << fullPath << std::endl;
+            Logger::instance().log(DEBUG, "CGI script not found: " + fullPath);
             sendErrorResponse(client_fd, 404);
         } else {
             CGIHandler cgiHandler;
@@ -311,13 +322,10 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
             sendResponse(client_fd, cgiResponse);
         }
     } else {
-        std::cerr << "[DEBUG] No CGI extension detected for path: " << fullPath << ". Serving as static file." << std::endl;
+        Logger::instance().log(DEBUG, "No CGI extension detected for path: " + fullPath + ". Serving as static file.");
         serveStaticFile(client_fd, fullPath, response);
     }
 }
-
-
-
 
 void Server::handleDeleteRequest(int client_fd, const HTTPRequest& request) {
 	std::string fullPath = _config.root + request.getPath();
@@ -361,7 +369,6 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath,
 			response.setStatusCode(200);
 			response.setReasonPhrase("OK");
 
-			// Déterminer le type de contenu
 			std::string contentType = "text/html";
 			size_t extPos = filePath.find_last_of('.');
 			if (extPos != std::string::npos) {
@@ -376,7 +383,6 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath,
 					contentType = "image/jpeg";
 				else if (extension == ".gif")
 					contentType = "image/gif";
-				// Ajoutez d'autres types si nécessaire
 			}
 
 			response.setHeader("Content-Type", contentType);

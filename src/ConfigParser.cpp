@@ -1,6 +1,7 @@
 // ConfigParser.cpp
 #include "ConfigParser.hpp"
 #include "ServerConfig.hpp"
+#include "Logger.hpp"
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -190,7 +191,7 @@ void ConfigParser::processServerDirective(std::ifstream &file, const std::string
             while (valueStream >> ext) {
                 validateDirectiveValue(directive, ext);
                 serverConfig.cgiExtensions.push_back(ext);
-				std::cerr << "[DEBUG] Loaded CGI extension from location: " << ext << std::endl;
+                Logger::instance().log(DEBUG, " Loaded CGI extension from location: " + ext);
             }
         }
         else {
@@ -238,7 +239,7 @@ void ConfigParser::processLocationBlock(std::ifstream &file, const std::string& 
             while (valueStream >> ext) {
                 validateDirectiveValue(directive, ext);
                 serverConfig.cgiExtensions.push_back(ext);
-                std::cerr << "[DEBUG] Loaded CGI extension from location: " << ext << std::endl;
+                Logger::instance().log(DEBUG, "Loaded CGI extension from location: " + ext);
             }
         } else if (directive == "method") {
             std::istringstream valueStream(value);
