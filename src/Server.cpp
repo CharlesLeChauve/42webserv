@@ -41,144 +41,133 @@ std::string getSorryPath() {
 }
 
 std::string Server::receiveRequest(int client_fd) {
-	if (client_fd <= 0) {
-		std::cerr << "Invalid client FD before reading: " << client_fd << std::endl;
-		return "";
-	}
+    if (client_fd <= 0) {
+        std::cerr << "Invalid client FD before reading: " << client_fd << std::endl;
+        return "";
+    }
 
-	std::string request;
-	char buffer[1024];
-	int bytes_received;
-	size_t content_length = 0;
-	bool headers_received = false;
+    std::string request;
+    char buffer[1024];
+    int bytes_received;
+    size_t content_length = 0;
+    bool headers_received = false;
 
-	while (true) {
-		bytes_received = read(client_fd, buffer, sizeof(buffer));
-		if (bytes_received == 0) {
-			// Client closed the connection
-			std::cerr << "Client closed the connection: FD " << client_fd << std::endl;
-			break;
-		} else if (bytes_received < 0) {
-			// Error reading from client
-			std::cerr << "Error reading from client. Please check the connection." << std::endl;
-			break;
-		}
+    while (true) {
+        bytes_received = read(client_fd, buffer, sizeof(buffer));
+        if (bytes_received == 0) {
+            // Client closed the connection
+            std::cerr << "Client closed the connection: FD " << client_fd << std::endl;
+            break;
+        } else if (bytes_received < 0) {
+            // Error reading from client
+            std::cerr << "Error reading from client. Please check the connection." << std::endl;
+            break;
+        }
 
-		request.append(buffer, bytes_received);
+        request.append(buffer, bytes_received);
 
-		if (!headers_received) {
-			// Check if we have received the full headers
-			size_t header_end_pos = request.find("\r\n\r\n");
-			if (header_end_pos != std::string::npos) {
-				headers_received = true;
+        if (!headers_received) {
+            // Check if we have received the full headers
+            size_t header_end_pos = request.find("\r\n\r\n");
+            if (header_end_pos != std::string::npos) {
+                headers_received = true;
 
-				// Parse headers to find Content-Length
-				std::string headers = request.substr(0, header_end_pos);
-				std::istringstream headers_stream(headers);
-				std::string header_line;
-				while (std::getline(headers_stream, header_line)) {
-					// Remove any trailing \r
-					if (!header_line.empty() && header_line[header_line.size() - 1] == '\r') {
-						header_line.erase(header_line.size() - 1);
-					}
-					size_t colon_pos = header_line.find(":");
-					if (colon_pos != std::string::npos) {
-						std::string header_name = header_line.substr(0, colon_pos);
-						std::string header_value = header_line.substr(colon_pos + 1);
-						// Trim whitespace
-						header_name.erase(0, header_name.find_first_not_of(" \t"));
-						header_name.erase(header_name.find_last_not_of(" \t") + 1);
-						header_value.erase(0, header_value.find_first_not_of(" \t"));
-						header_value.erase(header_value.find_last_not_of(" \t") + 1);
+                // Parse headers to find Content-Length
+                std::string headers = request.substr(0, header_end_pos);
+                std::istringstream headers_stream(headers);
+                std::string header_line;
+                while (std::getline(headers_stream, header_line)) {
+                    // Remove any trailing \r
+                    if (!header_line.empty() && header_line[header_line.size() - 1] == '\r') {
+                        header_line.erase(header_line.size() - 1);
+                    }
+                    size_t colon_pos = header_line.find(":");
+                    if (colon_pos != std::string::npos) {
+                        std::string header_name = header_line.substr(0, colon_pos);
+                        std::string header_value = header_line.substr(colon_pos + 1);
+                        // Trim whitespace
+                        header_name.erase(0, header_name.find_first_not_of(" \t"));
+                        header_name.erase(header_name.find_last_not_of(" \t") + 1);
+                        header_value.erase(0, header_value.find_first_not_of(" \t"));
+                        header_value.erase(header_value.find_last_not_of(" \t") + 1);
 
-						if (header_name == "Content-Length") {
-							content_length = static_cast<size_t>(atoi(header_value.c_str()));
-							break;
-						}
-					}
-				}
+                        if (header_name == "Content-Length") {
+                            content_length = static_cast<size_t>(atoi(header_value.c_str()));
+                            break;
+                        }
+                    }
+                }
 
-				// If there is a body, calculate how many more bytes to read
-				if (content_length > 0) {
-					size_t body_received = request.size() - (header_end_pos + 4);
-					if (body_received >= content_length) {
-						// We have received the entire request
-						break;
-					}
-				} else {
-					// No Content-Length, so no body, we are done
-					break;
-				}
-			}
-		} else {
-			// We have already received headers, check if we have received the entire body
-			size_t header_end_pos = request.find("\r\n\r\n");
-			size_t body_received = request.size() - (header_end_pos + 4);
-			if (body_received >= content_length) {
-				// We have received the entire request
-				break;
-			}
-		}
-	}
+                // If there is a body, calculate how many more bytes to read
+                if (content_length > 0) {
+                    size_t body_received = request.size() - (header_end_pos + 4);
+                    if (body_received >= content_length) {
+                        // We have received the entire request
+                        break;
+                    }
+                } else {
+                    // No Content-Length, so no body, we are done
+                    break;
+                }
+            }
+        } else {
+            // We have already received headers, check if we have received the entire body
+            size_t header_end_pos = request.find("\r\n\r\n");
+            size_t body_received = request.size() - (header_end_pos + 4);
+            if (body_received >= content_length) {
+                // We have received the entire request
+                break;
+            }
+        }
+    }
 
-	return request;
+    return request;
 }
-
 
 void Server::sendResponse(int client_fd, HTTPResponse response) {
 	std::string responseString = response.toString();
 	write(client_fd, responseString.c_str(), responseString.size()); // Check error : 0 / -1
 }
 
-void Server::handleHttpRequest(int client_fd, const HTTPRequest& request,
-							   HTTPResponse& response) {
-	// Vérifier si le Host correspond à l'un des server_names
-	std::string hostHeader = request.getHost();
-	if (!hostHeader.empty()) {
-		// Extraire le nom d'hôte et le port s'il est présent
-		size_t colonPos = hostHeader.find(':');
-		std::string hostName = (colonPos != std::string::npos)
-								   ? hostHeader.substr(0, colonPos)
-								   : hostHeader;
-		std::string portStr = (colonPos != std::string::npos)
-								  ? hostHeader.substr(colonPos + 1)
-								  : "";
+void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response) {
+    const Location* location = findLocation(request.getPath());
 
-		// bool hostMatch = false;
-		// for (size_t i = 0; i < _config.serverNames.size(); ++i) {
-		// 	if (hostName == _config.serverNames[i]) {
-		// 		hostMatch = true;
-		// 		break;
-		// 	}
-		// }
+    if (location && !location->allowedMethods.empty()) {
+        if (std::find(location->allowedMethods.begin(), location->allowedMethods.end(), request.getMethod()) == location->allowedMethods.end()) {
+            sendErrorResponse(client_fd, 405); // Méthode non autorisée
+            return;
+        }
+    }
 
-		// if (!hostMatch) {
-		// 	sendErrorResponse(client_fd, 404);  // Not Found
-		// 	return;
-		// }
+    // Vérification de l'hôte et du port (code existant)
+    std::string hostHeader = request.getHost();
+    if (!hostHeader.empty()) {
+        size_t colonPos = hostHeader.find(':');
+        std::string hostName = (colonPos != std::string::npos) ? hostHeader.substr(0, colonPos) : hostHeader;
+        std::string portStr = (colonPos != std::string::npos) ? hostHeader.substr(colonPos + 1) : "";
 
-		// Optionnel : Vérifier le port
-		if (!portStr.empty()) {
-			int port = std::atoi(portStr.c_str());
-			if (port != _config.ports.at(0)) {
-				sendErrorResponse(client_fd, 404);  // Not Found
-				return;
-			}
-		}
-	} else {
-		sendErrorResponse(client_fd, 400);  // Bad Request
-		return;
-	}
+        if (!portStr.empty()) {
+            int port = std::atoi(portStr.c_str());
+            if (port != _config.ports.at(0)) {
+                sendErrorResponse(client_fd, 404); // Not Found
+                return;
+            }
+        }
+    } else {
+        sendErrorResponse(client_fd, 400); // Mauvaise requête
+        return;
+    }
 
-	// Traiter la requête en fonction de la méthode
-	if (request.getMethod() == "GET" || request.getMethod() == "POST") {
-		handleGetOrPostRequest(client_fd, request, response);
-	} else if (request.getMethod() == "DELETE") {
-		handleDeleteRequest(client_fd, request);
-	} else {
-		sendErrorResponse(client_fd, 405);  // Méthode non autorisée
-	}
+    // Traitement de la requête selon la méthode
+    if (request.getMethod() == "GET" || request.getMethod() == "POST") {
+        handleGetOrPostRequest(client_fd, request, response);
+    } else if (request.getMethod() == "DELETE") {
+        handleDeleteRequest(client_fd, request);
+    } else {
+        sendErrorResponse(client_fd, 405); // Méthode non autorisée
+    }
 }
+
 
 bool Server::hasCgiExtension(const std::string& path) const {
 	std::cerr << "[DEBUG] CGI Extensions for this server:" << std::endl;
@@ -279,11 +268,10 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
 }
 
 // Modification de la méthode handleGetOrPostRequest
-
 void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response) {
     std::string fullPath = _config.root + request.getPath();
 
-    // Log pour vérifier le chemin complet
+    // Log to verify the complete path
     std::cerr << "[DEBUG] handleGetOrPostRequest: fullPath = " << fullPath << std::endl;
 
     // Vérifier si le fichier a une extension CGI (.cgi, .sh, .php)
@@ -312,14 +300,22 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
         } else {
             CGIHandler cgiHandler;
             std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
-            write(client_fd, cgiOutput.c_str(), cgiOutput.length()); //CHECK ERROR : 0 / -1
+
+            // Send the CGI output as response
+            HTTPResponse cgiResponse;
+            cgiResponse.setStatusCode(200);
+            cgiResponse.setReasonPhrase("OK");
+            cgiResponse.setBody(cgiOutput);
+            cgiResponse.setHeader("Content-Type", "text/html");
+            cgiResponse.setHeader("Content-Length", to_string(cgiOutput.size()));
+            sendResponse(client_fd, cgiResponse);
         }
-	}
-    else {
+    } else {
         std::cerr << "[DEBUG] No CGI extension detected for path: " << fullPath << ". Serving as static file." << std::endl;
         serveStaticFile(client_fd, fullPath, response);
     }
 }
+
 
 
 
@@ -477,4 +473,14 @@ void Server::sendErrorResponse(int client_fd, int errorCode) {
 	// est vide
 	response.beError(errorCode, errorContent);
 	sendResponse(client_fd, response);
+}
+
+const Location* Server::findLocation(const std::string& path) {
+    for (size_t i = 0; i < _config.locations.size(); ++i) {
+        // Vérifie une correspondance exacte ou un chemin avec un '/' final pour les répertoires
+        if (path == _config.locations[i].path || path == _config.locations[i].path + "/") {
+            return &_config.locations[i];
+        }
+    }
+    return NULL; // Aucune location correspondante trouvée
 }

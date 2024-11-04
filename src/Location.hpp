@@ -7,6 +7,7 @@
 struct Location {
 	std::string path;
 	std::map<std::string, std::string> options;
+	std::vector<std::string> allowedMethods;
 };
 
 #endif
