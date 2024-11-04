@@ -1,0 +1,7 @@
+INFO: Lancement du main
+INFO: Lancement du prgoramme
+DEBUG: Loaded CGI extension from location: .cgi
+DEBUG: Loaded CGI extension from location: .php
+DEBUG: Loaded CGI extension from location: .sh
+INFO: Server configuration is valid.
+INFO: Server configuration is valid.

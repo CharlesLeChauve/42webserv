@@ -15,9 +15,9 @@
 
 Server::Server(const ServerConfig& config) : _config(config) {
 	if (!_config.isValid()) {
-		std::cerr << "Server configuration is invalid." << std::endl;
+        Logger::instance().log(ERROR, "Server configuration is invalid.");
 	} else {
-		std::cout << "Server configuration is valid." << std::endl;
+        Logger::instance().log(INFO, "Server configuration is valid.");
 	}
 }
 
@@ -26,12 +26,13 @@ Server::~Server() {}
 void setNonBlocking(int fd) {
 	int flags = fcntl(fd, F_GETFL, 0);
 	if (flags == -1) {
-		std::cerr << "fcntl(F_GETFL) failed: " << strerror(errno) << std::endl;
+        Logger::instance().log(ERROR,std::string("fcntl(F_GETFL) failed: ") + strerror(errno));
 		return;
 	}
 
 	if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) {
-		std::cerr << "fcntl(F_SETFL) failed: " << strerror(errno) << std::endl;
+        Logger::instance().log(ERROR,std::string("fcntl(F_GETFL) failed: ") + strerror(errno));
+
 	}
 }
 
@@ -44,7 +45,7 @@ std::string getSorryPath() {
 
 std::string Server::receiveRequest(int client_fd) {
     if (client_fd <= 0) {
-        std::cerr << "Invalid client FD before reading: " << client_fd << std::endl;
+        Logger::instance().log(ERROR,  "Invalid client FD before reading: " + to_string(client_fd));
         return "";
     }
 
@@ -58,11 +59,11 @@ std::string Server::receiveRequest(int client_fd) {
         bytes_received = read(client_fd, buffer, sizeof(buffer));
         if (bytes_received == 0) {
             // Client closed the connection
-            std::cerr << "Client closed the connection: FD " << client_fd << std::endl;
+            Logger::instance().log(WARNING, "Client closed the connection: FD " + to_string(client_fd));
             break;
         } else if (bytes_received < 0) {
             // Error reading from client
-            std::cerr << "Error reading from client. Please check the connection." << std::endl;
+            Logger::instance().log(ERROR, "Error reading from client. Please check the connection.");
             break;
         }
 
@@ -175,12 +176,10 @@ bool Server::hasCgiExtension(const std::string& path) const {
     std::ostringstream oss;
     Logger::instance().log(DEBUG, "CGI Extensions for this server:");
     oss << "CGI Extensions for this server:" << std::endl;
-    // Logger les extensions CGI disponibles
     for (size_t i = 0; i < _config.cgiExtensions.size(); ++i) {
         oss << " - \"" << _config.cgiExtensions[i] << "\"";
     }
 
-    // Vérifier si le chemin correspond à une extension CGI
     for (size_t i = 0; i < _config.cgiExtensions.size(); ++i) {
         if (endsWith(path, _config.cgiExtensions[i])) {
             oss << "hasCgiExtension: Matched extension " << _config.cgiExtensions[i]
@@ -190,12 +189,10 @@ bool Server::hasCgiExtension(const std::string& path) const {
     }
 
     // Logger le fait qu'aucune extension correspondante n'a été trouvée
-    oss << "hasCgiExtension: No matching CGI extension for path " << path;
+    oss << "hasCgiExtension: No matching CGI extension for path " << path << std::endl;
     Logger::instance().log(DEBUG, oss.str());
     return false;
 }
-
-
 
 bool Server::endsWith(const std::string& str, const std::string& suffix) const {
 	if (str.length() >= suffix.length()) {
@@ -204,6 +201,7 @@ bool Server::endsWith(const std::string& str, const std::string& suffix) const {
 		return false;
 	}
 }
+
 void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response, const std::string& boundary) {
     std::string requestBody = request.getBody();
     std::string boundaryMarker = "--" + boundary;
@@ -236,7 +234,7 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
         // Trouver le prochain boundary
         endPos = requestBody.find(boundaryMarker, pos);
         if (endPos == std::string::npos) {
-            std::cerr << "Boundary de fin introuvable." << std::endl;
+            Logger::instance().log(ERROR, "Boundary de fin introuvable.");
             break;
         }
         size_t contentEnd = endPos;
@@ -259,7 +257,7 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
             try {
                 UploadHandler uploadHandler("www/uploads/" + filename, partContent, this->_config);
             } catch (const std::exception& e) {
-                std::cerr << "Erreur lors de l'upload du fichier : " << e.what() << std::endl;
+                Logger::instance().log(ERROR, std::string("Erreur lors de l'upload du fichier : ") + e.what());
                 response.setStatusCode(500);
                 response.setBody("Erreur lors de l'upload du fichier.");
                 return;
@@ -312,14 +310,7 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
             CGIHandler cgiHandler;
             std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
 
-            // Send the CGI output as response
-            HTTPResponse cgiResponse;
-            cgiResponse.setStatusCode(200);
-            cgiResponse.setReasonPhrase("OK");
-            cgiResponse.setBody(cgiOutput);
-            cgiResponse.setHeader("Content-Type", "text/html");
-            cgiResponse.setHeader("Content-Length", to_string(cgiOutput.size()));
-            sendResponse(client_fd, cgiResponse);
+            write(client_fd, cgiOutput.c_str(), cgiOutput.length()); //CHECK ERROR : 0 / -1
         }
     } else {
         Logger::instance().log(DEBUG, "No CGI extension detected for path: " + fullPath + ". Serving as static file.");

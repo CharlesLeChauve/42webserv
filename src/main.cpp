@@ -12,6 +12,7 @@
 #include <ctime>
 
 void initialize_random_generator() {
+	Logger::instance().log(INFO, "Lancement du prgoramme");
     std::ifstream urandom("/dev/urandom", std::ios::binary);
     unsigned int seed;
     if (urandom.is_open()) {
@@ -38,7 +39,7 @@ int main(int argc, char* argv[]) {
     try {
         configParser.parseConfigFile(configFile);
     } catch (const ConfigParserException& e) {
-        std::cerr << "Échec de l'analyse du fichier de configuration : " << e.what() << std::endl;
+		Logger::instance().log(ERROR, std::string("Échec de l'analyse du fichier de configuration : ") + e.what());
         return 1;
     }
 
@@ -85,10 +86,11 @@ int main(int argc, char* argv[]) {
 
             // Gérer les erreurs
             if (poll_fds[i].revents & POLLERR) {
-                std::cerr << "Erreur sur le descripteur FD : " << poll_fds[i].fd << std::endl;
+				Logger::instance().log(ERROR, "Erreur sur le descripteur FD : " + to_string(poll_fds[i].fd));
                 if (fdToServerMap.find(poll_fds[i].fd) != fdToServerMap.end()) {
                     // C'est un socket serveur
                     // Vous pouvez décider de fermer le serveur ou de gérer l'erreur autrement
+					// Et du coup on décide quoi ??
                 } else {
                     // C'est un socket client
                     close(poll_fds[i].fd);
@@ -101,7 +103,7 @@ int main(int argc, char* argv[]) {
 
             // Gérer les déconnexions
             if (poll_fds[i].revents & POLLHUP) {
-                std::cout << "Client déconnecté : FD " << poll_fds[i].fd << std::endl;
+				Logger::instance().log(INFO, "Client déconnecté : FD " + to_string(poll_fds[i].fd));
                 close(poll_fds[i].fd);
                 clientFdToServerMap.erase(poll_fds[i].fd);
                 poll_fds.erase(poll_fds.begin() + i);
@@ -110,7 +112,7 @@ int main(int argc, char* argv[]) {
             }
 
             if (poll_fds[i].revents & POLLNVAL) {
-                std::cerr << "Descripteur de fichier non valide : FD " << poll_fds[i].fd << std::endl;
+				Logger::instance().log(ERROR, "Descripteur de fichier non valide : FD " + to_string(poll_fds[i].fd));
                 // Supprimer le descripteur invalide
                 poll_fds.erase(poll_fds.begin() + i);
                 --i;
@@ -131,10 +133,9 @@ int main(int argc, char* argv[]) {
                         client_pollfd.events = POLLIN | POLLHUP | POLLERR;
                         client_pollfd.revents = 0;
                         poll_fds.push_back(client_pollfd);
-
-                        std::cout << "Nouveau client FD : " << client_fd << " accepté sur le serveur FD : " << poll_fds[i].fd << std::endl;
+						Logger::instance().log(INFO, "Nouveau client FD : " + to_string(client_fd) + " accepté sur le serveur FD : " + to_string(poll_fds[i].fd));
                     } else {
-                        std::cerr << "Échec de l'acceptation du client sur le serveur FD : " << poll_fds[i].fd << std::endl;
+						Logger::instance().log(ERROR, "Échec de l'acceptation du client sur le serveur FD : " + to_string(poll_fds[i].fd));
                     }
                 } else {
                     // C'est un descripteur de socket client, traiter la requête
