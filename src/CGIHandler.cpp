@@ -23,7 +23,7 @@ bool CGIHandler::endsWith(const std::string& str, const std::string& suffix) con
 }
 
 std::string CGIHandler::executeCGI(const std::string& scriptPath, const HTTPRequest& request) {
-    std::cerr << "[DEBUG] executeCGI: Executing script: " << scriptPath << std::endl;
+    Logger::instance().log(DEBUG, "executeCGI: Executing script: " + scriptPath);
     std::string interpreter = "";
     if (endsWith(scriptPath, ".sh")) {
         interpreter = "/opt/homebrew/bin/bash";  // Chemin correct vers bash
@@ -32,20 +32,19 @@ std::string CGIHandler::executeCGI(const std::string& scriptPath, const HTTPRequ
     }
     // .cgi utilisera le shebang du script
 
-    std::cerr << "[DEBUG] executeCGI: Interpreter = " << (interpreter.empty() ? "Shebang" : interpreter) << std::endl;
-
+    Logger::instance().log(DEBUG, "executeCGI: Interpreter = " + (interpreter.empty() ? "Shebang" : interpreter));
     std::string fullPath = scriptPath;
     HTTPResponse response;
 
     int pipefd[2];
     if (pipe(pipefd) == -1) {
-        std::cerr << "[ERROR] executeCGI: Pipe failed: " << strerror(errno) << std::endl;
+        Logger::instance().log(ERROR, std::string("executeCGI: Pipe failed: ") + strerror(errno));
         return response.beError(500, "Internal Server Error: Unable to create pipe.").toString();
     }
 
     int pipefd_in[2];  // Pipe pour l'entrée standard
     if (pipe(pipefd_in) == -1) {
-        std::cerr << "[ERROR] executeCGI: Pipe for STDIN failed: " << strerror(errno) << std::endl;
+        Logger::instance().log(ERROR, std::string("executeCGI: Pipe fir STDIN failed: ") + strerror(errno));
         return response.beError(500, "Internal Server Error: Unable to create stdin pipe.").toString();
     }
 
@@ -65,8 +64,7 @@ std::string CGIHandler::executeCGI(const std::string& scriptPath, const HTTPRequ
         } else {
             execl(fullPath.c_str(), fullPath.c_str(), NULL);
         }
-
-        std::cerr << "[ERROR] executeCGI: Failed to execute CGI script: " << fullPath << ". Error: " << strerror(errno) << std::endl;
+        Logger::instance().log(ERROR, std::string("executeCGI: Failed to execute CGI script: ") + fullPath + std::string(". Error: ") + strerror(errno));
         exit(EXIT_FAILURE);
     } else if (pid > 0) {
         // Processus parent : gestion de la sortie du CGI
@@ -92,7 +90,7 @@ std::string CGIHandler::executeCGI(const std::string& scriptPath, const HTTPRequ
         if (WIFEXITED(status)) {
             int exitCode = WEXITSTATUS(status);
             if (exitCode != 0) {
-                std::cerr << "[ERROR] executeCGI: CGI script exited with code: " << exitCode << std::endl;
+                Logger::instance().log(ERROR, std::string("executeCGI: CGI script exited with code: ") + to_string(exitCode));
                 return response.beError(500, "Internal Server Error: CGI script failed.").toString();
             }
         }
@@ -117,12 +115,10 @@ std::string CGIHandler::executeCGI(const std::string& scriptPath, const HTTPRequ
         if (cgiOutput.find("HTTP/1.1") == std::string::npos) {
             cgiOutput = "HTTP/1.1 200 OK\r\nContent-Type: text/html" + cgiOutput;
         }
-
-        std::cerr << "[DEBUG] executeCGI: CGI Output:\n" << cgiOutput << std::endl;
-
+        Logger::instance().log(DEBUG, std::string("executeCGI: CGI Output:\n") + cgiOutput);
         return cgiOutput;
     } else {
-        std::cerr << "[ERROR] executeCGI: Fork failed: " << strerror(errno) << std::endl;
+        Logger::instance().log(ERROR, std::string("executeCGI: Fork failed: ") + strerror(errno));
         return response.beError(500, "Internal Server Error: Fork failed.").toString();
     }
 }
