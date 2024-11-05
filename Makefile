@@ -76,6 +76,9 @@ else
 	@echo "Unsupported OS"
 endif
 
+clean_logs:
+	rm -rf logs/*
+
 re: fclean all
 
-PHONY: clean fclean all webserver php php_clean
+PHONY: clean fclean all webserver php php_clean clean_logs
