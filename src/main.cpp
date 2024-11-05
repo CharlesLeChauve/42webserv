@@ -91,11 +91,11 @@ int main(int argc, char* argv[]) {
                 if (fdToServerMap.find(poll_fds[i].fd) != fdToServerMap.end()) {
                     // C'est un socket serveur
                     // Vous pouvez décider de fermer le serveur ou de gérer l'erreur autrement
-                    Logger::instance().log(ERROR, "Error on Server socket detected in poll")
+                    Logger::instance().log(ERROR, "Error on Server socket detected in poll");
 					//?? Et du coup on décide quoi ?
                 } else {
                     // C'est un socket client
-                    Logger::instance().log(ERROR, "Error on Client socket detected in poll")
+                    Logger::instance().log(ERROR, "Error on Client socket detected in poll");
                     close(poll_fds[i].fd);
                     clientFdToServerMap.erase(poll_fds[i].fd);
                     poll_fds.erase(poll_fds.begin() + i);

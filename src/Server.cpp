@@ -414,7 +414,9 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath,
 }
 
 int Server::acceptNewClient(int server_fd) {
-    Logger::instance().log(INFO, "Tentative d'acceptation d'une nouvelle connexion sur le socket FD: " + to_string(server_fd) + );
+    Logger::instance().log(INFO, "Tentative d'acceptation d'une nouvelle connexion sur le socket FD: " + to_string(server_fd));
+    //?? Ici, je ne sais pas si c'est normal, mais il semble se produire la même chose pour le socket de connexion 
+    // (qui établit le lien client/serveur), et le socket de stream (utilisé pour transférer les données).
 	if (server_fd <= 0) {
         Logger::instance().log(ERROR, "Invalid server FD: " + to_string(server_fd));
 		return -1;
