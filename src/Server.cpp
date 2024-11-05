@@ -414,7 +414,7 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath,
 }
 
 int Server::acceptNewClient(int server_fd) {
-    Logger::instance().log(INFO, "Tentative d'acceptation d'une nouvelle connexion sur le socket FD: " + to_string(server_fd));
+    Logger::instance().log(INFO, "Tentative d'acceptation d'une nouvelle connexion sur le socket FD: " + to_string(server_fd) + );
 	if (server_fd <= 0) {
         Logger::instance().log(ERROR, "Invalid server FD: " + to_string(server_fd));
 		return -1;
@@ -455,6 +455,8 @@ void Server::handleClient(int client_fd) {
 	SessionManager session(request.getStrHeader("Cookie"));
 	if (session.getFirstCon())
 		response.setHeader("Set-Cookie", session.getSessionId() + "; Path=/; HttpOnly");
+    
+    Logger::instance().log(INFO, "Parsing OK, starting to handle request for clinet fd: " + to_string(client_fd));
 	handleHttpRequest(client_fd, request, response);
 }
 

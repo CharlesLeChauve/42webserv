@@ -85,16 +85,17 @@ int main(int argc, char* argv[]) {
         for (size_t i = 0; i < poll_fds.size(); ++i) {
             if (poll_fds[i].revents == 0)
                 continue;
-
             // Gérer les erreurs
             if (poll_fds[i].revents & POLLERR) {
 				Logger::instance().log(ERROR, "Erreur sur le descripteur FD : " + to_string(poll_fds[i].fd));
                 if (fdToServerMap.find(poll_fds[i].fd) != fdToServerMap.end()) {
                     // C'est un socket serveur
                     // Vous pouvez décider de fermer le serveur ou de gérer l'erreur autrement
+                    Logger::instance().log(ERROR, "Error on Server socket detected in poll")
 					//?? Et du coup on décide quoi ?
                 } else {
                     // C'est un socket client
+                    Logger::instance().log(ERROR, "Error on Client socket detected in poll")
                     close(poll_fds[i].fd);
                     clientFdToServerMap.erase(poll_fds[i].fd);
                     poll_fds.erase(poll_fds.begin() + i);
@@ -125,6 +126,7 @@ int main(int argc, char* argv[]) {
                 if (fdToServerMap.find(poll_fds[i].fd) != fdToServerMap.end()) {
                     // C'est un descripteur de socket serveur, accepter une nouvelle connexion
                     Server* server = fdToServerMap[poll_fds[i].fd];
+                    //?? la fonction acceptNewClient semble etre appelée 2 fois à chaque connexion
                     int client_fd = server->acceptNewClient(poll_fds[i].fd);
 
                     if (client_fd != -1) {
@@ -135,7 +137,7 @@ int main(int argc, char* argv[]) {
                         client_pollfd.events = POLLIN | POLLHUP | POLLERR;
                         client_pollfd.revents = 0;
                         poll_fds.push_back(client_pollfd);
-						Logger::instance().log(INFO, "Nouveau client FD : " + to_string(client_fd) + " accepté sur le serveur FD : " + to_string(poll_fds[i].fd));
+						Logger::instance().log(DEBUG, "New pollfd added for client with FD: " + to_string(client_fd) + " accepté sur le serveur FD : " + to_string(poll_fds[i].fd));
                     } else {
 						Logger::instance().log(ERROR, "Échec de l'acceptation du client sur le serveur FD : " + to_string(poll_fds[i].fd));
                     }
@@ -143,9 +145,9 @@ int main(int argc, char* argv[]) {
                     // C'est un descripteur de socket client, traiter la requête
                     Server* server = clientFdToServerMap[poll_fds[i].fd];
                     if (server != NULL) {
+                        Logger::instance().log(INFO, "Begin to handle request for client FD: " + to_string(poll_fds[i].fd));
                         server->handleClient(poll_fds[i].fd);
                     }
-
                     // Fermer et supprimer la connexion du client du poll_fds
                     close(poll_fds[i].fd);
                     clientFdToServerMap.erase(poll_fds[i].fd);
