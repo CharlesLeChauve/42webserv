@@ -73,7 +73,7 @@ void Socket::socket_binding() {
 		_socket_fd = -1;
 		return;
 	}
-	Logger::instance().log(INFO, "Socket successfully bound to port " + to_string(_port));
+	Logger::instance().log(INFO, "Socket " + to_string(_socket_fd) + " successfully bound to port " + to_string(_port));
 }
 
 void Socket::socket_listening() {
@@ -85,7 +85,7 @@ void Socket::socket_listening() {
 		_socket_fd = -1;
 		return;
 	}
-	Logger::instance().log(INFO, "Socket is now listening on port " + to_string(_port));
+	Logger::instance().log(INFO, "Socket " + to_string(_socket_fd) + " is now listening on port " + to_string(_port));
 }
 
 
