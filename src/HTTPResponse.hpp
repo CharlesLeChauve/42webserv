@@ -24,6 +24,7 @@ public:
     std::string getStrHeader(std::string header) const;
 
     std::string toString() const;
+    std::string toStringHeaders() const;
 
 private:
     int _statusCode;

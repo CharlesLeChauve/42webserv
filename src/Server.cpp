@@ -69,7 +69,7 @@ std::string Server::receiveRequest(int client_fd) {
             break;
         }
 
-        Logger::instance().log(DEBUG, std::string("Receiving data via read: \n") + buffer);
+        Logger::instance().log(DEBUG, std::string("Receiving data..."));
         request.append(buffer, bytes_received);
 
         if (!headers_received) {
@@ -126,14 +126,14 @@ std::string Server::receiveRequest(int client_fd) {
             }
         }
     }
-    Logger::instance().log(INFO, "Full request read : \n" + request);
+    Logger::instance().log(INFO, "Full request read.");
     return request;
 }
 
 void Server::sendResponse(int client_fd, HTTPResponse response) {
 	std::string responseString = response.toString();
 	write(client_fd, responseString.c_str(), responseString.size()); // Check error : 0 / -1
-    Logger::instance().log(WARNING, "Response sent to client; No verif on write : \n" + responseString);
+    Logger::instance().log(WARNING, "Response sent to client; No verif on write : \n" + response.toStringHeaders());
 }
 
 void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response) {

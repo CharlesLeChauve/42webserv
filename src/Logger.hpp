@@ -33,6 +33,11 @@ private:
     std::ofstream warningFile;
     std::ofstream errorFile;
 
+    std::string lastMessage;
+    LoggerLevel lastLevel;
+    int repeatCount;
+    void writeToLogs(LoggerLevel level, const std::string& output);
+
 	bool logToStderr;
 };
 

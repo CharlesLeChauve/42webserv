@@ -11,7 +11,7 @@ Logger& Logger::instance() {
     return instance;
 }
 
-Logger::Logger() : logToStderr(false) {
+Logger::Logger() : repeatCount(0), logToStderr(false) {
     struct stat st;
     if (stat("logs", &st) != 0) {
         mkdir("logs", 0755);
@@ -72,38 +72,67 @@ Logger::~Logger() {
         errorFile.close();
 }
 
-void Logger::log(LoggerLevel level, const std::string& message) {
-    std::string output = getLevelString(level) + ": " + message + "\n";
-
-	if (logToStderr) {
-        // Rediriger tous les logs vers std::cerr
+void Logger::writeToLogs(LoggerLevel level, const std::string& output) {
+    if (logToStderr) {
         std::cerr << output;
         std::cerr.flush();
         return;
     }
 
-    // Écrire dans debug.log
     if (debugFile.is_open()) {
         debugFile << output;
         debugFile.flush();
     }
 
-    // Écrire dans info.log si le niveau est INFO
     if ((level == INFO || level == WARNING || level == ERROR) && infoFile.is_open()) {
         infoFile << output;
         infoFile.flush();
     }
 
-    // Écrire dans warning.log si le niveau est WARNING ou ERROR
     if ((level == WARNING || level == ERROR) && warningFile.is_open()) {
         warningFile << output;
         warningFile.flush();
     }
 
-    // Écrire dans error.log si le niveau est ERROR
     if (level == ERROR && errorFile.is_open()) {
         errorFile << output;
         errorFile.flush();
+    }
+}
+
+void Logger::log(LoggerLevel level, const std::string& message) {
+    if (repeatCount == 0) {
+        // First message, output it
+        std::string output = getLevelString(level) + ": " + message + "\n";
+        writeToLogs(level, output);
+
+        // Update the last message and level
+        lastMessage = message;
+        lastLevel = level;
+        repeatCount = 1;
+    } else if (message == lastMessage && level == lastLevel) {
+        // Same message as before, increment the counter
+        repeatCount++;
+    } else {
+        // Different message
+        if (repeatCount > 1) {
+            // Output the summary of hidden lines
+            std::string hiddenMessage = "[ " + std::to_string(repeatCount - 2) + " similar lines hidden ]\n";
+            writeToLogs(lastLevel, hiddenMessage);
+
+            // Output the last repeated message
+            std::string lastOutput = getLevelString(lastLevel) + ": " + lastMessage + "\n";
+            writeToLogs(lastLevel, lastOutput);
+        }
+
+        // Output the new message
+        std::string output = getLevelString(level) + ": " + message + "\n";
+        writeToLogs(level, output);
+
+        // Reset the repeat counter and update the last message and level
+        repeatCount = 1;
+        lastMessage = message;
+        lastLevel = level;
     }
 }
 

@@ -24,7 +24,7 @@ public:
 
 	bool parse(const std::string& raw_request);
     std::string toString() const;
-
+    std::string toStringHeaders() const;
 
 private:
 	std::string _method;

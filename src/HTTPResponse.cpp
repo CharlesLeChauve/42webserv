@@ -93,7 +93,7 @@ std::string HTTPResponse::getStrHeader(std::string header) const {
 	return it->second;
 }
 
-std::string HTTPResponse::toString() const {
+std::string HTTPResponse::toStringHeaders() const {
 	std::ostringstream oss;
 	oss << "HTTP/1.1 " << _statusCode << " " << _reasonPhrase << "\r\n";
 
@@ -101,6 +101,12 @@ std::string HTTPResponse::toString() const {
 	for (std::map<std::string, std::string>::const_iterator it = _headers.begin(); it != _headers.end(); ++it) {
 		oss << it->first << ": " << it->second << "\r\n";
 	}
+	return oss.str();
+}
+
+std::string HTTPResponse::toString() const {
+	std::ostringstream oss;
+	oss << toStringHeaders();
 
 	oss << "\r\n"; // Fin des en-têtes
 	oss << _body;  // Corps de la réponse

@@ -151,17 +151,21 @@ void HTTPRequest::trim(std::string& s) const {
 	}
 }
 
-std::string HTTPRequest::toString() const {
+std::string HTTPRequest::toStringHeaders() const {
 	std::ostringstream oss;
-	// oss << "HTTP/1.1 " << _statusCode << " " << _reasonPhrase << "\r\n";
 
-	// Ajouter les en-têtes
 	for (std::map<std::string, std::string>::const_iterator it = _headers.begin(); it != _headers.end(); ++it) {
 		oss << it->first << ": " << it->second << "\r\n";
 	}
+	return oss.str();
+}
+
+std::string HTTPRequest::toString() const {
+	std::ostringstream oss;
+	oss << toStringHeaders();
 
 	oss << "\r\n"; // Fin des en-têtes
-	oss << _body;  // Corps de la requete
+	oss << _body;  // Corps de la réponse
 
 	return oss.str();
 }
