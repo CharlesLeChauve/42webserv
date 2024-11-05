@@ -23,6 +23,8 @@ public:
 	void trim(std::string& s) const;
 
 	bool parse(const std::string& raw_request);
+    std::string toString() const;
+
 
 private:
 	std::string _method;

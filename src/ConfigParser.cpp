@@ -15,6 +15,7 @@ ConfigParser::~ConfigParser() {}
 void ConfigParser::parseConfigFile(const std::string &filename) {
     std::ifstream file(filename.c_str());
     if (!file.is_open()) {
+        Logger::instance().log(ERROR, "Unable to open configuration file: " + filename);
         throw ConfigParserException("Unable to open configuration file: " + filename);
     }
 

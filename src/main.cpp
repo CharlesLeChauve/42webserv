@@ -32,12 +32,14 @@ int main(int argc, char* argv[]) {
         return 1;
     } else {
         configFile = (argc == 1 ? "config/server.conf" : argv[1]);
+        Logger::instance().log(DEBUG, "Config File Content : " + configFile);
     }
     initialize_random_generator();
     ConfigParser configParser;
 
     try {
         configParser.parseConfigFile(configFile);
+        Logger::instance().log(DEBUG, "Config file successfully parsed");
     } catch (const ConfigParserException& e) {
 		Logger::instance().log(ERROR, std::string("Échec de l'analyse du fichier de configuration : ") + e.what());
         return 1;
@@ -90,7 +92,7 @@ int main(int argc, char* argv[]) {
                 if (fdToServerMap.find(poll_fds[i].fd) != fdToServerMap.end()) {
                     // C'est un socket serveur
                     // Vous pouvez décider de fermer le serveur ou de gérer l'erreur autrement
-					// Et du coup on décide quoi ??
+					//?? Et du coup on décide quoi ?
                 } else {
                     // C'est un socket client
                     close(poll_fds[i].fd);

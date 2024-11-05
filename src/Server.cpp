@@ -40,7 +40,9 @@ std::string getSorryPath() {
 	srand(time(NULL));
 	int num = rand() % 6;
 	num++;
-	return "images/" + to_string(num) + "-sorry.gif";
+    std::string path = "images/" + to_string(num) + "-sorry.gif";
+    Logger::instance().log(DEBUG, "path for error sorry gif : " + path);
+	return path;
 }
 
 std::string Server::receiveRequest(int client_fd) {
@@ -67,6 +69,7 @@ std::string Server::receiveRequest(int client_fd) {
             break;
         }
 
+        Logger::instance().log(DEBUG, std::string("Receiving data via read: \n") + buffer);
         request.append(buffer, bytes_received);
 
         if (!headers_received) {
@@ -123,13 +126,14 @@ std::string Server::receiveRequest(int client_fd) {
             }
         }
     }
-
+    Logger::instance().log(INFO, "Full request read : \n" + request);
     return request;
 }
 
 void Server::sendResponse(int client_fd, HTTPResponse response) {
 	std::string responseString = response.toString();
 	write(client_fd, responseString.c_str(), responseString.size()); // Check error : 0 / -1
+    Logger::instance().log(WARNING, "Response sent to client; No verif on write : \n" + responseString);
 }
 
 void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response) {
@@ -138,6 +142,7 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPRe
     if (location && !location->allowedMethods.empty()) {
         if (std::find(location->allowedMethods.begin(), location->allowedMethods.end(), request.getMethod()) == location->allowedMethods.end()) {
             sendErrorResponse(client_fd, 405); // Méthode non autorisée
+            Logger::instance().log(WARNING, "405 error (Forbidden) sent on request : \n" + request.toString());
             return;
         }
     }
@@ -153,11 +158,13 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPRe
             int port = std::atoi(portStr.c_str());
             if (port != _config.ports.at(0)) {
                 sendErrorResponse(client_fd, 404); // Not Found
+                Logger::instance().log(WARNING, "404 error (Not Found) sent on request : \n" + request.toString());
                 return;
             }
         }
     } else {
         sendErrorResponse(client_fd, 400); // Mauvaise requête
+        Logger::instance().log(WARNING, "400 error (Bad Request) sent on request : \n" + request.toString());
         return;
     }
 
@@ -168,6 +175,8 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPRe
         handleDeleteRequest(client_fd, request);
     } else {
         sendErrorResponse(client_fd, 405); // Méthode non autorisée
+        //??Est ce qu'on devrait pas mettre l'erreur Unknown Method
+        Logger::instance().log(WARNING, "405 error (Forbidden) sent on request : \n" + request.toString());
     }
 }
 
@@ -206,12 +215,14 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
     std::string requestBody = request.getBody();
     std::string boundaryMarker = "--" + boundary;
     std::string endBoundaryMarker = boundaryMarker + "--";
+    std::string filename;
     size_t pos = 0;
     size_t endPos = 0;
 
     while (true) {
         pos = requestBody.find(boundaryMarker, endPos);
         if (pos == std::string::npos) {
+            Logger::instance().log(WARNING, "No Boundary Marker found in body for Upload.");
             break;
         }
         pos += boundaryMarker.length();
@@ -226,6 +237,7 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
         // Extraire les en-têtes de la partie
         size_t headersEnd = requestBody.find("\r\n\r\n", pos);
         if (headersEnd == std::string::npos) {
+            Logger::instance().log(WARNING, "Miss \\r\\n\\r\\n in request for Upload");
             break;
         }
         std::string partHeaders = requestBody.substr(pos, headersEnd - pos);
@@ -253,17 +265,18 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
 		{
             size_t filenamePos = partHeaders.find("filename=\"") + 10;
             size_t filenameEnd = partHeaders.find("\"", filenamePos);
-            std::string filename = partHeaders.substr(filenamePos, filenameEnd - filenamePos);
+            filename = partHeaders.substr(filenamePos, filenameEnd - filenamePos);
             try {
+                //?? Ici, il faudra utiliser les éléments du conf pour savoir si c'est autorisé, et passer en adresse celle requise par la requete
                 UploadHandler uploadHandler("www/uploads/" + filename, partContent, this->_config);
             } catch (const std::exception& e) {
-                Logger::instance().log(ERROR, std::string("Erreur lors de l'upload du fichier : ") + e.what());
+                Logger::instance().log(ERROR, std::string("Error while opening file: ") + e.what());
                 response.setStatusCode(500);
                 response.setBody("Erreur lors de l'upload du fichier.");
                 return;
             }
         } else {
-             
+             //?? Else what ??
         }
         endPos = endPos + boundaryMarker.length();
     }
@@ -273,7 +286,9 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
                      "    window.location.href = 'index.html';"
                      "}, 3500);"
                      "</script>";
-    response.setBody(script + "Fichier uploadé avec succès, Vous allez etre redirigé vers la page d'Accueil.");
+    response.setBody(script + "<head><meta charset=UTF-8></head>Fichier uploadé avec succès, Vous allez etre redirigé vers la page d'Accueil.");
+    //?? Enlever www/uploads pour mettre le path requis
+    Logger::instance().log(INFO, "Successfully uploaded file: " + filename + " at Address: " + "www/uploads");
 }
 
 // Modification de la méthode handleGetOrPostRequest
@@ -298,8 +313,10 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
                 return;
 			}
 		}
-		else
+		else {
 			sendErrorResponse(client_fd, 400); // Bad request
+            Logger::instance().log(WARNING, "400 error (Bad Request) sent on request : \n" + request.toString());
+        }
 	}
 	else if (hasCgiExtension(fullPath)) {
         Logger::instance().log(DEBUG, "CGI extension detected for path: " + fullPath);
@@ -310,7 +327,7 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
             CGIHandler cgiHandler;
             std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
 
-            write(client_fd, cgiOutput.c_str(), cgiOutput.length()); //CHECK ERROR : 0 / -1
+            write(client_fd, cgiOutput.c_str(), cgiOutput.length()); //?? CHECK ERROR : 0 / -1
         }
     } else {
         Logger::instance().log(DEBUG, "No CGI extension detected for path: " + fullPath + ". Serving as static file.");
@@ -322,6 +339,7 @@ void Server::handleDeleteRequest(int client_fd, const HTTPRequest& request) {
 	std::string fullPath = _config.root + request.getPath();
 	HTTPResponse response;
 	if (access(fullPath.c_str(), F_OK) == -1) {
+        Logger::instance().log(WARNING, "404 error (Not Found) sent on DELETE request for address: \n" + _config.root + request.getPath());
 		sendErrorResponse(client_fd, 404);
 	} else {
 		if (remove(fullPath.c_str()) == 0) {
@@ -331,9 +349,10 @@ void Server::handleDeleteRequest(int client_fd, const HTTPRequest& request) {
 			std::string body = "<html><body><h1>File deleted successfully</h1></body></html>";
 			response.setHeader("Content-Length", to_string(body.size()));
 			response.setBody(body);
-
+            Logger::instance().log(INFO, "Successful DELETE on resource : " + fullPath);
 			sendResponse(client_fd, response);
 		} else {
+            Logger::instance().log(WARNING, "500 error (Internal Server Error) to DELETE: " + fullPath + ": remove() failed");
 			sendErrorResponse(client_fd, 500);
 		}
 	}
@@ -344,15 +363,19 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath,
 	struct stat pathStat;
 	if (stat(filePath.c_str(), &pathStat) == 0 && S_ISDIR(pathStat.st_mode)) {
 		// Gérer les répertoires en cherchant un fichier index
+        Logger::instance().log(INFO, "Request File Path is a dir, Searching for an index page...");
 		std::string indexPath = filePath + "/" + _config.index;
 		if (access(indexPath.c_str(), F_OK) != -1) {
+            Logger::instance().log(INFO, "Found : " + indexPath);
 			serveStaticFile(client_fd, indexPath, response);
 		} else {
+            Logger::instance().log(INFO, indexPath + " Not found, 404 error (Not Found) sent.");
 			sendErrorResponse(client_fd, 404);
 		}
 	} else {
 		std::ifstream file(filePath.c_str(), std::ios::binary);
 		if (file) {
+            Logger::instance().log(INFO, "Serving static file found at : " + filePath);
 			std::stringstream buffer;
 			buffer << file.rdbuf();
 			std::string content = buffer.str();
@@ -374,23 +397,17 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath,
 					contentType = "image/jpeg";
 				else if (extension == ".gif")
 					contentType = "image/gif";
+                //?? Pas de else ?
 			}
 
 			response.setHeader("Content-Type", contentType);
 			response.setHeader("Content-Length", to_string(content.size()));
-
-			// Gestion des cookies si nécessaire
-			// response.setHeader("Set-Cookie", "theme=light; Path=/;");
-
 			response.setBody(content);
-
-			std::cout << std::endl
-					  << "Set-Cookie header : " << response.getStrHeader("Set-Cookie")
-					  << std::endl
-					  << std::endl;
+			std::cout << "Set-Cookie header : " << response.getStrHeader("Set-Cookie") << std::endl;
 
 			sendResponse(client_fd, response);
 		} else {
+            Logger::instance().log(WARNING, "Requested file not found: " + filePath + "; 404 error sent");
 			sendErrorResponse(client_fd, 404);
 		}
 	}
@@ -430,6 +447,7 @@ void Server::handleClient(int client_fd) {
 	HTTPResponse response;
 
 	if (!request.parse(requestString)) {
+        Logger::instance().log(ERROR, "Failed to parse client request on fd" + to_string(client_fd) + "; 400 error (Bad Request) sent");
 		sendErrorResponse(client_fd, 400);  // Mauvaise requête
 		return;
 	}
@@ -437,7 +455,6 @@ void Server::handleClient(int client_fd) {
 	SessionManager session(request.getStrHeader("Cookie"));
 	if (session.getFirstCon())
 		response.setHeader("Set-Cookie", session.getSessionId() + "; Path=/; HttpOnly");
-
 	handleHttpRequest(client_fd, request, response);
 }
 
@@ -450,12 +467,13 @@ void Server::sendErrorResponse(int client_fd, int errorCode) {
 	if (it != _config.errorPages.end()) {
 		std::string errorPagePath = _config.root + it->second;  // Chemin complet
 		std::ifstream errorFile(errorPagePath.c_str(), std::ios::binary);
+        Logger::instance().log(INFO, "Error page found in config file, searching for : " + errorPagePath);
 		if (errorFile) {
 			std::stringstream buffer;
 			buffer << errorFile.rdbuf();
 			errorContent = buffer.str();
 		} else {
-            Logger::instance().log(WARNING, "Impossible d'ouvrir le fichier d'erreur personnalisé : " + errorPagePath);
+            Logger::instance().log(WARNING, "Failed to open custom error page : " + errorPagePath + "; Serving default");
 			// Laisser errorContent vide pour utiliser la page d'erreur par défaut
 		}
 	}

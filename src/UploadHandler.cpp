@@ -19,6 +19,7 @@ UploadHandler::UploadHandler(const std::string& destPath, const std::string& fil
     }
     std::ofstream destFile(destPath.c_str(), std::ios::binary);
     if (!destFile.is_open()) {
+        Logger::instance().log(ERROR, "Failed to open dest file on server's file system");
         throw std::runtime_error("Failed to open destination file.");
     }
 
