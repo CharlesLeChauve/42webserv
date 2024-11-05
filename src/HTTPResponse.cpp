@@ -13,11 +13,20 @@ void HTTPResponse::setStatusCode(int code) {
 	switch (code) {
 		case 200: _reasonPhrase = "OK"; break;
 		case 201: _reasonPhrase = "Created"; break;
-		case 404: _reasonPhrase = "Not Found"; break;
-		case 500: _reasonPhrase = "Internal Server Error"; break;
 		case 400: _reasonPhrase = "Bad Request"; break;
+		case 401: _reasonPhrase = "Unauthorized"; break;
 		case 403: _reasonPhrase = "Forbidden"; break;
+		case 404: _reasonPhrase = "Not Found"; break;
 		case 405: _reasonPhrase = "Method Not Allowed"; break;
+		case 408: _reasonPhrase = "Request Timeout"; break; // le serveur ne reçoit pas de requête complète dans un délai défini.
+		case 413: _reasonPhrase = "Payload Too Large"; break; // fichier téléchargé dépasse la limite autorisée.
+		case 415: _reasonPhrase = "Unsupported Media Type"; break; // Si certains types de fichiers ne sont pas acceptés.
+		case 429: _reasonPhrase = "Too Many Requests"; break; // trop grand nombre de requêtes en peu de temps (si limite)
+		case 500: _reasonPhrase = "Internal Server Error"; break;
+		case 502: _reasonPhrase = "Bad Gateway"; break; // un serveur (agissant comme une passerelle ou un proxy, style NGINX) a reçu une réponse invalide ou inattendue d'un autre serveur en amont
+		case 503: _reasonPhrase = "Service Unavailable"; break; // le serveur n'est pas prêt à traiter la requête (surcharge, maintenance, etc.).
+		case 504: _reasonPhrase = "Gateway Timeout"; break; //un des serveurs, passerelle ou proxy, n'a pas reçu une réponse à temps de la part d'un autre serveur (ou interface) qu'il a interrogé pour obtenir une réponse à la requête
+
 		default: _reasonPhrase = "Unknown";
 	}
 }

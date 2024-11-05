@@ -13,6 +13,7 @@
 #include "CGIHandler.hpp"
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
+#include <algorithm>
 
 class Socket;
 

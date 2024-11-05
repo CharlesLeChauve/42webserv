@@ -3,6 +3,8 @@
 
 #include <string>
 #include <map>
+#include <vector>
+
 
 struct Location {
 	std::string path;
