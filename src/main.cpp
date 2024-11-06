@@ -130,7 +130,6 @@ int main(int argc, char* argv[]) {
                 if (fdToServerMap.find(poll_fds[i].fd) != fdToServerMap.end()) {
                     // C'est un descripteur de socket serveur, accepter une nouvelle connexion
                     Server* server = fdToServerMap[poll_fds[i].fd];
-                    //?? la fonction acceptNewClient semble etre appelée 2 fois à chaque connexion
                     int client_fd = server->acceptNewClient(poll_fds[i].fd);
 
                     if (client_fd != -1) {

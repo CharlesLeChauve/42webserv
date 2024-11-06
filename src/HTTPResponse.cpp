@@ -13,6 +13,10 @@ void HTTPResponse::setStatusCode(int code) {
 	switch (code) {
 		case 200: _reasonPhrase = "OK"; break;
 		case 201: _reasonPhrase = "Created"; break;
+		case 301: _reasonPhrase = "Moved Permanently"; break; // indique que la ressource a définitivement été déplacée à l'URL contenue dans l'en-tête Location
+		case 303: _reasonPhrase = "See Other"; break; // renvoyé comme résultat d'une opération PUT ou POST, indique que la redirection ne fait pas le lien vers la ressource nouvellement téléversée mais vers une autre page
+		case 307: _reasonPhrase = "Temporary Redirect"; break; // indique que la ressource demandée est temporairement déplacée vers l'URL contenue dans l'en-tête Location
+		case 308: _reasonPhrase = "Permanent Redirect"; break; // indique que la ressource demandée à définitivement été déplacée vers l'URL contenue dans l'en-tête Location. Un navigateur redirigera vers cette page et les moteurs de recherche mettront à jour leurs liens vers la ressource
 		case 400: _reasonPhrase = "Bad Request"; break;
 		case 401: _reasonPhrase = "Unauthorized"; break;
 		case 403: _reasonPhrase = "Forbidden"; break;
@@ -21,8 +25,10 @@ void HTTPResponse::setStatusCode(int code) {
 		case 408: _reasonPhrase = "Request Timeout"; break; // le serveur ne reçoit pas de requête complète dans un délai défini.
 		case 413: _reasonPhrase = "Payload Too Large"; break; // fichier téléchargé dépasse la limite autorisée.
 		case 415: _reasonPhrase = "Unsupported Media Type"; break; // Si certains types de fichiers ne sont pas acceptés.
+		case 418: _reasonPhrase = "I'm a teapot"; break; //?? Where should we implement it ?
 		case 429: _reasonPhrase = "Too Many Requests"; break; // trop grand nombre de requêtes en peu de temps (si limite)
 		case 500: _reasonPhrase = "Internal Server Error"; break;
+		case 501: _reasonPhrase = "Method Not Implemented"; break;
 		case 502: _reasonPhrase = "Bad Gateway"; break; // un serveur (agissant comme une passerelle ou un proxy, style NGINX) a reçu une réponse invalide ou inattendue d'un autre serveur en amont
 		case 503: _reasonPhrase = "Service Unavailable"; break; // le serveur n'est pas prêt à traiter la requête (surcharge, maintenance, etc.).
 		case 504: _reasonPhrase = "Gateway Timeout"; break; //un des serveurs, passerelle ou proxy, n'a pas reçu une réponse à temps de la part d'un autre serveur (ou interface) qu'il a interrogé pour obtenir une réponse à la requête
