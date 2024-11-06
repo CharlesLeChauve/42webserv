@@ -72,7 +72,11 @@ std::string CGIHandler::executeCGI(const std::string& scriptPath, const HTTPRequ
         close(pipefd_in[0]);
 
         if (request.getMethod() == "POST") {
-            write(pipefd_in[1], request.getBody().c_str(), request.getBody().size());
+            int bytes_written = write(pipefd_in[1], request.getBody().c_str(), request.getBody().size());
+            if (bytes_written == -1) {
+                sendErrorResponse(client_fd, 500); // Internal server error
+                Logger::instance().log(WARNING, "500 error (Internal Server Error) for writing"); // To specify i'm tired.
+            }
         }
         close(pipefd_in[1]);
 

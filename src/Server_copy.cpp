@@ -66,7 +66,7 @@ std::string Server::receiveRequest(int client_fd) {
         } else if (bytes_received < 0) {
             // Error reading from client
             Logger::instance().log(ERROR, "Error reading from client. Please check the connection.");
-             //?? Handle different types error (status code).
+             //?? Must handle different types error (status code).
             break;
         }
 
@@ -306,7 +306,7 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
 
     // Log to verify the complete path
     Logger::instance().log(DEBUG, "handleGetOrPostRequest: fullPath =" + fullPath);
-
+    //?? ici, changet le getPath() == pour regarder la config
 	if (request.getMethod() == "POST" && request.getPath() == "/uploads" && request.hasHeader("Content-Type")) {
         std::string contentType = request.getStrHeader("Content-Type");
         if (contentType.find("multipart/form-data") != std::string::npos) {
@@ -433,7 +433,7 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath,
 }
 
 int Server::acceptNewClient(int server_fd) {
-    Logger::instance().log(INFO, "Acceptin new Connection on socket FD: " + to_string(server_fd));
+    Logger::instance().log(INFO, "Accepting new Connection on socket FD: " + to_string(server_fd));
 	if (server_fd <= 0) {
         Logger::instance().log(ERROR, "Invalid server FD: " + to_string(server_fd));
 		return -1;

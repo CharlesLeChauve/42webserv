@@ -3,6 +3,7 @@
 #define CONFIGPARSER_HPP
 
 #include "ServerConfig.hpp"
+#include "Logger.hpp"
 #include <vector>
 #include <string>
 #include <map>

@@ -66,6 +66,7 @@ std::string Server::receiveRequest(int client_fd) {
         } else if (bytes_received < 0) {
             // Error reading from client
             Logger::instance().log(ERROR, "Error reading from client. Please check the connection.");
+             //?? Must handle different types error (status code).
             break;
         }
 
@@ -132,7 +133,11 @@ std::string Server::receiveRequest(int client_fd) {
 
 void Server::sendResponse(int client_fd, HTTPResponse response) {
 	std::string responseString = response.toString();
-	write(client_fd, responseString.c_str(), responseString.size()); // Check error : 0 / -1
+	int bytes_written = write(client_fd, responseString.c_str(), responseString.size()); // Check error
+    if (bytes_written == -1) {
+        sendErrorResponse(client_fd, 500); // Internal server error
+        Logger::instance().log(WARNING, "500 error (Internal Server Error) for failing to send response");
+    }
     Logger::instance().log(WARNING, "Response sent to client; No verif on write : \n" + response.toStringHeaders());
 }
 
@@ -174,9 +179,8 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPRe
     } else if (request.getMethod() == "DELETE") {
         handleDeleteRequest(client_fd, request);
     } else {
-        sendErrorResponse(client_fd, 405); // Méthode non autorisée
-        //??Est ce qu'on devrait pas mettre l'erreur Unknown Method
-        Logger::instance().log(WARNING, "405 error (Forbidden) sent on request : \n" + request.toString());
+        sendErrorResponse(client_fd, 501); // Not implemented method
+        Logger::instance().log(WARNING, "501 error (Not Implemented) sent on request : \n" + request.toString());
     }
 }
 
@@ -221,7 +225,9 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
         pos = requestBody.find(boundaryMarker, endPos);
         if (pos == std::string::npos) {
             Logger::instance().log(WARNING, "No Boundary Marker found in body for Upload.");
-            break;
+            response.setStatusCode(400);
+            response.setBody("Bad Request: No Boundary Marker found in body for upload");
+            return;
         }
         pos += boundaryMarker.length();
 
@@ -236,7 +242,9 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
         size_t headersEnd = requestBody.find("\r\n\r\n", pos);
         if (headersEnd == std::string::npos) {
             Logger::instance().log(WARNING, "Miss \\r\\n\\r\\n in request for Upload");
-            break;
+            response.setStatusCode(400);
+            response.setBody("Bad Request: Miss \\r\\n\\r\\n in request for Upload");
+            return;
         }
         std::string partHeaders = requestBody.substr(pos, headersEnd - pos);
         pos = headersEnd + 4; // Position du début du contenu
@@ -245,7 +253,9 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
         endPos = requestBody.find(boundaryMarker, pos);
         if (endPos == std::string::npos) {
             Logger::instance().log(ERROR, "End Boundary Marker not found.");
-            break;
+            response.setStatusCode(400);
+            response.setBody("Bad Request: End Boundary Marker not found.");
+            return;
         }
         size_t contentEnd = endPos;
 
@@ -270,11 +280,14 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
             } catch (const std::exception& e) {
                 Logger::instance().log(ERROR, std::string("Error while opening file: ") + e.what());
                 response.setStatusCode(500);
-                response.setBody("Erreur lors de l'upload du fichier.");
+                response.setBody("Internal Server Error: Erreur lors de l'upload du fichier.");
                 return;
             }
         } else {
-             //?? Else what ??
+            Logger::instance().log(ERROR, std::string("Error while looking for the file in the request:") + partHeaders);
+            response.setStatusCode(400);
+            response.setBody("Bad Request: File not found.");
+            return;
         }
         endPos = endPos + boundaryMarker.length();
     }
@@ -289,15 +302,12 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
     Logger::instance().log(INFO, "Successfully uploaded file: " + filename + " at Address: " + "www/uploads");
 }
 
-// Modification de la méthode handleGetOrPostRequest
 void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response) {
     std::string fullPath = _config.root + request.getPath();
 
     // Log to verify the complete path
     Logger::instance().log(DEBUG, "handleGetOrPostRequest: fullPath =" + fullPath);
-
-    // Vérifier si le fichier a une extension CGI (.cgi, .sh, .php)
-    //?? ici, changet le getPath() == pour regarder la config
+    //?? ici, changer le getPath() == pour regarder la config
 	if (request.getMethod() == "POST" && request.getPath() == "/uploads" && request.hasHeader("Content-Type")) {
         std::string contentType = request.getStrHeader("Content-Type");
         if (contentType.find("multipart/form-data") != std::string::npos) {
@@ -307,8 +317,12 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
 			if (boundaryPos != std::string::npos) {
 				std::string boundary = contentType.substr(boundaryPos + 9);
 				handleFileUpload(request, response, boundary);
-                std::string responseText = response.toString();  // Assure-toi que response.toString() génère la réponse complète
-                write(client_fd, responseText.c_str(), responseText.length());  // Envoie la réponse
+                std::string responseText = response.toString(); //?? Check for errors if it's better to use sendErrorResponse instead of toString().
+                int bytes_written = write(client_fd, responseText.c_str(), responseText.length());  // Envoie la réponse
+                if (bytes_written == -1) {
+                    sendErrorResponse(client_fd, 500); // Internal server error
+                    Logger::instance().log(WARNING, "500 error (Internal Server Error) to File Upload response for failing to send response");
+                }
                 return;
 			}
 		}
@@ -316,7 +330,7 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
 			sendErrorResponse(client_fd, 400); // Bad request
             Logger::instance().log(WARNING, "400 error (Bad Request) sent on request : \n" + request.toString());
         }
-	}
+	}// Vérifier si le fichier a une extension CGI (.cgi, .sh, .php)
 	else if (hasCgiExtension(fullPath)) {
         Logger::instance().log(DEBUG, "CGI extension detected for path: " + fullPath);
         if (access(fullPath.c_str(), F_OK) == -1) {
@@ -326,7 +340,11 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
             CGIHandler cgiHandler;
             std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
 
-            write(client_fd, cgiOutput.c_str(), cgiOutput.length()); //?? CHECK ERROR : 0 / -1
+            int bytes_written = write(client_fd, cgiOutput.c_str(), cgiOutput.length()); //?? CHECK ERROR : 0 / -1
+            if (bytes_written == -1) {
+                sendErrorResponse(client_fd, 500); // Internal server error
+                Logger::instance().log(WARNING, "500 error (Internal Server Error) to CGI output response for failing to send response");
+            }
         }
     } else {
         Logger::instance().log(DEBUG, "No CGI extension detected for path: " + fullPath + ". Serving as static file.");
@@ -439,6 +457,7 @@ void Server::handleClient(int client_fd) {
 	std::string requestString = receiveRequest(client_fd);
 	if (requestString.empty()) {
         Logger::instance().log(ERROR, "Error receiving request.");
+        sendErrorResponse(client_fd, 400); // Request is empty.
 		return;
 	}
 

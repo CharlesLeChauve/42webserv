@@ -70,6 +70,8 @@
 #include "Utils.hpp"
 #include <string>
 #include <fstream>
+#include <iostream>
+#include <vector>
 
 class Logger {
 public:
