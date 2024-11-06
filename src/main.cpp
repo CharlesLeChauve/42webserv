@@ -12,7 +12,6 @@
 #include <ctime>
 
 void initialize_random_generator() {
-	Logger::instance().log(INFO, "Lancement du prgoramme");
     std::ifstream urandom("/dev/urandom", std::ios::binary);
     unsigned int seed;
     if (urandom.is_open()) {
@@ -25,14 +24,19 @@ void initialize_random_generator() {
 }
 
 int main(int argc, char* argv[]) {
-    Logger::instance().log(INFO, "Lancement du main");
+    Logger::instance().log(INFO, "Starting main");
     std::string configFile;
     if (argc > 2) {
         std::cerr << "Usage: " << argv[0] << " [path/to/file]" << std::endl;
         return 1;
     } else {
-        configFile = (argc == 1 ? "config/server.conf" : argv[1]);
-        Logger::instance().log(DEBUG, "Config File Content : " + configFile);
+        if (argc == 1) {
+            configFile = "config/server.conf";
+            Logger::instance().log(DEBUG, "Default configuration file loaded : " + configFile);
+        } else {
+            configFile = argv[1];
+            Logger::instance().log(DEBUG, "Custom configuration file loaded : " + configFile);
+        }
     }
     initialize_random_generator();
     ConfigParser configParser;
@@ -41,12 +45,12 @@ int main(int argc, char* argv[]) {
         configParser.parseConfigFile(configFile);
         Logger::instance().log(DEBUG, "Config file successfully parsed");
     } catch (const ConfigParserException& e) {
-		Logger::instance().log(ERROR, std::string("Échec de l'analyse du fichier de configuration : ") + e.what());
+		Logger::instance().log(ERROR, std::string("Failure in configuration parsing: ") + e.what());
         return 1;
     }
 
     const std::vector<ServerConfig>& serverConfigs = configParser.getServerConfigs();
-	Logger::instance().log(INFO, "Nombre de serveurs configurés : " + to_string(serverConfigs.size()));
+	Logger::instance().log(INFO, to_string(serverConfigs.size()) + " servers successfully cnfigured");
 
     std::vector<Server*> servers;
     std::vector<Socket*> sockets;
@@ -72,7 +76,7 @@ int main(int argc, char* argv[]) {
         servers.push_back(server);
         sockets.push_back(socket);
 
-		Logger::instance().log(INFO, "Serveur lancé sur le port " + to_string(serverConfigs[i].ports[0]));
+		Logger::instance().log(INFO, "Server launched, listenign on port: " + to_string(serverConfigs[i].ports[0]));
     }
 
     while (true) {
@@ -87,7 +91,7 @@ int main(int argc, char* argv[]) {
                 continue;
             // Gérer les erreurs
             if (poll_fds[i].revents & POLLERR) {
-				Logger::instance().log(ERROR, "Erreur sur le descripteur FD : " + to_string(poll_fds[i].fd));
+				Logger::instance().log(ERROR, "Error on file descriptor: " + to_string(poll_fds[i].fd));
                 if (fdToServerMap.find(poll_fds[i].fd) != fdToServerMap.end()) {
                     // C'est un socket serveur
                     // Vous pouvez décider de fermer le serveur ou de gérer l'erreur autrement
@@ -106,7 +110,7 @@ int main(int argc, char* argv[]) {
 
             // Gérer les déconnexions
             if (poll_fds[i].revents & POLLHUP) {
-				Logger::instance().log(INFO, "Client déconnecté : FD " + to_string(poll_fds[i].fd));
+				Logger::instance().log(INFO, "Disconnected client FD : " + to_string(poll_fds[i].fd));
                 close(poll_fds[i].fd);
                 clientFdToServerMap.erase(poll_fds[i].fd);
                 poll_fds.erase(poll_fds.begin() + i);
@@ -115,7 +119,7 @@ int main(int argc, char* argv[]) {
             }
 
             if (poll_fds[i].revents & POLLNVAL) {
-				Logger::instance().log(ERROR, "Descripteur de fichier non valide : FD " + to_string(poll_fds[i].fd));
+				Logger::instance().log(ERROR, "File descriptor not valid: " + to_string(poll_fds[i].fd));
                 // Supprimer le descripteur invalide
                 poll_fds.erase(poll_fds.begin() + i);
                 --i;
@@ -137,9 +141,9 @@ int main(int argc, char* argv[]) {
                         client_pollfd.events = POLLIN | POLLHUP | POLLERR;
                         client_pollfd.revents = 0;
                         poll_fds.push_back(client_pollfd);
-						Logger::instance().log(DEBUG, "New pollfd added for client with FD: " + to_string(client_fd) + " accepté sur le serveur FD : " + to_string(poll_fds[i].fd));
+						Logger::instance().log(DEBUG, "New pollfd added for client with FD: " + to_string(client_fd) + " accepted on server FD: " + to_string(poll_fds[i].fd));
                     } else {
-						Logger::instance().log(ERROR, "Échec de l'acceptation du client sur le serveur FD : " + to_string(poll_fds[i].fd));
+						Logger::instance().log(ERROR, "Failure accepting client " + to_string(client_fd) + " on server FD : " + to_string(poll_fds[i].fd));
                     }
                 } else {
                     // C'est un descripteur de socket client, traiter la requête

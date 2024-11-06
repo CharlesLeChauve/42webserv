@@ -30,11 +30,7 @@ Logger::Logger() : repeatCount(0), logToStderr(false) {
 
     // Vérifier et créer le répertoire timestampé s'il n'existe pas
     if (stat(logsDir.c_str(), &st) != 0) {
-        #ifdef _WIN32
-            _mkdir(logsDir.c_str());
-        #else
             mkdir(logsDir.c_str(), 0755);
-        #endif
     }
 
     // Construire les noms de fichiers avec le répertoire timestampé
@@ -58,6 +54,8 @@ Logger::Logger() : repeatCount(0), logToStderr(false) {
         if (infoFile.is_open()) infoFile.close();
         if (warningFile.is_open()) warningFile.close();
         if (errorFile.is_open()) errorFile.close();
+    } else {
+        this->log(INFO, std::string("Starting Program logs at : ") + timestamp);
     }
 }
 
@@ -102,19 +100,15 @@ void Logger::writeToLogs(LoggerLevel level, const std::string& output) {
 
 void Logger::log(LoggerLevel level, const std::string& message) {
     if (repeatCount == 0) {
-        // First message, output it
         std::string output = getLevelString(level) + ": " + message + "\n";
         writeToLogs(level, output);
 
-        // Update the last message and level
         lastMessage = message;
         lastLevel = level;
         repeatCount = 1;
     } else if (message == lastMessage && level == lastLevel) {
-        // Same message as before, increment the counter
         repeatCount++;
     } else {
-        // Different message
         if (repeatCount > 1) {
             // Output the summary of hidden lines
             std::string hiddenMessage = "[ " + std::to_string(repeatCount - 2) + " similar lines hidden ]\n";

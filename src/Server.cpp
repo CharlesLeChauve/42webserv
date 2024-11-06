@@ -183,7 +183,6 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPRe
 bool Server::hasCgiExtension(const std::string& path) const {
     // Logger le message initial
     std::ostringstream oss;
-    Logger::instance().log(DEBUG, "CGI Extensions for this server:");
     oss << "CGI Extensions for this server:" << std::endl;
     for (size_t i = 0; i < _config.cgiExtensions.size(); ++i) {
         oss << " - \"" << _config.cgiExtensions[i] << "\"";
@@ -197,7 +196,6 @@ bool Server::hasCgiExtension(const std::string& path) const {
         }
     }
 
-    // Logger le fait qu'aucune extension correspondante n'a été trouvée
     oss << "hasCgiExtension: No matching CGI extension for path " << path << std::endl;
     Logger::instance().log(DEBUG, oss.str());
     return false;
@@ -246,7 +244,7 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
         // Trouver le prochain boundary
         endPos = requestBody.find(boundaryMarker, pos);
         if (endPos == std::string::npos) {
-            Logger::instance().log(ERROR, "Boundary de fin introuvable.");
+            Logger::instance().log(ERROR, "End Boundary Marker not found.");
             break;
         }
         size_t contentEnd = endPos;
@@ -414,7 +412,7 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath,
 }
 
 int Server::acceptNewClient(int server_fd) {
-    Logger::instance().log(INFO, "Tentative d'acceptation d'une nouvelle connexion sur le socket FD: " + to_string(server_fd));
+    Logger::instance().log(INFO, "Acceptin new Connection on socket FD: " + to_string(server_fd));
 	if (server_fd <= 0) {
         Logger::instance().log(ERROR, "Invalid server FD: " + to_string(server_fd));
 		return -1;
@@ -425,7 +423,7 @@ int Server::acceptNewClient(int server_fd) {
 
 	int client_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
 	if (client_fd == -1) {
-        Logger::instance().log(ERROR, std::string("Erreur lors de l'acceptation de la connexion : ") + strerror(errno));
+        Logger::instance().log(ERROR, std::string("Error while accepting connection: ") + strerror(errno));
 		return -1;
 	}
 
@@ -439,7 +437,7 @@ void Server::handleClient(int client_fd) {
 	}
 	std::string requestString = receiveRequest(client_fd);
 	if (requestString.empty()) {
-        Logger::instance().log(ERROR, "Erreur lors de la réception de la requête.");
+        Logger::instance().log(ERROR, "Error receiving request.");
 		return;
 	}
 
@@ -456,7 +454,7 @@ void Server::handleClient(int client_fd) {
 	if (session.getFirstCon())
 		response.setHeader("Set-Cookie", session.getSessionId() + "; Path=/; HttpOnly");
     
-    Logger::instance().log(INFO, "Parsing OK, starting to handle request for clinet fd: " + to_string(client_fd));
+    Logger::instance().log(INFO, "Parsing OK, starting to handle request for client fd: " + to_string(client_fd));
 	handleHttpRequest(client_fd, request, response);
 }
 
