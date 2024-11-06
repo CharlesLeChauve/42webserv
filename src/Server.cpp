@@ -297,6 +297,7 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
     Logger::instance().log(DEBUG, "handleGetOrPostRequest: fullPath =" + fullPath);
 
     // Vérifier si le fichier a une extension CGI (.cgi, .sh, .php)
+    //?? ici, changet le getPath() == pour regarder la config
 	if (request.getMethod() == "POST" && request.getPath() == "/uploads" && request.hasHeader("Content-Type")) {
         std::string contentType = request.getStrHeader("Content-Type");
         if (contentType.find("multipart/form-data") != std::string::npos) {
@@ -412,7 +413,7 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath,
 }
 
 int Server::acceptNewClient(int server_fd) {
-    Logger::instance().log(INFO, "Acceptin new Connection on socket FD: " + to_string(server_fd));
+    Logger::instance().log(INFO, "Accepting new Connection on socket FD: " + to_string(server_fd));
 	if (server_fd <= 0) {
         Logger::instance().log(ERROR, "Invalid server FD: " + to_string(server_fd));
 		return -1;

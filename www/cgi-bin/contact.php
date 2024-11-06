@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Destinataires
         $mail->setFrom($email, "$nom $prenom"); // L'email de l'expéditeur (l'utilisateur qui remplit le formulaire)
-        $mail->addAddress('anporced@student.42perpignan.fr', 'Teddy Gibert'); // Votre adresse email où vous recevrez le message
+        $mail->addAddress('jeguerin@student.42perpignan.fr', 'Teddy Gibert'); // Votre adresse email où vous recevrez le message
 
         // Contenu de l'email
         $mail->isHTML(false); // Paramétrer sur true si vous envoyez un email au format HTML

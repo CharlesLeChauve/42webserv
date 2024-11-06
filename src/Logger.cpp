@@ -59,42 +59,41 @@ Logger::Logger() : repeatCount(0), logToStderr(false) {
     }
 }
 
+#include <iostream>
+#include <string>
+#include <cstdio> // pour std::remove
+
 Logger::~Logger() {
-    if (debugFile.is_open())
-        debugFile.close();
-    if (infoFile.is_open())
-        infoFile.close();
-    if (warningFile.is_open())
-        warningFile.close();
-    if (errorFile.is_open())
-        errorFile.close();
-}
+    std::string user_input;
 
-void Logger::writeToLogs(LoggerLevel level, const std::string& output) {
-    if (logToStderr) {
-        std::cerr << output;
-        std::cerr.flush();
-        return;
-    }
+    // Boucle pour valider l'entrée
+    while (true) {
+        std::cout << "Would you like to [K]eep this session logs or [D]elete? (d/k): ";
+        std::getline(std::cin, user_input);
 
-    if (debugFile.is_open()) {
-        debugFile << output;
-        debugFile.flush();
-    }
-
-    if ((level == INFO || level == WARNING || level == ERROR) && infoFile.is_open()) {
-        infoFile << output;
-        infoFile.flush();
-    }
-
-    if ((level == WARNING || level == ERROR) && warningFile.is_open()) {
-        warningFile << output;
-        warningFile.flush();
-    }
-
-    if (level == ERROR && errorFile.is_open()) {
-        errorFile << output;
-        errorFile.flush();
+        if (user_input == "d" || user_input == "D") {
+            if (std::remove("debug.log") == 0)
+                std::cout << "Debug log deleted successfully.\n";
+            if (std::remove("info.log") == 0)
+                std::cout << "Info log deleted successfully.\n";
+            if (std::remove("warning.log") == 0)
+                std::cout << "Warning log deleted successfully.\n";
+            if (std::remove("error.log") == 0)
+                std::cout << "Error log deleted successfully.\n";
+            break;
+        } else if (user_input == "k" || user_input == "K") {
+            if (debugFile.is_open())
+                debugFile.close();
+            if (infoFile.is_open())
+                infoFile.close();
+            if (warningFile.is_open())
+                warningFile.close();
+            if (errorFile.is_open())
+                errorFile.close();
+            break;
+        } else {
+            std::cout << "Invalid option. Please enter 'd' to delete or 'k' to keep.\n";
+        }
     }
 }
 
