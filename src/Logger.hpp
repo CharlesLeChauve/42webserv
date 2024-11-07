@@ -82,16 +82,16 @@ public:
         // Surcharge de l'opérateur << pour les types génériques
         template<typename T>
         LoggerStream& operator<<(const T& value) {
-            for (auto& stream : streams_) {
-                (*stream) << value;
+            for (std::vector<std::ostream*>::iterator it = streams_.begin(); it != streams_.end(); ++it) {
+                *(*it) << value;
             }
             return *this;
         }
 
         // Surcharge pour les manipulateurs (comme std::endl)
         LoggerStream& operator<<(std::ostream& (*manip)(std::ostream&)) {
-            for (auto& stream : streams_) {
-                manip(*stream);
+            for (std::vector<std::ostream*>::iterator it = streams_.begin(); it != streams_.end(); ++it) {
+                manip(*(*it));
             }
             return *this;
         }
@@ -109,7 +109,7 @@ public:
 
 
     template <typename T>
-    void Logger::writeToLogs(LoggerLevel level, const T& output) {
+    void writeToLogs(LoggerLevel level, const T& output) {
         if (logToStderr) {
             std::cerr << output;
             std::cerr.flush();
@@ -159,7 +159,6 @@ private:
     std::string lastMessage;
     LoggerLevel lastLevel;
     int repeatCount;
-    void writeToLogs(LoggerLevel level, const std::string& output);
 
 	bool logToStderr;
 };

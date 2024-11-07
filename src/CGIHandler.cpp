@@ -30,6 +30,7 @@ std::string CGIHandler::executeCGI(const std::string& scriptPath, const HTTPRequ
     } else if (endsWith(scriptPath, ".php")) {
         interpreter = "/opt/homebrew/bin/php-cgi"; // Chemin correct vers php-cgi
     }
+    //?? gérer interpreter file
     // .cgi utilisera le shebang du script
 
     Logger::instance().log(DEBUG, "executeCGI: Interpreter = " + (interpreter.empty() ? "Shebang" : interpreter));
@@ -74,8 +75,8 @@ std::string CGIHandler::executeCGI(const std::string& scriptPath, const HTTPRequ
         if (request.getMethod() == "POST") {
             int bytes_written = write(pipefd_in[1], request.getBody().c_str(), request.getBody().size());
             if (bytes_written == -1) {
-                sendErrorResponse(client_fd, 500); // Internal server error
                 Logger::instance().log(WARNING, "500 error (Internal Server Error) for writing"); // To specify i'm tired.
+                return response.beError(500, "500 error (Internal Server Error) for writing").toString(); // Internal server error
             }
         }
         close(pipefd_in[1]);

@@ -224,10 +224,8 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
     while (true) {
         pos = requestBody.find(boundaryMarker, endPos);
         if (pos == std::string::npos) {
-            Logger::instance().log(WARNING, "No Boundary Marker found in body for Upload.");
-            response.setStatusCode(400);
-            response.setBody("Bad Request: No Boundary Marker found in body for upload");
-            return;
+            Logger::instance().log(DEBUG, "File fully received.");
+            break;
         }
         pos += boundaryMarker.length();
 
