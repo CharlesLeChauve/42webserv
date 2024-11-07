@@ -12,6 +12,8 @@
 #include <fcntl.h>
 #include <time.h>
 #include "Utils.hpp"
+#include <limits.h>    // Pour PATH_MAX
+#include <stdlib.h>    // Pour realpath
 
 Server::Server(const ServerConfig& config) : _config(config) {
 	if (!_config.isValid()) {
@@ -192,6 +194,14 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPRe
         }
     }
 
+	if (location && location->returnCode != 0) {
+        response.setStatusCode(location->returnCode);
+        response.setHeader("Location", location->returnUrl);
+        sendResponse(client_fd, response);
+        Logger::instance().log(INFO, "Redirecting " + request.getPath() + " to " + location->returnUrl);
+        return;
+    }
+
     // Vérification de l'hôte et du port (code existant)
     std::string hostHeader = request.getHost();
     if (!hostHeader.empty()) {
@@ -253,6 +263,22 @@ bool Server::endsWith(const std::string& str, const std::string& suffix) const {
 	}
 }
 
+bool Server::isPathAllowed(const std::string& path, const std::string& uploadPath) {
+    // Résoudre les chemins absolus
+    char resolvedPath[PATH_MAX];
+    char resolvedUploadPath[PATH_MAX];
+
+    if (!realpath(path.c_str(), resolvedPath) || !realpath(uploadPath.c_str(), resolvedUploadPath)) {
+        return false;
+    }
+
+    std::string pathStr(resolvedPath);
+    std::string uploadPathStr(resolvedUploadPath);
+
+    // Vérifier que le chemin commence par le chemin autorisé
+    return pathStr.find(uploadPathStr) == 0;
+}
+
 void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response, const std::string& boundary) {
     std::string requestBody = request.getBody();
     std::string boundaryMarker = "--" + boundary;
@@ -260,6 +286,14 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
     std::string filename;
     size_t pos = 0;
     size_t endPos = 0;
+
+    const Location* location = _config.findLocation(request.getPath());
+    if (!location || location->uploadPath.empty()) {
+        Logger::instance().log(ERROR, "Upload path not allowed for this location.");
+        response.setStatusCode(403);
+        response.setBody("Upload path not allowed.");
+        return;
+    }
 
     while (true) {
         pos = requestBody.find(boundaryMarker, endPos);
@@ -308,13 +342,23 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
         // Vérifier si c'est un fichier
         if (partHeaders.find("Content-Disposition") != std::string::npos &&
             partHeaders.find("filename=\"") != std::string::npos)
-		{
+        {
             size_t filenamePos = partHeaders.find("filename=\"") + 10;
             size_t filenameEnd = partHeaders.find("\"", filenamePos);
             filename = partHeaders.substr(filenamePos, filenameEnd - filenamePos);
+
+            std::string destPath = location->uploadPath + "/" + filename;
+
+            if (!isPathAllowed(destPath, location->uploadPath)) {
+                Logger::instance().log(ERROR, "Attempt to upload outside of allowed path.");
+                response.setStatusCode(403);
+                response.setBody("Attempt to upload outside of allowed path.");
+                return;
+            }
+
             try {
-                //?? Ici, il faudra utiliser les éléments du conf pour savoir si c'est autorisé, et passer en adresse celle requise par la requete
-                UploadHandler uploadHandler("www/uploads/" + filename, partContent, this->_config);
+                // Enregistrer le fichier dans le chemin autorisé
+                UploadHandler uploadHandler(destPath, partContent, this->_config);
             } catch (const std::exception& e) {
                 Logger::instance().log(ERROR, std::string("Error while opening file: ") + e.what());
                 response.setStatusCode(500);
@@ -330,15 +374,15 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
         endPos = endPos + boundaryMarker.length();
     }
     response.setStatusCode(201);
-	std::string script = "<script type=\"text/javascript\">"
-                     "setTimeout(function() {"
-                     "    window.location.href = 'index.html';"
-                     "}, 3500);"
-                     "</script>";
-    response.setBody(script + "<head><meta charset=UTF-8></head>Fichier uploadé avec succès, Vous allez etre redirigé vers la page d'Accueil.");
-    //?? Enlever www/uploads pour mettre le path requis
-    Logger::instance().log(INFO, "Successfully uploaded file: " + filename + " at Address: " + "www/uploads");
+    std::string script = "<script type=\"text/javascript\">"
+                         "setTimeout(function() {"
+                         "    window.location.href = 'index.html';"
+                         "}, 3500);"
+                         "</script>";
+    response.setBody(script + "<head><meta charset=UTF-8></head>Fichier uploadé avec succès, Vous allez être redirigé vers la page d'Accueil.");
+    Logger::instance().log(INFO, "Successfully uploaded file: " + filename + " at Address: " + location->uploadPath);
 }
+
 
 void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response) {
     std::string fullPath = _config.root + request.getPath();

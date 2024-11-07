@@ -262,6 +262,21 @@ void ConfigParser::processLocationBlock(std::ifstream &file, const std::string& 
     		validateDirectiveValue(directive, value);
     		location.clientMaxBodySize = std::atoi(value.c_str());
 			 Logger::instance().log(DEBUG, "Set client_max_body_size to " + value + " in location " + location.path);
+		} else  if (directive == "return") {
+            std::istringstream valueStream(value);
+            int statusCode;
+            std::string redirectUrl;
+            valueStream >> statusCode >> redirectUrl;
+
+            if (statusCode < 300 || statusCode > 399) {
+                throw ConfigParserException("Invalid status code for 'return': " + to_string(statusCode));
+            }
+
+            location.returnCode = statusCode;
+            location.returnUrl = redirectUrl;
+        } else if (directive == "upload_path") {
+    		validateDirectiveValue(directive, value);
+    		location.uploadPath = value;
 		} else {
             location.options[directive] = value;
         }

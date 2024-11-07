@@ -12,8 +12,10 @@ struct Location {
 	std::vector<std::string> allowedMethods;
 	int clientMaxBodySize;
 	int returnCode;
+	std::string returnUrl;
+	std::string uploadPath;
 
-	Location() : clientMaxBodySize(-1) {}
+	Location() : clientMaxBodySize(-1), returnCode(0) {}
 };
 
 #endif

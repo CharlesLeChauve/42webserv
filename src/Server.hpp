@@ -29,6 +29,7 @@ private:
     void handleDeleteRequest(int client_fd, const HTTPRequest& request);
     void serveStaticFile(int client_fd, const std::string& filePath, HTTPResponse& response);
     void handleFileUpload(const HTTPRequest& request, HTTPResponse& response, const std::string& boundary);
+	bool isPathAllowed(const std::string& path, const std::string& uploadPath);
     // bool handleFileUpload(const HTTPRequest& request, HTTPResponse& response, const std::string& boundary);
 
     // Ajout des méthodes auxiliaires pour gérer les extensions CGI supplémentaires
