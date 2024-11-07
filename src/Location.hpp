@@ -10,6 +10,10 @@ struct Location {
 	std::string path;
 	std::map<std::string, std::string> options;
 	std::vector<std::string> allowedMethods;
+	int clientMaxBodySize;
+	int returnCode;
+
+	Location() : clientMaxBodySize(-1) {}
 };
 
 #endif

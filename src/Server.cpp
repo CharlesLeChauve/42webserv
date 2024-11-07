@@ -47,7 +47,7 @@ std::string getSorryPath() {
 
 std::string Server::receiveRequest(int client_fd) {
     if (client_fd <= 0) {
-        Logger::instance().log(ERROR,  "Invalid client FD before reading: " + to_string(client_fd));
+        Logger::instance().log(ERROR, "Invalid client FD before reading: " + to_string(client_fd));
         return "";
     }
 
@@ -56,35 +56,57 @@ std::string Server::receiveRequest(int client_fd) {
     int bytes_received;
     size_t content_length = 0;
     bool headers_received = false;
+    size_t body_received = 0;
+    this->requestTooLarge = false;
+
+    // Par défaut, utiliser la limite définie dans ServerConfig
+    int max_body_size = _config.clientMaxBodySize;
+
+    if (max_body_size <= 0) {
+        // Si aucune limite définie, on utilise une limite très élevée par défaut
+        max_body_size = std::numeric_limits<int>::max();
+    }
+
+    std::string request_line;
+    std::string path;
 
     while (true) {
         bytes_received = read(client_fd, buffer, sizeof(buffer));
         if (bytes_received == 0) {
-            // Client closed the connection
             Logger::instance().log(WARNING, "Client closed the connection: FD " + to_string(client_fd));
             break;
         } else if (bytes_received < 0) {
-            // Error reading from client
             Logger::instance().log(ERROR, "Error reading from client. Please check the connection.");
-             //?? Must handle different types error (status code).
             break;
         }
 
-        Logger::instance().log(DEBUG, std::string("Receiving data..."));
         request.append(buffer, bytes_received);
 
         if (!headers_received) {
-            // Check if we have received the full headers
             size_t header_end_pos = request.find("\r\n\r\n");
             if (header_end_pos != std::string::npos) {
                 headers_received = true;
+
+                // Extraire la ligne de requête pour obtenir le chemin
+                size_t line_end_pos = request.find("\r\n");
+                if (line_end_pos != std::string::npos) {
+                    request_line = request.substr(0, line_end_pos);
+                    std::istringstream iss(request_line);
+                    std::string method;
+                    iss >> method >> path;
+
+                    // Extraire la Location correspondante et sa limite `client_max_body_size`
+                    const Location* location = _config.findLocation(path);
+                    if (location && location->clientMaxBodySize != -1) {
+                        max_body_size = location->clientMaxBodySize;
+                    }
+                }
 
                 // Parse headers to find Content-Length
                 std::string headers = request.substr(0, header_end_pos);
                 std::istringstream headers_stream(headers);
                 std::string header_line;
                 while (std::getline(headers_stream, header_line)) {
-                    // Remove any trailing \r
                     if (!header_line.empty() && header_line[header_line.size() - 1] == '\r') {
                         header_line.erase(header_line.size() - 1);
                     }
@@ -105,28 +127,46 @@ std::string Server::receiveRequest(int client_fd) {
                     }
                 }
 
-                // If there is a body, calculate how many more bytes to read
-                if (content_length > 0) {
-                    size_t body_received = request.size() - (header_end_pos + 4);
-                    if (body_received >= content_length) {
-                        // We have received the entire request
-                        break;
-                    }
-                } else {
-                    // No Content-Length, so no body, we are done
+                // Log pour vérifier la taille de `Content-Length` et `max_body_size`
+                Logger::instance().log(DEBUG, "Content-Length detected: " + to_string(content_length));
+                Logger::instance().log(DEBUG, "Configured client_max_body_size: " + to_string(max_body_size));
+
+                // Vérifier si Content-Length dépasse la limite
+                if (content_length > static_cast<size_t>(max_body_size)) {
+                    Logger::instance().log(WARNING, "Content-Length exceeds the configured maximum.");
+                    requestTooLarge = true;
+                    break;
+                }
+
+                // Si pas de corps, on peut arrêter la lecture
+                if (content_length == 0) {
                     break;
                 }
             }
         } else {
-            // We have already received headers, check if we have received the entire body
-            size_t header_end_pos = request.find("\r\n\r\n");
-            size_t body_received = request.size() - (header_end_pos + 4);
+            // Nous avons déjà reçu les en-têtes
+            body_received = request.size() - request.find("\r\n\r\n") - 4;
+
+            // Vérifier si la taille du corps dépasse la limite
+            if (body_received > static_cast<size_t>(max_body_size)) {
+                Logger::instance().log(WARNING, "Request body size exceeds the configured maximum.");
+                requestTooLarge = true;
+                break;
+            }
+
+            // Vérifier si nous avons reçu tout le corps
             if (body_received >= content_length) {
-                // We have received the entire request
                 break;
             }
         }
     }
+
+    if (requestTooLarge) {
+        // Enregistrer que la requête est trop grande pour la traiter
+        this->requestTooLarge = true;
+        return "";
+    }
+
     Logger::instance().log(INFO, "Full request read.");
     return request;
 }
@@ -267,7 +307,7 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
 
         // Vérifier si c'est un fichier
         if (partHeaders.find("Content-Disposition") != std::string::npos &&
-            partHeaders.find("filename=\"") != std::string::npos) 
+            partHeaders.find("filename=\"") != std::string::npos)
 		{
             size_t filenamePos = partHeaders.find("filename=\"") + 10;
             size_t filenameEnd = partHeaders.find("\"", filenamePos);
@@ -310,7 +350,7 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
         std::string contentType = request.getStrHeader("Content-Type");
         if (contentType.find("multipart/form-data") != std::string::npos) {
 		// Recherche du boundary dans le Content-Type avec find + check if end
-		// Si ce n'est pas la fin extraire 
+		// Si ce n'est pas la fin extraire
 			size_t	boundaryPos = contentType.find("boundary=");
 			if (boundaryPos != std::string::npos) {
 				std::string boundary = contentType.substr(boundaryPos + 9);
@@ -471,7 +511,7 @@ void Server::handleClient(int client_fd) {
 	SessionManager session(request.getStrHeader("Cookie"));
 	if (session.getFirstCon())
 		response.setHeader("Set-Cookie", session.getSessionId() + "; Path=/; HttpOnly");
-    
+
     Logger::instance().log(INFO, "Parsing OK, starting to handle request for client fd: " + to_string(client_fd));
 	handleHttpRequest(client_fd, request, response);
 }

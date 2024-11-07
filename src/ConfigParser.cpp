@@ -105,7 +105,12 @@ void ConfigParser::validateDirectiveValue(const std::string &directive, const st
         if (value.empty() || value[0] != '.') {
             throw ConfigParserException("Invalid CGI extension: " + value);
         }
-    }
+    } else if (directive == "client_max_body_size") {
+    	int maxSize = std::atoi(value.c_str());
+    	if (maxSize <= 0) {
+        	throw ConfigParserException("Invalid value for 'client_max_body_size': " + value);
+    	}
+	}
 }
 
 
@@ -195,7 +200,11 @@ void ConfigParser::processServerDirective(std::ifstream &file, const std::string
                 Logger::instance().log(DEBUG, " Loaded CGI extension from location: " + ext);
             }
         }
-        else {
+		else if (directive == "client_max_body_size") {
+			validateDirectiveValue(directive, value);
+			serverConfig.clientMaxBodySize = std::atoi(value.c_str());
+			Logger::instance().log(DEBUG, "Set client_max_body_size to " + value + " in server config");
+		} else {
             throw ConfigParserException("Unknown directive: \"" + directive + "\"");
         }
     } else {
@@ -249,7 +258,11 @@ void ConfigParser::processLocationBlock(std::ifstream &file, const std::string& 
                 validateDirectiveValue(directive, method);
                 location.allowedMethods.push_back(method);
             }
-        } else {
+        } else if (directive == "client_max_body_size") {
+    		validateDirectiveValue(directive, value);
+    		location.clientMaxBodySize = std::atoi(value.c_str());
+			 Logger::instance().log(DEBUG, "Set client_max_body_size to " + value + " in location " + location.path);
+		} else {
             location.options[directive] = value;
         }
     }
