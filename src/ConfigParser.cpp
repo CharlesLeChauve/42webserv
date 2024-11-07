@@ -110,7 +110,11 @@ void ConfigParser::validateDirectiveValue(const std::string &directive, const st
     	if (maxSize <= 0) {
         	throw ConfigParserException("Invalid value for 'client_max_body_size': " + value);
     	}
-	}
+	} else if (directive == "upload_on") {
+        if (value != "on" && value != "off") {
+            throw ConfigParserException("Invalid value for 'upload_on': " + value);
+        }
+    }
 }
 
 
@@ -274,6 +278,9 @@ void ConfigParser::processLocationBlock(std::ifstream &file, const std::string& 
 
             location.returnCode = statusCode;
             location.returnUrl = redirectUrl;
+        } else if (directive == "upload_on") {
+            location.uploadOn = (value == "on");
+            Logger::instance().log(DEBUG, "Set uploadOn to " + value + " in location " + location.path);
         } else if (directive == "upload_path") {
     		validateDirectiveValue(directive, value);
     		location.uploadPath = value;

@@ -14,8 +14,9 @@ struct Location {
 	int returnCode;
 	std::string returnUrl;
 	std::string uploadPath;
+	bool uploadOn;
 
-	Location() : clientMaxBodySize(-1), returnCode(0) {}
+	Location() : clientMaxBodySize(-1), returnCode(0), uploadOn(false) {}
 };
 
 #endif
