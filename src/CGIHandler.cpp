@@ -24,13 +24,25 @@ bool CGIHandler::endsWith(const std::string& str, const std::string& suffix) con
 
 std::string CGIHandler::executeCGI(const std::string& scriptPath, const HTTPRequest& request) {
     Logger::instance().log(DEBUG, "executeCGI: Executing script: " + scriptPath);
-    std::string interpreter = "";
+
+    std::string interpreter_directory_path = "";
+    #ifdef __APPLE__
+        interpreter_directory_path = "/opt/homebrew/bin/";
+    #elif defined(__linux__)
+        interpreter_directory_path = "/usr/bin/";
+    #else
+        // Handle other OS or set a default path
+        interpreter_directory_path = "/usr/bin/";
+    #endif
+
+    std::string interpreter_name = "";
     if (endsWith(scriptPath, ".sh")) {
-        interpreter = "/opt/homebrew/bin/bash";  // Chemin correct vers bash
+        interpreter_name = "bash";
     } else if (endsWith(scriptPath, ".php")) {
-        interpreter = "/opt/homebrew/bin/php-cgi"; // Chemin correct vers php-cgi
+        interpreter_name = "php-cgi";
     }
-    //?? gérer interpreter file
+
+    std::string interpreter = interpreter_directory_path + interpreter_name;
     // .cgi utilisera le shebang du script
 
     Logger::instance().log(DEBUG, "executeCGI: Interpreter = " + (interpreter.empty() ? "Shebang" : interpreter));
