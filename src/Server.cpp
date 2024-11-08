@@ -430,7 +430,12 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
         endPos = endPos + boundaryMarker.length();
     }
     response.setStatusCode(201);
-    response.setBody("<html><body><h1>File uploaded successfully</h1></body></html>");
+    std::string script = "<script type=\"text/javascript\">"
+                         "setTimeout(function() {"
+                         "    window.location.href = 'index.html';"
+                         "}, 3500);"
+                         "</script>";
+    response.setBody(script + "<html><body><h1>File successfully uploaded, you'll be redirected on HomePage</h1></body></html>");
     Logger::instance().log(INFO, "Successfully uploaded file: " + filename + " to " + uploadDir);
 }
 
