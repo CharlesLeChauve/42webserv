@@ -445,70 +445,96 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
     // Trouver la Location correspondante
     const Location* location = _config.findLocation(request.getPath());
 
-    // Vérifier si c'est une requête POST et si l'upload est autorisé
     if (request.getMethod() == "POST") {
-        if (location && location->uploadOn) {
-            // Vérifier si l'en-tête Content-Type est présent
-            if (request.hasHeader("Content-Type")) {
-                std::string contentType = request.getStrHeader("Content-Type");
-                if (contentType.find("multipart/form-data") != std::string::npos) {
-                    // Recherche du boundary dans le Content-Type
-                    size_t boundaryPos = contentType.find("boundary=");
-                    if (boundaryPos != std::string::npos) {
-                        std::string boundary = contentType.substr(boundaryPos + 9);
-                        handleFileUpload(request, response, boundary);
+        bool isFileUpload = false;
+        std::string contentType;
+        if (request.hasHeader("Content-Type")) {
+            contentType = request.getStrHeader("Content-Type");
+            if (contentType.find("multipart/form-data") != std::string::npos) {
+                isFileUpload = true;
+            }
+        }
 
-                        // Envoyer la réponse
-                        sendResponse(client_fd, response);
-                        return;
-                    } else {
-                        // Boundary manquant dans Content-Type
-                        sendErrorResponse(client_fd, 400); // Bad Request
-                        Logger::instance().log(WARNING, "400 error (Bad Request): Missing boundary in Content-Type header.");
-                        return;
-                    }
+        if (isFileUpload) {
+            // Gestion de l'upload de fichier
+            if (location && location->uploadOn) {
+                size_t boundaryPos = contentType.find("boundary=");
+                if (boundaryPos != std::string::npos) {
+                    std::string boundary = contentType.substr(boundaryPos + 9);
+                    handleFileUpload(request, response, boundary);
+
+                    // Envoyer la réponse
+                    sendResponse(client_fd, response);
+                    return;
                 } else {
-                    // Content-Type incorrect
-                    sendErrorResponse(client_fd, 415); // Unsupported Media Type
-                    Logger::instance().log(WARNING, "415 error (Unsupported Media Type): Content-Type is not multipart/form-data.");
+                    // Boundary manquant dans Content-Type
+                    sendErrorResponse(client_fd, 400); // Bad Request
+                    Logger::instance().log(WARNING, "400 error (Bad Request): Missing boundary in Content-Type header.");
                     return;
                 }
             } else {
-                // En-tête Content-Type manquant
-                sendErrorResponse(client_fd, 400); // Bad Request
-                Logger::instance().log(WARNING, "400 error (Bad Request): Missing Content-Type header.");
+                // Upload non autorisé dans cette location
+                sendErrorResponse(client_fd, 403); // Forbidden
+                Logger::instance().log(WARNING, "403 error (Forbidden): Upload not allowed for this location.");
                 return;
             }
         } else {
-            // Upload non autorisé dans cette location
-            sendErrorResponse(client_fd, 403); // Forbidden
-            Logger::instance().log(WARNING, "403 error (Forbidden): Upload not allowed for this location.");
-            return;
-        }
-    }
+            // Traiter les autres requêtes POST (par exemple, les formulaires)
+            // Vérifier si le fichier a une extension CGI
+            if (hasCgiExtension(fullPath)) {
+                Logger::instance().log(DEBUG, "CGI extension detected for path: " + fullPath);
+                if (access(fullPath.c_str(), F_OK) == -1) {
+                    Logger::instance().log(DEBUG, "CGI script not found: " + fullPath);
+                    sendErrorResponse(client_fd, 404); // Not Found
+                } else {
+                    CGIHandler cgiHandler;
+                    std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
 
-    // Vérifier si le fichier a une extension CGI
-    if (hasCgiExtension(fullPath)) {
-        Logger::instance().log(DEBUG, "CGI extension detected for path: " + fullPath);
-        if (access(fullPath.c_str(), F_OK) == -1) {
-            Logger::instance().log(DEBUG, "CGI script not found: " + fullPath);
-            sendErrorResponse(client_fd, 404); // Not Found
-        } else {
-            CGIHandler cgiHandler;
-            std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
-
-            int bytes_written = write(client_fd, cgiOutput.c_str(), cgiOutput.length());
-            if (bytes_written == -1) {
-                sendErrorResponse(client_fd, 500); // Internal Server Error
-                Logger::instance().log(WARNING, "500 error (Internal Server Error): Failed to send CGI output response.");
+                    int bytes_written = write(client_fd, cgiOutput.c_str(), cgiOutput.length());
+                    if (bytes_written == -1) {
+                        sendErrorResponse(client_fd, 500); // Internal Server Error
+                        Logger::instance().log(WARNING, "500 error (Internal Server Error): Failed to send CGI output response.");
+                    }
+                    return;
+                }
+            } else {
+                // Si ce n'est pas un script CGI, vous pouvez renvoyer une erreur ou servir un fichier statique
+                Logger::instance().log(WARNING, "POST request to non-CGI resource.");
+                sendErrorResponse(client_fd, 405); // Method Not Allowed
+                return;
             }
         }
+    } else if (request.getMethod() == "GET") {
+        // Vérifier si le fichier a une extension CGI
+        if (hasCgiExtension(fullPath)) {
+            Logger::instance().log(DEBUG, "CGI extension detected for path: " + fullPath);
+            if (access(fullPath.c_str(), F_OK) == -1) {
+                Logger::instance().log(DEBUG, "CGI script not found: " + fullPath);
+                sendErrorResponse(client_fd, 404); // Not Found
+            } else {
+                CGIHandler cgiHandler;
+                std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
+
+                int bytes_written = write(client_fd, cgiOutput.c_str(), cgiOutput.length());
+                if (bytes_written == -1) {
+                    sendErrorResponse(client_fd, 500); // Internal Server Error
+                    Logger::instance().log(WARNING, "500 error (Internal Server Error): Failed to send CGI output response.");
+                }
+                return;
+            }
+        } else {
+            // Servir le fichier statique
+            Logger::instance().log(DEBUG, "No CGI extension detected for path: " + fullPath + ". Serving as static file.");
+            serveStaticFile(client_fd, fullPath, response, request);
+        }
     } else {
-        // Servir le fichier statique
-        Logger::instance().log(DEBUG, "No CGI extension detected for path: " + fullPath + ". Serving as static file.");
-        serveStaticFile(client_fd, fullPath, response, request);
+        // Méthode non supportée
+        sendErrorResponse(client_fd, 501); // Not Implemented
+        Logger::instance().log(WARNING, "501 error (Not Implemented) sent on request: \n" + request.toString());
     }
 }
+
+
 
 
 
