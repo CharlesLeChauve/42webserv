@@ -14,6 +14,7 @@
 #include "Utils.hpp"
 #include <limits.h>    // Pour PATH_MAX
 #include <stdlib.h>    // Pour realpath
+#include <dirent.h>
 
 Server::Server(const ServerConfig& config) : _config(config) {
 	if (!_config.isValid()) {
@@ -505,7 +506,7 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
     } else {
         // Servir le fichier statique
         Logger::instance().log(DEBUG, "No CGI extension detected for path: " + fullPath + ". Serving as static file.");
-        serveStaticFile(client_fd, fullPath, response);
+        serveStaticFile(client_fd, fullPath, response, request);
     }
 }
 
@@ -535,59 +536,81 @@ void Server::handleDeleteRequest(int client_fd, const HTTPRequest& request) {
 }
 
 void Server::serveStaticFile(int client_fd, const std::string& filePath,
-							 HTTPResponse& response) {
-	struct stat pathStat;
-	if (stat(filePath.c_str(), &pathStat) == 0 && S_ISDIR(pathStat.st_mode)) {
-		// Gérer les répertoires en cherchant un fichier index
-        Logger::instance().log(INFO, "Request File Path is a dir, Searching for an index page...");
-		std::string indexPath = filePath + "/" + _config.index;
-		if (access(indexPath.c_str(), F_OK) != -1) {
-            Logger::instance().log(INFO, "Found : " + indexPath);
-			serveStaticFile(client_fd, indexPath, response);
-		} else {
-            Logger::instance().log(INFO, indexPath + " Not found, 404 error (Not Found) sent.");
-			sendErrorResponse(client_fd, 404);
-		}
-	} else {
-		std::ifstream file(filePath.c_str(), std::ios::binary);
-		if (file) {
-            Logger::instance().log(INFO, "Serving static file found at : " + filePath);
-			std::stringstream buffer;
-			buffer << file.rdbuf();
-			std::string content = buffer.str();
+                             HTTPResponse& response, const HTTPRequest& request) {
+    struct stat pathStat;
+    if (stat(filePath.c_str(), &pathStat) == 0 && S_ISDIR(pathStat.st_mode)) {
+        // Vérifier s'il existe un fichier index
+        Logger::instance().log(INFO, "Request File Path is a directory, searching for an index page...");
+        std::string indexPath = filePath + "/" + _config.index;
+        if (access(indexPath.c_str(), F_OK) != -1) {
+            Logger::instance().log(INFO, "Found index page: " + indexPath);
+            serveStaticFile(client_fd, indexPath, response, request);
+        } else {
+            // Vérifier la valeur de autoindex
+            bool autoindex = _config.autoindex; // Valeur par défaut du serveur
+            const Location* location = _config.findLocation(request.getPath());
+            if (location && location->autoindex != -1) { // Si défini dans la location
+                autoindex = (location->autoindex == 1);
+            }
 
-			response.setStatusCode(200);
-			response.setReasonPhrase("OK");
+            if (autoindex) {
+                // Générer le listing du répertoire
+                Logger::instance().log(INFO, "Index page not found. Generating directory listing for: " + filePath);
+                std::string directoryListing = generateDirectoryListing(filePath, request.getPath());
 
-			std::string contentType = "text/html";
-			size_t extPos = filePath.find_last_of('.');
-			if (extPos != std::string::npos) {
-				std::string extension = filePath.substr(extPos);
-				if (extension == ".css")
-					contentType = "text/css";
-				else if (extension == ".js")
-					contentType = "application/javascript";
-				else if (extension == ".png")
-					contentType = "image/png";
-				else if (extension == ".jpg" || extension == ".jpeg")
-					contentType = "image/jpeg";
-				else if (extension == ".gif")
-					contentType = "image/gif";
-                //?? Pas de else ?
-			}
+                response.setStatusCode(200);
+                response.setHeader("Content-Type", "text/html");
+                response.setBody(directoryListing);
+                response.setHeader("Content-Length", to_string(directoryListing.size()));
+                sendResponse(client_fd, response);
+            } else {
+                // Si autoindex est désactivé, retourner une erreur 403 Forbidden
+                Logger::instance().log(INFO, "Index page not found and autoindex is off. Sending 403 Forbidden.");
+                sendErrorResponse(client_fd, 403);
+            }
+        }
+    } else {
+        std::ifstream file(filePath.c_str(), std::ios::binary);
+        if (file) {
+            Logger::instance().log(INFO, "Serving static file found at: " + filePath);
+            std::stringstream buffer;
+            buffer << file.rdbuf();
+            std::string content = buffer.str();
 
-			response.setHeader("Content-Type", contentType);
-			response.setHeader("Content-Length", to_string(content.size()));
-			response.setBody(content);
-			std::cout << "Set-Cookie header : " << response.getStrHeader("Set-Cookie") << std::endl;
+            response.setStatusCode(200);
+            response.setReasonPhrase("OK");
 
-			sendResponse(client_fd, response);
-		} else {
+            std::string contentType = "text/html";
+            size_t extPos = filePath.find_last_of('.');
+            if (extPos != std::string::npos) {
+                std::string extension = filePath.substr(extPos);
+                if (extension == ".css")
+                    contentType = "text/css";
+                else if (extension == ".js")
+                    contentType = "application/javascript";
+                else if (extension == ".png")
+                    contentType = "image/png";
+                else if (extension == ".jpg" || extension == ".jpeg")
+                    contentType = "image/jpeg";
+                else if (extension == ".gif")
+                    contentType = "image/gif";
+                // Vous pouvez ajouter d'autres types MIME si nécessaire
+            }
+
+            response.setHeader("Content-Type", contentType);
+            response.setHeader("Content-Length", to_string(content.size()));
+            response.setBody(content);
+            Logger::instance().log(DEBUG, "Set-Cookie header: " + response.getStrHeader("Set-Cookie"));
+
+            sendResponse(client_fd, response);
+        } else {
             Logger::instance().log(WARNING, "Requested file not found: " + filePath + "; 404 error sent");
-			sendErrorResponse(client_fd, 404);
-		}
-	}
+            sendErrorResponse(client_fd, 404);
+        }
+    }
 }
+
+
 
 int Server::acceptNewClient(int server_fd) {
     Logger::instance().log(INFO, "Accepting new Connection on socket FD: " + to_string(server_fd));
@@ -663,3 +686,44 @@ void Server::sendErrorResponse(int client_fd, int errorCode) {
 	sendResponse(client_fd, response);
 }
 
+std::string Server::generateDirectoryListing(const std::string& directoryPath, const std::string& requestPath) {
+    std::string listing;
+    listing += "<html><head><title>Index of " + requestPath + "</title></head><body>";
+    listing += "<h1>Index of " + requestPath + "</h1>";
+    listing += "<ul>";
+
+    DIR* dir = opendir(directoryPath.c_str());
+    if (dir) {
+        struct dirent* entry;
+        while ((entry = readdir(dir)) != NULL) {
+            std::string name = entry->d_name;
+
+            // Ignorer les entrées spéciales "." et ".."
+            if (name == "." || name == "..")
+                continue;
+
+            std::string fullPath = requestPath;
+            if (fullPath.back() != '/')
+                fullPath += "/";
+            fullPath += name;
+
+            // Ajouter un '/' à la fin si c'est un répertoire
+            std::string displayName = name;
+            std::string filePath = directoryPath + "/" + name;
+            struct stat st;
+            if (stat(filePath.c_str(), &st) == 0 && S_ISDIR(st.st_mode)) {
+                displayName += "/";
+                fullPath += "/";
+            }
+
+            listing += "<li><a href=\"" + fullPath + "\">" + displayName + "</a></li>";
+        }
+        closedir(dir);
+    } else {
+        Logger::instance().log(ERROR, "Failed to open directory: " + directoryPath);
+        listing += "<p>Unable to access directory.</p>";
+    }
+
+    listing += "</ul></body></html>";
+    return listing;
+}

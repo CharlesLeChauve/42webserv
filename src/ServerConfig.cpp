@@ -2,7 +2,7 @@
 #include "Logger.hpp"
 #include <iostream>
 
-ServerConfig::ServerConfig() : root("www/"), index("index.html"), host("0.0.0.0"), clientMaxBodySize(-1) {
+ServerConfig::ServerConfig() : root("www/"), index("index.html"), host("0.0.0.0"), clientMaxBodySize(-1), autoindex(false) {
 	serverNames.push_back("localhost");
 }
 
@@ -16,6 +16,7 @@ ServerConfig::ServerConfig(const ServerConfig& other) {
 	host = other.host;
 	cgiExtensions = other.cgiExtensions;
 	clientMaxBodySize = other.clientMaxBodySize;
+	autoindex = other.autoindex;
 }
 
 
@@ -40,6 +41,7 @@ ServerConfig& ServerConfig::operator=(const ServerConfig& other) {
 		host = other.host;
 		cgiExtensions = other.cgiExtensions;
 		clientMaxBodySize = other.clientMaxBodySize;
+		autoindex = other.autoindex;
 	}
 	return *this;
 }

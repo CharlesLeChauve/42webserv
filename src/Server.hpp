@@ -27,10 +27,11 @@ private:
     void handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response);
     void handleGetOrPostRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response);
     void handleDeleteRequest(int client_fd, const HTTPRequest& request);
-    void serveStaticFile(int client_fd, const std::string& filePath, HTTPResponse& response);
+    void serveStaticFile(int client_fd, const std::string& filePath, HTTPResponse& response, const HTTPRequest& request);
     void handleFileUpload(const HTTPRequest& request, HTTPResponse& response, const std::string& boundary);
 	bool isPathAllowed(const std::string& path, const std::string& uploadPath);
 	std::string sanitizeFilename(const std::string& filename);
+	std::string generateDirectoryListing(const std::string& directoryPath, const std::string& requestPath);
     // bool handleFileUpload(const HTTPRequest& request, HTTPResponse& response, const std::string& boundary);
 
     // Ajout des méthodes auxiliaires pour gérer les extensions CGI supplémentaires

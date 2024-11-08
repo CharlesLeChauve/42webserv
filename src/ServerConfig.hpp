@@ -16,7 +16,8 @@ public:
     std::map<int, std::string> errorPages;
     std::vector<Location> locations;
     std::string host;
-    int clientMaxBodySize;;
+    int clientMaxBodySize;
+    bool autoindex;
 
     // Ajout d'un vecteur pour les extensions CGI
     std::vector<std::string> cgiExtensions;

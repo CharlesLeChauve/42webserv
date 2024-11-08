@@ -114,7 +114,12 @@ void ConfigParser::validateDirectiveValue(const std::string &directive, const st
         if (value != "on" && value != "off") {
             throw ConfigParserException("Invalid value for 'upload_on': " + value);
         }
-    }
+    } else if (directive == "autoindex") {
+    if (value != "on" && value != "off") {
+        throw ConfigParserException("Invalid value for 'autoindex': " + value);
+		}
+	}
+
 }
 
 
@@ -208,7 +213,11 @@ void ConfigParser::processServerDirective(std::ifstream &file, const std::string
 			validateDirectiveValue(directive, value);
 			serverConfig.clientMaxBodySize = std::atoi(value.c_str());
 			Logger::instance().log(DEBUG, "Set client_max_body_size to " + value + " in server config");
-		} else {
+		} else if (directive == "autoindex") {
+    		validateDirectiveValue(directive, value);
+    		serverConfig.autoindex = (value == "on");
+    		Logger::instance().log(DEBUG, "Set autoindex to " + value + " in server config");
+	} else {
             throw ConfigParserException("Unknown directive: \"" + directive + "\"");
         }
     } else {
@@ -284,7 +293,11 @@ void ConfigParser::processLocationBlock(std::ifstream &file, const std::string& 
         } else if (directive == "upload_path") {
     		validateDirectiveValue(directive, value);
     		location.uploadPath = value;
-		} else {
+		} else if (directive == "autoindex") {
+			validateDirectiveValue(directive, value);
+			location.autoindex = (value == "on");
+			Logger::instance().log(DEBUG, "Set autoindex to " + value + " in location " + location.path);
+	} else {
             location.options[directive] = value;
         }
     }
