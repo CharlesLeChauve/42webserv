@@ -130,7 +130,7 @@ std::string CGIHandler::executeCGI(const std::string& scriptPath, const HTTPRequ
 
         // Si aucun en-tête "Status:" n'est trouvé, renvoyer la réponse CGI directement
         if (cgiOutput.find("HTTP/1.1") == std::string::npos) {
-            cgiOutput = "HTTP/1.1 200 OK\r\nContent-Type: text/html" + cgiOutput;
+            cgiOutput = "HTTP/1.1 200 OK\r\n" + cgiOutput;
         }
         Logger::instance().log(DEBUG, std::string("executeCGI: CGI Output:\n") + cgiOutput);
         return cgiOutput;
