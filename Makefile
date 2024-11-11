@@ -17,6 +17,7 @@ SRC = \
 	$(SRCDIR)/SessionManager.cpp \
 	$(SRCDIR)/UploadHandler.cpp \
 	$(SRCDIR)/Logger.cpp \
+	$(SRCDIR)/utils.cpp \
 	$(SRCDIR)/HTTPRequest.cpp
 
 # Liste des fichiers objets

@@ -10,6 +10,7 @@
 #include <poll.h>
 #include <unistd.h>
 #include <ctime>
+#include <signal.h>
 
 void initialize_random_generator() {
     std::ifstream urandom("/dev/urandom", std::ios::binary);
@@ -25,6 +26,8 @@ void initialize_random_generator() {
 
 int main(int argc, char* argv[]) {
     Logger::instance().log(INFO, "Starting main");
+    bool stopServer = false;
+
     std::string configFile;
     if (argc > 2) {
         std::cerr << "Usage: " << argv[0] << " [path/to/file]" << std::endl;
@@ -38,9 +41,10 @@ int main(int argc, char* argv[]) {
             Logger::instance().log(DEBUG, "Custom configuration file loaded : " + configFile);
         }
     }
-    initialize_random_generator();
-    ConfigParser configParser;
 
+    initialize_random_generator();
+    
+    ConfigParser configParser;
     try {
         configParser.parseConfigFile(configFile);
         Logger::instance().log(DEBUG, "Config file successfully parsed");
@@ -52,11 +56,31 @@ int main(int argc, char* argv[]) {
     const std::vector<ServerConfig>& serverConfigs = configParser.getServerConfigs();
 	Logger::instance().log(INFO, to_string(serverConfigs.size()) + " servers successfully cnfigured");
 
+    if (pipe(serverSignal::pipe_fd) == -1) {
+        perror("pipe");
+        exit(EXIT_FAILURE);
+    }
+
+    // Configuration du signal handler
+    struct sigaction sa;
+    sa.sa_handler = serverSignal::signal_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    sigaction(SIGINT, &sa, NULL);
+
     std::vector<Server*> servers;
     std::vector<Socket*> sockets;
     std::vector<pollfd> poll_fds;
     std::map<int, Server*> fdToServerMap;
     std::map<int, Server*> clientFdToServerMap;
+
+    {
+        pollfd pfd;
+        pfd.fd = serverSignal::pipe_fd[0];
+        pfd.events = POLLIN;
+        pfd.revents = 0; // Initialiser revents à 0
+        poll_fds.push_back(pfd);
+    }
 
     // Créer les serveurs et sockets
     for (size_t i = 0; i < serverConfigs.size(); ++i) {
@@ -79,16 +103,36 @@ int main(int argc, char* argv[]) {
 		Logger::instance().log(INFO, "Server launched, listenign on port: " + to_string(serverConfigs[i].ports[0]));
     }
 
-    while (true) {
+    while (!stopServer) {
         int poll_count = poll(&poll_fds[0], poll_fds.size(), -1); // Attendre indéfiniment
-        if (poll_count < 0) {
-            perror("Erreur lors de l'appel à poll");
-            continue;
+         if (poll_count < 0) {
+            if (errno == EINTR) {
+                // poll() a été interrompu par un signal, continuer la boucle
+                continue;
+            } else {
+                perror("Erreur lors de l'appel à poll");
+                break; // Ou gérez l'erreur de manière appropriée
+            }
         }
 
         for (size_t i = 0; i < poll_fds.size(); ++i) {
             if (poll_fds[i].revents == 0)
                 continue;
+
+            if (poll_fds[i].fd == serverSignal::pipe_fd[0]) {
+                if (poll_fds[i].revents & POLLIN) {
+                    // Lire le(s) octet(s) du pipe pour vider le buffer
+                    uint8_t byte;
+                    ssize_t bytesRead = read(serverSignal::pipe_fd[0], &byte, sizeof(byte));
+                    if (bytesRead > 0) {
+                        // Vous pouvez définir une variable pour arrêter proprement le serveur
+                        Logger::instance().log(INFO, "Signal reçu, arrêt du serveur en cours...");
+                        stopServer = true;
+                        break; 
+                    }
+                }
+                continue;
+            }
             // Gérer les erreurs
             if (poll_fds[i].revents & POLLERR) {
 				Logger::instance().log(ERROR, "Error on file descriptor: " + to_string(poll_fds[i].fd));
@@ -159,6 +203,8 @@ int main(int argc, char* argv[]) {
                 }
             }
         }
+        if (stopServer)
+            break;
     }
 
     // Nettoyage de la mémoire
