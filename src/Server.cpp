@@ -503,9 +503,14 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
                     return;
                 }
             } else {
-                // Si ce n'est pas un script CGI, vous pouvez renvoyer une erreur ou servir un fichier statique
-                Logger::instance().log(WARNING, "POST request to non-CGI resource.");
-                sendErrorResponse(client_fd, 405); // Method Not Allowed
+                // Autoriser la requête POST à continuer avec une réponse par défaut
+                Logger::instance().log(INFO, "POST request to static resource.");
+
+                // Vous pouvez personnaliser la réponse ici
+                response.setStatusCode(200);
+                response.setHeader("Content-Type", "text/html");
+                response.setBody("<html><body><h1>POST request received</h1></body></html>");
+                sendResponse(client_fd, response);
                 return;
             }
         }
