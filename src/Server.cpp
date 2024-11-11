@@ -146,7 +146,6 @@ std::string Server::receiveRequest(int client_fd) {
                     break;
                 }
             }
-        } else {
             // Nous avons déjà reçu les en-têtes
             body_received = request.size() - request.find("\r\n\r\n") - 4;
 
