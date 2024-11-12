@@ -39,6 +39,7 @@ public:
 	std::string getRawRequest() const;
 
 	void setBodyReceived(size_t size);
+	void setRequestTooLarge(bool value);
 
 private:
 	std::string _method;

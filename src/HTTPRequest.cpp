@@ -31,7 +31,7 @@ void HTTPRequest::parseRawRequest(const ServerConfig& config) {
     // Check if headers are fully received
     size_t header_end_pos = _rawRequest.find("\r\n\r\n");
 
-	//?? Sue se passe-t-il si le client n'envoie pas \r\n\r\n ? Est-ce possible ?
+	//?? Que se passe-t-il si le client n'envoie pas \r\n\r\n ? Est-ce possible ? ==> Gérer le timeout;
     if (header_end_pos == std::string::npos) {
         return;
     }
@@ -229,11 +229,12 @@ std::string HTTPRequest::toString() const {
 }
 
 
-bool HTTPRequest::getHeadersParsed() const {return _headersParsed;};
-bool HTTPRequest::getRequestTooLarge() const {return _requestTooLarge;};
-size_t HTTPRequest::getContentLength() const {return _contentLength;};
-size_t HTTPRequest::getBodyReceived() const {return _bodyReceived;};
-int HTTPRequest::getMaxBodySize() const {return _maxBodySize;};
-std::string HTTPRequest::getRawRequest() const {return _rawRequest;};
+bool HTTPRequest::getHeadersParsed() const {return _headersParsed;}
+bool HTTPRequest::getRequestTooLarge() const {return _requestTooLarge;}
+size_t HTTPRequest::getContentLength() const {return _contentLength;}
+size_t HTTPRequest::getBodyReceived() const {return _bodyReceived;}
+int HTTPRequest::getMaxBodySize() const {return _maxBodySize;}
+std::string HTTPRequest::getRawRequest() const {return _rawRequest;}
 
-void HTTPRequest::setBodyReceived(size_t size) {_bodyReceived = size;};
+void HTTPRequest::setBodyReceived(size_t size) {_bodyReceived = size;}
+void HTTPRequest::setRequestTooLarge(bool value) {_RequestTooLarge = value;}
