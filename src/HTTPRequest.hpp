@@ -1,6 +1,7 @@
 #ifndef HTTPREQUEST_HPP
 #define HTTPREQUEST_HPP
 
+#include "ServerConfig.hpp"
 #include <string>
 #include <map>
 
@@ -8,6 +9,7 @@
 class HTTPRequest {
 public:
 	HTTPRequest();
+	HTTPRequest(int def_max_body_size);
 	~HTTPRequest();
 
 	std::string getMethod() const;
@@ -22,16 +24,35 @@ public:
 	std::string getHost() const;
 	void trim(std::string& s) const;
 
-	bool parse(const std::string& raw_request);
+	bool parse();
     std::string toString() const;
     std::string toStringHeaders() const;
+	void parseRawRequest(const ServerConfig& config);
+
+	std::string _rawRequest;
+	
+	bool getHeadersParsed() const;
+    bool getRequestTooLarge() const;
+    size_t getContentLength() const;
+	size_t getBodyReceived() const;
+	int	getMaxBodySize() const;
+	std::string getRawRequest() const;
+
+	void setBodyReceived(size_t size);
 
 private:
 	std::string _method;
 	std::string _path;
 	std::string _queryString;
-	std::map<std::string, std::string> _headers;
 	std::string _body;
+	std::map<std::string, std::string> _headers;
+
+	int _maxBodySize;
+	size_t _contentLength;
+    size_t _bodyReceived;
+    bool _headersParsed;
+    bool _requestTooLarge;
+
 
 	bool parseRequestLine(const std::string& line);
 	void parseHeaders(const std::string& headers);

@@ -22,7 +22,7 @@ class Server
 private:
     const ServerConfig& _config;
 
-    std::string receiveRequest(int client_fd);
+    std::string receiveRequest(int client_fd, HTTPRequest& request);
     void sendResponse(int client_fd, HTTPResponse response);
     void handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response);
     void handleGetOrPostRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response);
@@ -37,7 +37,6 @@ private:
     // Ajout des méthodes auxiliaires pour gérer les extensions CGI supplémentaires
     bool hasCgiExtension(const std::string& path) const;
     bool endsWith(const std::string& str, const std::string& suffix) const;
-	bool requestTooLarge;
 
 public:
     // Constructeur pour inclure ServerConfig

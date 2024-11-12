@@ -1,11 +1,15 @@
 #include "HTTPRequest.hpp"
 #include "Utils.hpp"
+#include "Location.hpp"
 #include "Logger.hpp"
 #include <sstream>
 #include <iostream>
 #include <cstdlib>
 
+
 HTTPRequest::HTTPRequest() {}
+
+HTTPRequest::HTTPRequest(int max_body_size) : _maxBodySize(max_body_size), _contentLength(0),_bodyReceived(0), _headersParsed(false),_requestTooLarge(false) {}
 
 HTTPRequest::~HTTPRequest() {}
 
@@ -23,15 +27,69 @@ std::string HTTPRequest::getStrHeader(std::string header) const {
     return it->second;
 }
 
-bool HTTPRequest::parse(const std::string& raw_request) {
-	size_t header_end_pos = raw_request.find("\r\n\r\n");
+void HTTPRequest::parseRawRequest(const ServerConfig& config) {
+    // Check if headers are fully received
+    size_t header_end_pos = _rawRequest.find("\r\n\r\n");
+
+	//?? Sue se passe-t-il si le client n'envoie pas \r\n\r\n ? Est-ce possible ?
+    if (header_end_pos == std::string::npos) {
+        return;
+    }
+
+    // Parse the request line
+    size_t line_end_pos = _rawRequest.find("\r\n");
+    std::string request_line = _rawRequest.substr(0, line_end_pos);
+    std::istringstream iss(request_line);
+    iss >> _method >> _path;
+
+    // Determine max_body_size based on location
+    const Location* location = config.findLocation(_path);
+    if (location && location->clientMaxBodySize != -1) {
+        _maxBodySize = location->clientMaxBodySize;
+    }
+
+    // Parse headers
+    std::string headers = getRawRequest().substr(0, header_end_pos);
+    std::istringstream headers_stream(headers);
+    std::string header_line;
+    while (std::getline(headers_stream, header_line)) {
+        if (!header_line.empty() && header_line.back() == '\r') {
+            header_line.pop_back();
+        }
+        size_t colon_pos = header_line.find(":");
+        if (colon_pos != std::string::npos) {
+            std::string header_name = header_line.substr(0, colon_pos);
+            std::string header_value = header_line.substr(colon_pos + 1);
+            // Trim whitespace
+            header_name.erase(0, header_name.find_first_not_of(" \t"));
+            header_name.erase(header_name.find_last_not_of(" \t") + 1);
+            header_value.erase(0, header_value.find_first_not_of(" \t"));
+            header_value.erase(header_value.find_last_not_of(" \t") + 1);
+
+            if (header_name == "Content-Length") {
+                _contentLength = static_cast<size_t>(atoi(header_value.c_str()));
+            }
+        }
+    }
+
+    _headersParsed = true;
+
+    // Check for request too large
+    if (_contentLength > static_cast<size_t>(_maxBodySize)) {
+        Logger::instance().log(WARNING, "Content-Length exceeds the configured maximum.");
+        _requestTooLarge = true;
+    }
+}
+
+bool HTTPRequest::parse() {
+	size_t header_end_pos = _rawRequest.find("\r\n\r\n");
 	if (header_end_pos == std::string::npos) {
 		Logger::instance().log(ERROR, "Invalid HTTP request: missing header-body separator.");
 		return false;
 	}
 
-	std::string headers_part = raw_request.substr(0, header_end_pos);
-	std::string body_part = raw_request.substr(header_end_pos + 4);
+	std::string headers_part = _rawRequest.substr(0, header_end_pos);
+	std::string body_part = _rawRequest.substr(header_end_pos + 4);
 
 	std::istringstream header_stream(headers_part);
 	std::string line;
@@ -169,3 +227,13 @@ std::string HTTPRequest::toString() const {
 
 	return oss.str();
 }
+
+
+bool HTTPRequest::getHeadersParsed() const {return _headersParsed;};
+bool HTTPRequest::getRequestTooLarge() const {return _requestTooLarge;};
+size_t HTTPRequest::getContentLength() const {return _contentLength;};
+size_t HTTPRequest::getBodyReceived() const {return _bodyReceived;};
+int HTTPRequest::getMaxBodySize() const {return _maxBodySize;};
+std::string HTTPRequest::getRawRequest() const {return _rawRequest;};
+
+void HTTPRequest::setBodyReceived(size_t size) {_bodyReceived = size;};
