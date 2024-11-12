@@ -254,56 +254,61 @@ void ConfigParser::processLocationBlock(std::ifstream &file, const std::string& 
         std::getline(iss, value, ';');
         trim(value);
 
-        validateDirectiveValue(directive, value);
-
-        if (directive == "cgi_extension") {
-            std::istringstream valueStream(value);
-            std::string ext;
-            while (valueStream >> ext) {
-                validateDirectiveValue(directive, ext);
-                serverConfig.cgiExtensions.push_back(ext);
-                Logger::instance().log(DEBUG, "Loaded CGI extension from location: " + ext);
-            }
-        } else if (directive == "method") {
+        if (directive == "method") {
+            // Traitement des méthodes HTTP
             std::istringstream valueStream(value);
             std::string method;
             while (valueStream >> method) {
                 validateDirectiveValue(directive, method);
                 location.allowedMethods.push_back(method);
             }
-        } else if (directive == "client_max_body_size") {
-    		validateDirectiveValue(directive, value);
-    		location.clientMaxBodySize = std::atoi(value.c_str());
-			 Logger::instance().log(DEBUG, "Set client_max_body_size to " + value + " in location " + location.path);
-		} else  if (directive == "return") {
-            std::istringstream valueStream(value);
-            int statusCode;
-            std::string redirectUrl;
-            valueStream >> statusCode >> redirectUrl;
+        } else {
+            // Pour toutes les autres directives, valider la valeur complète
+            validateDirectiveValue(directive, value);
 
-            if (statusCode < 300 || statusCode > 399) {
-                throw ConfigParserException("Invalid status code for 'return': " + to_string(statusCode));
+            if (directive == "cgi_extension") {
+                std::istringstream valueStream(value);
+                std::string ext;
+                while (valueStream >> ext) {
+                    validateDirectiveValue(directive, ext);
+                    serverConfig.cgiExtensions.push_back(ext);
+                    Logger::instance().log(DEBUG, "Loaded CGI extension from location: " + ext);
+                }
+            } else if (directive == "client_max_body_size") {
+                validateDirectiveValue(directive, value);
+                location.clientMaxBodySize = std::atoi(value.c_str());
+                Logger::instance().log(DEBUG, "Set client_max_body_size to " + value + " in location " + location.path);
+            } else if (directive == "return") {
+                std::istringstream valueStream(value);
+                int statusCode;
+                std::string redirectUrl;
+                valueStream >> statusCode >> redirectUrl;
+
+                if (statusCode < 300 || statusCode > 399) {
+                    throw ConfigParserException("Invalid status code for 'return': " + to_string(statusCode));
+                }
+
+                location.returnCode = statusCode;
+                location.returnUrl = redirectUrl;
+            } else if (directive == "upload_on") {
+                location.uploadOn = (value == "on");
+                Logger::instance().log(DEBUG, "Set uploadOn to " + value + " in location " + location.path);
+            } else if (directive == "upload_path") {
+                validateDirectiveValue(directive, value);
+                location.uploadPath = value;
+            } else if (directive == "autoindex") {
+                validateDirectiveValue(directive, value);
+                location.autoindex = (value == "on");
+                Logger::instance().log(DEBUG, "Set autoindex to " + value + " in location " + location.path);
+            } else {
+                location.options[directive] = value;
             }
-
-            location.returnCode = statusCode;
-            location.returnUrl = redirectUrl;
-        } else if (directive == "upload_on") {
-            location.uploadOn = (value == "on");
-            Logger::instance().log(DEBUG, "Set uploadOn to " + value + " in location " + location.path);
-        } else if (directive == "upload_path") {
-    		validateDirectiveValue(directive, value);
-    		location.uploadPath = value;
-		} else if (directive == "autoindex") {
-			validateDirectiveValue(directive, value);
-			location.autoindex = (value == "on");
-			Logger::instance().log(DEBUG, "Set autoindex to " + value + " in location " + location.path);
-	} else {
-            location.options[directive] = value;
         }
     }
 
     throw ConfigParserException("Error: unexpected end of file in location block.");
 }
+
 
 
 
