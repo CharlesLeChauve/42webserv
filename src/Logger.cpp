@@ -110,7 +110,7 @@ void Logger::log(LoggerLevel level, const std::string& message) {
     } else {
         if (repeatCount > 1) {
             // Output the summary of hidden lines
-            std::string hiddenMessage = "[ " + std::to_string(repeatCount - 2) + " similar lines hidden ]\n";
+            std::string hiddenMessage = "[ " + to_string(repeatCount - 2) + " similar lines hidden ]\n";
             writeToLogs(lastLevel, hiddenMessage);
 
             // Output the last repeated message

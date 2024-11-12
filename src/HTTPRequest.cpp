@@ -53,9 +53,9 @@ void HTTPRequest::parseRawRequest(const ServerConfig& config) {
     std::istringstream headers_stream(headers);
     std::string header_line;
     while (std::getline(headers_stream, header_line)) {
-        if (!header_line.empty() && header_line.back() == '\r') {
-            header_line.pop_back();
-        }
+        if (!header_line.empty() && header_line[header_line.size() - 1] == '\r') {
+        	header_line.erase(header_line.size() - 1); //?? CHECK IF MODIFICATION IS GOOD !
+    	}
         size_t colon_pos = header_line.find(":");
         if (colon_pos != std::string::npos) {
             std::string header_name = header_line.substr(0, colon_pos);
@@ -237,4 +237,4 @@ int HTTPRequest::getMaxBodySize() const {return _maxBodySize;}
 std::string HTTPRequest::getRawRequest() const {return _rawRequest;}
 
 void HTTPRequest::setBodyReceived(size_t size) {_bodyReceived = size;}
-void HTTPRequest::setRequestTooLarge(bool value) {_RequestTooLarge = value;}
+void HTTPRequest::setRequestTooLarge(bool value) {_requestTooLarge = value;}

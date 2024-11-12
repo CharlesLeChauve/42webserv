@@ -53,7 +53,7 @@ void readFromSocket(int client_fd, HTTPRequest& request) {
     int bytes_received = read(client_fd, buffer, sizeof(buffer));
     
     if (bytes_received == 0) {
-        Logger::instance().log(WARNING, "Client closed the connection: FD " + std::to_string(client_fd));
+        Logger::instance().log(WARNING, "Client closed the connection: FD " + to_string(client_fd));
         // Handle client disconnect
     } else if (bytes_received < 0) {
         Logger::instance().log(ERROR, "Error reading from client. Please check the connection.");
@@ -65,7 +65,7 @@ void readFromSocket(int client_fd, HTTPRequest& request) {
 
 std::string Server::receiveRequest(int client_fd, HTTPRequest& request) {
     if (client_fd <= 0) {
-        Logger::instance().log(ERROR, "Invalid client FD before reading: " + std::to_string(client_fd));
+        Logger::instance().log(ERROR, "Invalid client FD before reading: " + to_string(client_fd));
         return "";
     }
 
@@ -790,7 +790,7 @@ std::string Server::generateDirectoryListing(const std::string& directoryPath, c
                 continue;
 
             std::string fullPath = requestPath;
-            if (fullPath.back() != '/')
+            if (!fullPath.empty() && fullPath.size() - 1 != '/')
                 fullPath += "/";
             fullPath += name;
 
