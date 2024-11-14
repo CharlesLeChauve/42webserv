@@ -789,7 +789,7 @@ std::string Server::generateDirectoryListing(const std::string& directoryPath, c
                 continue;
 
             std::string fullPath = requestPath;
-            if (fullPath.back() != '/')
+            if (!fullPath.empty() && fullPath.size() - 1 != '/')
                 fullPath += "/";
             fullPath += name;
 
