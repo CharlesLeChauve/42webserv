@@ -51,56 +51,51 @@ std::string getSorryPath() {
 void readFromSocket(int client_fd, HTTPRequest& request) {
     char buffer[1024];
     int bytes_received = read(client_fd, buffer, sizeof(buffer));
-    
+
     if (bytes_received == 0) {
-        Logger::instance().log(WARNING, "Client closed the connection: FD " + std::to_string(client_fd));
-        // Handle client disconnect
+        Logger::instance().log(WARNING, "Client closed the connection: FD " + to_string(client_fd));
+        request.setConnectionClosed(true);
     } else if (bytes_received < 0) {
-        Logger::instance().log(ERROR, "Error reading from client. Please check the connection.");
-        // Handle read error
+        Logger::instance().log(ERROR, "Error reading from client.");
+        request.setConnectionClosed(true);
     } else {
         request._rawRequest.append(buffer, bytes_received);
     }
 }
 
-std::string Server::receiveRequest(int client_fd, HTTPRequest& request) {
+
+void Server::receiveRequest(int client_fd, HTTPRequest& request) {
     if (client_fd <= 0) {
-        Logger::instance().log(ERROR, "Invalid client FD before reading: " + std::to_string(client_fd));
-        return "";
+        Logger::instance().log(ERROR, "Invalid client FD before reading: " + to_string(client_fd));
+        return;
     }
 
-    while (true) {
-        readFromSocket(client_fd, request);
-        if (request.getRequestTooLarge()) {
-            break;
-        }
-        if (!request.getHeadersParsed()) {
-            request.parseRawRequest(_config);
-            if (request.getRequestTooLarge()) {
-                break;
-            }
-        }
-        if (request.getHeadersParsed()) {
-            // Calculate body received
-            size_t header_end_pos = request._rawRequest.find("\r\n\r\n") + 4;
-            request.setBodyReceived(request._rawRequest.size() - header_end_pos);
-            // Check if full body is received
-            if (request.getBodyReceived() >= request.getContentLength()) {
-                break; // Full request received
-            }
-            // Check if body size exceeds maximum
-            if (request.getBodyReceived()  > static_cast<size_t>(request.getMaxBodySize())) {
-                Logger::instance().log(WARNING, "Request body size exceeds the configured maximum.");
-                // request.setRequestTooLarge(true);
-                break;
-            }
-        }
-    }
+    readFromSocket(client_fd, request);
     if (request.getRequestTooLarge()) {
-        return "";
+        return;
     }
-    Logger::instance().log(INFO, "Full request read.");
-    return request._rawRequest;
+    if (!request.getHeadersParsed()) {
+        request.parseRawRequest(_config);
+        if (request.getRequestTooLarge()) {
+            return;
+        }
+    }
+    if (request.getHeadersParsed()) {
+        // Calculate body received
+        size_t header_end_pos = request._rawRequest.find("\r\n\r\n") + 4;
+        request.setBodyReceived(request._rawRequest.size() - header_end_pos);
+        // Check if full body is received
+        if (request.getBodyReceived() >= request.getContentLength()) {
+            request.setComplete(true);
+            Logger::instance().log(INFO, "Full request read.");
+            return; // Full request received
+        }
+        // Check if body size exceeds maximum
+        if (request.getBodyReceived() > static_cast<size_t>(request.getMaxBodySize())) {
+            Logger::instance().log(WARNING, "Request body size exceeds the configured maximum.");
+            return;
+        }
+    }
 }
 
 // std::string Server::receiveRequest(int client_fd, HTTPRequest& request) {
@@ -140,13 +135,13 @@ std::string Server::receiveRequest(int client_fd, HTTPRequest& request) {
 //         request.append(buffer, bytes_received);
 
 
-//         /*      
+//         /*
 //             Lire jusqu'a fin des headers ==> Comment la trouver, si le client met pas \r\n\...
 
 //             }
 //             Headers lus, trouver content-length :
 
-        
+
 
 //             Si pas , pas de body, salut;
 //             //Si method = GET, pareil
@@ -723,28 +718,32 @@ int Server::acceptNewClient(int server_fd) {
 	return client_fd;
 }
 
-void Server::handleClient(int client_fd) {
-	if (client_fd <= 0) {
+void Server::handleClient(int client_fd, HTTPRequest* request) {
+    if (client_fd <= 0) {
         Logger::instance().log(ERROR, "Invalid client FD: " + to_string(client_fd));
-		return;
-	}
+        return;
+    }
 
-	HTTPRequest request(_config.clientMaxBodySize);
-	receiveRequest(client_fd, request);
-	HTTPResponse response;
+    receiveRequest(client_fd, *request);
+    if (!request->isComplete()) {
+        // Request is incomplete, return and wait for more data
+        return;
+    }
 
-	if (!request.parse()) {
-        Logger::instance().log(ERROR, "Failed to parse client request on fd" + to_string(client_fd) + "; 400 error (Bad Request) sent");
-		sendErrorResponse(client_fd, 400);  // Mauvaise requête
-		return;
-	}
+    HTTPResponse response;
 
-	SessionManager session(request.getStrHeader("Cookie"));
-	if (session.getFirstCon())
-		response.setHeader("Set-Cookie", session.getSessionId() + "; Path=/; HttpOnly");
+    if (!request->parse()) {
+        Logger::instance().log(ERROR, "Failed to parse client request on fd " + to_string(client_fd));
+        sendErrorResponse(client_fd, 400);  // Bad Request
+        return;
+    }
 
-    Logger::instance().log(INFO, "Parsing OK, starting to handle request for client fd: " + to_string(client_fd));
-	handleHttpRequest(client_fd, request, response);
+    SessionManager session(request->getStrHeader("Cookie"));
+    if (session.getFirstCon())
+        response.setHeader("Set-Cookie", session.getSessionId() + "; Path=/; HttpOnly");
+
+    Logger::instance().log(INFO, "Parsing OK, handling request for client fd: " + to_string(client_fd));
+    handleHttpRequest(client_fd, *request, response);
 }
 
 void Server::sendErrorResponse(int client_fd, int errorCode) {

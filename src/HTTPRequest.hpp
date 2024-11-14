@@ -30,7 +30,7 @@ public:
 	void parseRawRequest(const ServerConfig& config);
 
 	std::string _rawRequest;
-	
+
 	bool getHeadersParsed() const;
     bool getRequestTooLarge() const;
     size_t getContentLength() const;
@@ -41,12 +41,19 @@ public:
 	void setBodyReceived(size_t size);
 	void setRequestTooLarge(bool value);
 
+	bool isComplete() const;
+    void setComplete(bool value);
+    bool getConnectionClosed() const;
+    void setConnectionClosed(bool value);
+
 private:
 	std::string _method;
 	std::string _path;
 	std::string _queryString;
 	std::string _body;
 	std::map<std::string, std::string> _headers;
+	bool _complete;
+    bool _connectionClosed;
 
 	int _maxBodySize;
 	size_t _contentLength;

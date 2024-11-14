@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <ctime>
 #include <signal.h>
+#include <map>
 
 void initialize_random_generator() {
     std::ifstream urandom("/dev/urandom", std::ios::binary);
@@ -43,18 +44,18 @@ int main(int argc, char* argv[]) {
     }
 
     initialize_random_generator();
-    
+
     ConfigParser configParser;
     try {
         configParser.parseConfigFile(configFile);
         Logger::instance().log(DEBUG, "Config file successfully parsed");
     } catch (const ConfigParserException& e) {
-		Logger::instance().log(ERROR, std::string("Failure in configuration parsing: ") + e.what());
+        Logger::instance().log(ERROR, std::string("Failure in configuration parsing: ") + e.what());
         return 1;
     }
 
     const std::vector<ServerConfig>& serverConfigs = configParser.getServerConfigs();
-	Logger::instance().log(INFO, to_string(serverConfigs.size()) + " servers successfully cnfigured");
+    Logger::instance().log(INFO, to_string(serverConfigs.size()) + " servers successfully configured");
 
     if (pipe(serverSignal::pipe_fd) == -1) {
         perror("pipe");
@@ -73,16 +74,17 @@ int main(int argc, char* argv[]) {
     std::vector<pollfd> poll_fds;
     std::map<int, Server*> fdToServerMap;
     std::map<int, Server*> clientFdToServerMap;
+    std::map<int, HTTPRequest*> clientFdToRequestMap; // Map to keep track of HTTPRequest objects
 
     {
         pollfd pfd;
         pfd.fd = serverSignal::pipe_fd[0];
         pfd.events = POLLIN;
-        pfd.revents = 0; // Initialiser revents à 0
+        pfd.revents = 0; // Initialize revents to 0
         poll_fds.push_back(pfd);
     }
 
-    // Créer les serveurs et sockets
+    // Create servers and sockets
     for (size_t i = 0; i < serverConfigs.size(); ++i) {
         Server* server = new Server(serverConfigs[i]);
         Socket* socket = new Socket(serverConfigs[i].ports[0]);
@@ -91,27 +93,27 @@ int main(int argc, char* argv[]) {
         pollfd pfd;
         pfd.fd = socket->getSocket();
         pfd.events = POLLIN;
-        pfd.revents = 0; // Initialiser revents à 0
+        pfd.revents = 0; // Initialize revents to 0
         poll_fds.push_back(pfd);
 
-        // Associer les sockets serveurs aux serveurs
+        // Associate server sockets with servers
         fdToServerMap[socket->getSocket()] = server;
 
         servers.push_back(server);
         sockets.push_back(socket);
 
-		Logger::instance().log(INFO, "Server launched, listenign on port: " + to_string(serverConfigs[i].ports[0]));
+        Logger::instance().log(INFO, "Server launched, listening on port: " + to_string(serverConfigs[i].ports[0]));
     }
 
     while (!stopServer) {
-        int poll_count = poll(&poll_fds[0], poll_fds.size(), -1); // Attendre indéfiniment
-         if (poll_count < 0) {
+        int poll_count = poll(&poll_fds[0], poll_fds.size(), -1); // Wait indefinitely
+        if (poll_count < 0) {
             if (errno == EINTR) {
-                // poll() a été interrompu par un signal, continuer la boucle
+                // poll() was interrupted by a signal, continue the loop
                 continue;
             } else {
-                perror("Erreur lors de l'appel à poll");
-                break; // Ou gérez l'erreur de manière appropriée
+                perror("Error calling poll");
+                break; // Or handle the error appropriately
             }
         }
 
@@ -121,50 +123,52 @@ int main(int argc, char* argv[]) {
 
             if (poll_fds[i].fd == serverSignal::pipe_fd[0]) {
                 if (poll_fds[i].revents & POLLIN) {
-                    // Lire le(s) octet(s) du pipe pour vider le buffer
+                    // Read the byte(s) from the pipe to clear the buffer
                     uint8_t byte;
                     ssize_t bytesRead = read(serverSignal::pipe_fd[0], &byte, sizeof(byte));
                     if (bytesRead > 0) {
-                        // Vous pouvez définir une variable pour arrêter proprement le serveur
-                        Logger::instance().log(INFO, "Signal reçu, arrêt du serveur en cours...");
+                        // You can set a variable to properly stop the server
+                        Logger::instance().log(INFO, "Signal received, stopping the server...");
                         stopServer = true;
-                        break; 
+                        break;
                     }
                 }
                 continue;
             }
-            // Gérer les erreurs
+
+            // Handle errors
             if (poll_fds[i].revents & POLLERR) {
-				Logger::instance().log(ERROR, "Error on file descriptor: " + to_string(poll_fds[i].fd));
+                Logger::instance().log(ERROR, "Error on file descriptor: " + to_string(poll_fds[i].fd));
                 if (fdToServerMap.find(poll_fds[i].fd) != fdToServerMap.end()) {
-                    // C'est un socket serveur
-                    // Vous pouvez décider de fermer le serveur ou de gérer l'erreur autrement
-                    Logger::instance().log(ERROR, "Error on Server socket detected in poll");
-					//?? Et du coup on décide quoi ?
+                    // It's a server socket
+                    Logger::instance().log(ERROR, "Error on server socket detected in poll");
+                    // Decide how to handle server socket errors
                 } else {
-                    // C'est un socket client
-                    Logger::instance().log(ERROR, "Error on Client socket detected in poll");
+                    // It's a client socket
+                    Logger::instance().log(ERROR, "Error on client socket detected in poll");
                     close(poll_fds[i].fd);
                     clientFdToServerMap.erase(poll_fds[i].fd);
+                    clientFdToRequestMap.erase(poll_fds[i].fd);
                     poll_fds.erase(poll_fds.begin() + i);
                     --i;
                 }
                 continue;
             }
 
-            // Gérer les déconnexions
+            // Handle disconnections
             if (poll_fds[i].revents & POLLHUP) {
-				Logger::instance().log(INFO, "Disconnected client FD : " + to_string(poll_fds[i].fd));
+                Logger::instance().log(INFO, "Disconnected client FD: " + to_string(poll_fds[i].fd));
                 close(poll_fds[i].fd);
                 clientFdToServerMap.erase(poll_fds[i].fd);
+                clientFdToRequestMap.erase(poll_fds[i].fd);
                 poll_fds.erase(poll_fds.begin() + i);
                 --i;
                 continue;
             }
 
             if (poll_fds[i].revents & POLLNVAL) {
-				Logger::instance().log(ERROR, "File descriptor not valid: " + to_string(poll_fds[i].fd));
-                // Supprimer le descripteur invalide
+                Logger::instance().log(ERROR, "File descriptor not valid: " + to_string(poll_fds[i].fd));
+                // Remove the invalid descriptor
                 poll_fds.erase(poll_fds.begin() + i);
                 --i;
                 continue;
@@ -172,42 +176,63 @@ int main(int argc, char* argv[]) {
 
             if (poll_fds[i].revents & POLLIN) {
                 if (fdToServerMap.find(poll_fds[i].fd) != fdToServerMap.end()) {
-                    // C'est un descripteur de socket serveur, accepter une nouvelle connexion
+                    // It's a server socket descriptor, accept a new connection
                     Server* server = fdToServerMap[poll_fds[i].fd];
                     int client_fd = server->acceptNewClient(poll_fds[i].fd);
 
                     if (client_fd != -1) {
-                        clientFdToServerMap[client_fd] = server;  // Enregistrer l'association client_fd -> server
+                        clientFdToServerMap[client_fd] = server; // Register the client_fd -> server association
+
+                        // Create a new HTTPRequest object and store it in the map
+                        int max_body_size = serverConfigs[0].clientMaxBodySize;
+                        HTTPRequest* request = new HTTPRequest(max_body_size);
+                        clientFdToRequestMap[client_fd] = request;
 
                         pollfd client_pollfd;
                         client_pollfd.fd = client_fd;
                         client_pollfd.events = POLLIN | POLLHUP | POLLERR;
                         client_pollfd.revents = 0;
                         poll_fds.push_back(client_pollfd);
-						Logger::instance().log(DEBUG, "New pollfd added for client with FD: " + to_string(client_fd) + " accepted on server FD: " + to_string(poll_fds[i].fd));
+                        Logger::instance().log(DEBUG, "New pollfd added for client with FD: " + to_string(client_fd) + " accepted on server FD: " + to_string(poll_fds[i].fd));
                     } else {
-						Logger::instance().log(ERROR, "Failure accepting client " + to_string(client_fd) + " on server FD : " + to_string(poll_fds[i].fd));
+                        Logger::instance().log(ERROR, "Failure accepting client on server FD: " + to_string(poll_fds[i].fd));
                     }
                 } else {
-                    // C'est un descripteur de socket client, traiter la requête
+                    // It's a client socket descriptor, handle the request
                     Server* server = clientFdToServerMap[poll_fds[i].fd];
-                    if (server != NULL) {
+                    HTTPRequest* request = clientFdToRequestMap[poll_fds[i].fd];
+
+                    if (server != NULL && request != NULL) {
                         Logger::instance().log(INFO, "Begin to handle request for client FD: " + to_string(poll_fds[i].fd));
-                        server->handleClient(poll_fds[i].fd);
+                        server->handleClient(poll_fds[i].fd, request);
                     }
-                    // Fermer et supprimer la connexion du client du poll_fds
-                    close(poll_fds[i].fd);
-                    clientFdToServerMap.erase(poll_fds[i].fd);
-                    poll_fds.erase(poll_fds.begin() + i);
-                    --i;
+
+                    // Check if the request is complete or connection is closed
+                    if (request->isComplete() || request->getConnectionClosed()) {
+                        // Clean up
+                        delete request;
+                        clientFdToRequestMap.erase(poll_fds[i].fd);
+
+                        close(poll_fds[i].fd);
+                        clientFdToServerMap.erase(poll_fds[i].fd);
+                        poll_fds.erase(poll_fds.begin() + i);
+                        --i;
+                    }
                 }
             }
         }
+
         if (stopServer)
             break;
     }
 
-    // Nettoyage de la mémoire
+    // Clean up any remaining HTTPRequest objects
+    for (std::map<int, HTTPRequest*>::iterator it = clientFdToRequestMap.begin(); it != clientFdToRequestMap.end(); ++it) {
+        delete it->second;
+    }
+    clientFdToRequestMap.clear();
+
+    // Clean up memory
     for (size_t i = 0; i < servers.size(); ++i) {
         delete servers[i];
         delete sockets[i];

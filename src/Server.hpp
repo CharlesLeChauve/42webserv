@@ -22,7 +22,7 @@ class Server
 private:
     const ServerConfig& _config;
 
-    std::string receiveRequest(int client_fd, HTTPRequest& request);
+    void receiveRequest(int client_fd, HTTPRequest& request);
     void sendResponse(int client_fd, HTTPResponse response);
     void handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response);
     void handleGetOrPostRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response);
@@ -50,7 +50,7 @@ public:
     int acceptNewClient(int server_fd);
 
     // Gérer les requêtes d'un client connecté
-    void handleClient(int client_fd);
+    void handleClient(int client_fd, HTTPRequest* request);
 };
 
 #endif
