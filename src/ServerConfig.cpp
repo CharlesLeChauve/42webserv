@@ -2,7 +2,7 @@
 #include "Logger.hpp"
 #include <iostream>
 
-ServerConfig::ServerConfig() : root("www/"), index("index.html"), host("0.0.0.0"), clientMaxBodySize(-1), autoindex(false) {
+ServerConfig::ServerConfig() : root("www/"), index("index.html"), host("0.0.0.0"), clientMaxBodySize(0), autoindex(false) {
 	serverNames.push_back("localhost");
 }
 
