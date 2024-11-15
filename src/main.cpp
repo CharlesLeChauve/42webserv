@@ -9,9 +9,19 @@
 #include "ServerConfig.hpp"
 #include <poll.h>
 #include <unistd.h>
+#include <sys/time.h>
 #include <ctime>
 #include <signal.h>
 #include <map>
+
+// Définition du functoOor
+struct MatchFD {
+    int fd;
+    MatchFD(int f) : fd(f) {}
+    bool operator()(const pollfd& pfd) const {
+        return pfd.fd == fd;
+    }
+};
 
 void initialize_random_generator() {
     std::ifstream urandom("/dev/urandom", std::ios::binary);
@@ -23,6 +33,12 @@ void initialize_random_generator() {
         seed = std::time(0);
     }
     srand(seed);
+}
+
+unsigned long curr_time_ms() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return static_cast<unsigned long>(tv.tv_sec) * 1000 + tv.tv_usec / 1000;
 }
 
 int main(int argc, char* argv[]) {
@@ -75,6 +91,7 @@ int main(int argc, char* argv[]) {
     std::map<int, Server*> fdToServerMap;
     std::map<int, Server*> clientFdToServerMap;
     std::map<int, HTTPRequest*> clientFdToRequestMap; // Map to keep track of HTTPRequest objects
+    
 
     {
         pollfd pfd;
@@ -106,7 +123,53 @@ int main(int argc, char* argv[]) {
     }
 
     while (!stopServer) {
-        int poll_count = poll(&poll_fds[0], poll_fds.size(), -1); // Wait indefinitely
+        unsigned long now = curr_time_ms();
+        std::vector<int> timed_out_fds;
+        unsigned long min_remaining_time = TIMEOUT_MS;
+        bool has_active_connections = false;
+
+        // Timeout checks
+        std::map<int, HTTPRequest*>::iterator it;
+        for (it = clientFdToRequestMap.begin(); it != clientFdToRequestMap.end(); /* no increment here */) {
+            int client_fd = it->first;
+            HTTPRequest& request = *(it->second);
+
+            unsigned long time_since_last_activity = now - request.getLastActivity();
+
+            if (time_since_last_activity >= TIMEOUT_MS) {
+                // Connection has timed out
+                Logger::instance().log(INFO, "Connection timed out for client FD: " + to_string(client_fd));
+                //?? sendError avant de close (408)
+                // Close the connection and clean up
+                Server *server = clientFdToServerMap[client_fd];
+                server->sendErrorResponse(client_fd, 408);
+                close(client_fd);
+                clientFdToServerMap.erase(client_fd);
+                poll_fds.erase(
+                    std::remove_if(poll_fds.begin(), poll_fds.end(), MatchFD(client_fd)),
+                    poll_fds.end()
+                );
+                clientFdToRequestMap.erase(it++);
+            } else {
+                unsigned long remaining_time = TIMEOUT_MS - time_since_last_activity;
+                if (remaining_time < min_remaining_time) {
+                    min_remaining_time = remaining_time;
+                }
+                has_active_connections = true;
+                ++it;
+            }
+        }
+
+        // Call poll()
+        int poll_timeout;
+        if (has_active_connections) {
+            poll_timeout = static_cast<int>(min_remaining_time);
+        } else {
+            poll_timeout = -1; // Bloquer indéfiniment si aucune connexion active
+        }
+        int poll_count = poll(&poll_fds[0], poll_fds.size(), poll_timeout); 
+        // Ici on attend le temps le plus court avant expiration d'une des requetes. Si une requête timeout dans 500ms, on dit a poll d'attendre au maximum 500ms
+        // Comme ca on sort du poll, on coupe la connexion avec le client expiré et on peut relancer une boucle poll avec le nouveau temps le plus court avant time out d'une requete 
         if (poll_count < 0) {
             if (errno == EINTR) {
                 // poll() was interrupted by a signal, continue the loop
@@ -186,6 +249,7 @@ int main(int argc, char* argv[]) {
                         // Create a new HTTPRequest object and store it in the map
                         int max_body_size = serverConfigs[0].clientMaxBodySize;
                         HTTPRequest* request = new HTTPRequest(max_body_size);
+                        request->setLastActivity(curr_time_ms());
                         clientFdToRequestMap[client_fd] = request;
 
                         pollfd client_pollfd;
@@ -201,6 +265,7 @@ int main(int argc, char* argv[]) {
                     // It's a client socket descriptor, handle the request
                     Server* server = clientFdToServerMap[poll_fds[i].fd];
                     HTTPRequest* request = clientFdToRequestMap[poll_fds[i].fd];
+                    request->setLastActivity(curr_time_ms());
 
                     if (server != NULL && request != NULL) {
                         Logger::instance().log(INFO, "Begin to handle request for client FD: " + to_string(poll_fds[i].fd));

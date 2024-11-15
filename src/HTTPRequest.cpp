@@ -234,11 +234,13 @@ size_t HTTPRequest::getContentLength() const { return _contentLength; }
 size_t HTTPRequest::getBodyReceived() const { return _bodyReceived; }
 int HTTPRequest::getMaxBodySize() const { return _maxBodySize; }
 std::string HTTPRequest::getRawRequest() const { return _rawRequest; }
+bool HTTPRequest::getConnectionClosed() const { return _connectionClosed; }
+unsigned long HTTPRequest::getLastActivity() const {return _lastActivity; }
+bool HTTPRequest::isComplete() const { return _complete; }
 
 void HTTPRequest::setBodyReceived(size_t size) { _bodyReceived = size; }
 void HTTPRequest::setRequestTooLarge(bool value) { _requestTooLarge = value; }
-
-bool HTTPRequest::isComplete() const { return _complete; }
-void HTTPRequest::setComplete(bool value) { _complete = value; }
-bool HTTPRequest::getConnectionClosed() const { return _connectionClosed; }
 void HTTPRequest::setConnectionClosed(bool value) { _connectionClosed = value; }
+void HTTPRequest::setComplete(bool value) { _complete = value; }
+
+void HTTPRequest::setLastActivity(unsigned long timestamp) { _lastActivity = timestamp; }

@@ -37,6 +37,8 @@ public:
 	size_t getBodyReceived() const;
 	int	getMaxBodySize() const;
 	std::string getRawRequest() const;
+	unsigned long getLastActivity() const;
+
 
 	void setBodyReceived(size_t size);
 	void setRequestTooLarge(bool value);
@@ -45,6 +47,8 @@ public:
     void setComplete(bool value);
     bool getConnectionClosed() const;
     void setConnectionClosed(bool value);
+	void setLastActivity(unsigned long timestamp);
+
 
 private:
 	std::string _method;
@@ -60,6 +64,8 @@ private:
     size_t _bodyReceived;
     bool _headersParsed;
     bool _requestTooLarge;
+
+	unsigned long _lastActivity;
 
 
 	bool parseRequestLine(const std::string& line);

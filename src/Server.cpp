@@ -77,7 +77,8 @@ void Server::receiveRequest(int client_fd, HTTPRequest& request) {
     if (!request.getHeadersParsed()) {
         request.parseRawRequest(_config);
         if (request.getRequestTooLarge()) {
-            return;
+            //?? Ici il va falloir enlever void et return une erreur si request too large ===> D'autres code si d'autres erreurs ? bool ou int ?? 
+            return ;//413
         }
     }
     if (request.getHeadersParsed()) {
