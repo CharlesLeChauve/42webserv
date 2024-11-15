@@ -107,7 +107,7 @@ void ConfigParser::validateDirectiveValue(const std::string &directive, const st
         }
     } else if (directive == "client_max_body_size") {
     	int maxSize = std::atoi(value.c_str());
-    	if (maxSize <= 0) {
+    	if (maxSize < 0) {
         	throw ConfigParserException("Invalid value for 'client_max_body_size': " + value);
     	}
 	} else if (directive == "upload_on") {

@@ -77,7 +77,7 @@ void HTTPRequest::parseRawRequest(const ServerConfig& config) {
     _headersParsed = true;
 
     // Check for request too large
-    if (_contentLength > static_cast<size_t>(_maxBodySize)) {
+    if (_maxBodySize > 0 && _contentLength > static_cast<size_t>(_maxBodySize)) {
         Logger::instance().log(WARNING, "Content-Length exceeds the configured maximum.");
         _requestTooLarge = true;
     }
