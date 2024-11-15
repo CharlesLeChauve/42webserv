@@ -26,18 +26,18 @@ Logger::Logger() : repeatCount(0), logToStderr(false) {
     std::strftime(timestamp, sizeof(timestamp), "%Y%m%d_%H%M%S", now_tm);
 
     // Créer le nom du répertoire avec le timestamp
-    std::string logsDir = std::string("logs/logs_") + timestamp;
+    _logsDir = std::string("logs/logs_") + timestamp;
 
     // Vérifier et créer le répertoire timestampé s'il n'existe pas
-    if (stat(logsDir.c_str(), &st) != 0) {
-            mkdir(logsDir.c_str(), 0755);
+    if (stat(_logsDir.c_str(), &st) != 0) {
+            mkdir(_logsDir.c_str(), 0755);
     }
 
     // Construire les noms de fichiers avec le répertoire timestampé
-    std::string debugFilename = logsDir + "/debug.log";
-    std::string infoFilename = logsDir + "/info.log";
-    std::string warningFilename = logsDir + "/warning.log";
-    std::string errorFilename = logsDir + "/error.log";
+    std::string debugFilename = _logsDir + "/debug.log";
+    std::string infoFilename = _logsDir + "/info.log";
+    std::string warningFilename = _logsDir + "/warning.log";
+    std::string errorFilename = _logsDir + "/error.log";
 
 	debugFile.open(debugFilename.c_str(), std::ofstream::out | std::ofstream::trunc);
     infoFile.open(infoFilename.c_str(), std::ofstream::out | std::ofstream::trunc);
@@ -71,17 +71,7 @@ Logger::~Logger() {
         std::cout << "Would you like to [K]eep this session logs or [D]elete? (d/k): ";
         std::getline(std::cin, user_input);
 
-        if (user_input == "d" || user_input == "D") {
-            if (std::remove("debug.log") == 0)
-                std::cout << "Debug log deleted successfully.\n";
-            if (std::remove("info.log") == 0)
-                std::cout << "Info log deleted successfully.\n";
-            if (std::remove("warning.log") == 0)
-                std::cout << "Warning log deleted successfully.\n";
-            if (std::remove("error.log") == 0)
-                std::cout << "Error log deleted successfully.\n";
-            break;
-        } else if (user_input == "k" || user_input == "K") {
+        if (user_input == "d" || user_input == "D" || user_input == "k" || user_input == "K") {
             if (debugFile.is_open())
                 debugFile.close();
             if (infoFile.is_open())
@@ -90,9 +80,19 @@ Logger::~Logger() {
                 warningFile.close();
             if (errorFile.is_open())
                 errorFile.close();
-            break;
-        } else {
-            std::cout << "Invalid option. Please enter 'd' to delete or 'k' to keep.\n";
+            if (user_input == "d" || user_input == "D") {
+                if (std::remove(std::string(_logsDir + "/debug.log").c_str()) == 0)
+                    std::cout << "Debug log deleted successfully.\n";
+                if (std::remove(std::string(_logsDir + "/info.log").c_str()) == 0)
+                    std::cout << "Info log deleted successfully.\n";
+                if (std::remove(std::string(_logsDir + "/warning.log").c_str()) == 0)
+                    std::cout << "Warning log deleted successfully.\n";
+                if (std::remove(std::string(_logsDir + "/error.log").c_str()) == 0)
+                    std::cout << "Error log deleted successfully.\n";
+                break;
+            } else {
+                std::cout << "Invalid option. Please enter 'd' to delete or 'k' to keep.\n";
+            }
         }
     }
 }

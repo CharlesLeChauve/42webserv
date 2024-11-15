@@ -160,6 +160,8 @@ private:
     LoggerLevel lastLevel;
     int repeatCount;
 
+    std::string _logsDir;
+
 	bool logToStderr;
 };
 
