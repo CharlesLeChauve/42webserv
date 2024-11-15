@@ -273,7 +273,7 @@ int main(int argc, char* argv[]) {
                     }
 
                     // Check if the request is complete or connection is closed
-                    if (request->isComplete() || request->getConnectionClosed()) {
+                    if (request->isComplete() || request->getConnectionClosed() || request->getRequestTooLarge()) {
                         // Clean up
                         delete request;
                         clientFdToRequestMap.erase(poll_fds[i].fd);

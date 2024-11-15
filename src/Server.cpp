@@ -72,13 +72,13 @@ void Server::receiveRequest(int client_fd, HTTPRequest& request) {
 
     readFromSocket(client_fd, request);
     if (request.getRequestTooLarge()) {
+        sendErrorResponse(client_fd, 413);
         return;
     }
     if (!request.getHeadersParsed()) {
         request.parseRawRequest(_config);
         if (request.getRequestTooLarge()) {
             sendErrorResponse(client_fd, 413);
-            request.setConnectionClosed(true);
             return ;
         }
     }
@@ -95,145 +95,11 @@ void Server::receiveRequest(int client_fd, HTTPRequest& request) {
         // Check if body size exceeds maximum
         if (request.getBodyReceived() > static_cast<size_t>(request.getMaxBodySize())) {
             Logger::instance().log(WARNING, "Request body size exceeds the configured maximum.");
+            request.setRequestTooLarge(true);
             return;
         }
     }
 }
-
-// std::string Server::receiveRequest(int client_fd, HTTPRequest& request) {
-//     if (client_fd <= 0) {
-//         Logger::instance().log(ERROR, "Invalid client FD before reading: " + to_string(client_fd));
-//         return "";
-//     }
-
-//     std::string request;
-//     char buffer[1024];
-//     int bytes_received;
-//     size_t content_length = 0;
-//     size_t body_received = 0;
-//     this->requestTooLarge = false;
-
-//     // Par défaut, utiliser la limite définie dans ServerConfig
-//     int max_body_size = _config.clientMaxBodySize;
-
-//     if (max_body_size <= 0) {
-//         // Si aucune limite définie, on utilise une limite très élevée par défaut
-//         max_body_size = std::numeric_limits<int>::max();
-//     }
-
-//     std::string request_line;
-//     std::string path;
-
-//     while (true) {
-//         bytes_received = read(client_fd, buffer, sizeof(buffer));
-//         if (bytes_received == 0) {
-//             Logger::instance().log(WARNING, "Client closed the connection: FD " + to_string(client_fd));
-//             break;
-//         } else if (bytes_received < 0) {
-//             Logger::instance().log(ERROR, "Error reading from client. Please check the connection.");
-//             break;
-//         }
-
-//         request.append(buffer, bytes_received);
-
-
-//         /*
-//             Lire jusqu'a fin des headers ==> Comment la trouver, si le client met pas \r\n\...
-
-//             }
-//             Headers lus, trouver content-length :
-
-
-
-//             Si pas , pas de body, salut;
-//             //Si method = GET, pareil
-//             Tant que < content-length
-//                 read encore
-//                 request.append();
-//         */
-
-
-
-//         size_t header_end_pos = request.find("\r\n\r\n");
-//         if (header_end_pos != std::string::npos) {
-
-//             // Extraire la ligne de requête pour obtenir le chemin
-//             size_t line_end_pos = request.find("\r\n");
-//             //?? doit-on chercher la requete ici ? c'est toujours la premier ligne qu'onn peut extraire a la sortie;
-//             if (line_end_pos != std::string::npos) {
-//                 request_line = request.substr(0, line_end_pos);
-//                 std::istringstream iss(request_line);
-//                 std::string method;
-//                 iss >> method >> path;
-
-//                 // Extraire la Location correspondante et sa limite `client_max_body_size`
-//                 const Location* location = _config.findLocation(path);
-//                 if (location && location->clientMaxBodySize != -1) {
-//                     max_body_size = location->clientMaxBodySize;
-//                 }
-//             }
-
-//             // Parse headers to find Content-Length
-//             std::string headers = request.substr(0, header_end_pos);
-//             std::istringstream headers_stream(headers);
-//             std::string header_line;
-//             while (std::getline(headers_stream, header_line)) {
-//                 if (!header_line.empty() && header_line[header_line.size() - 1] == '\r') {
-//                     header_line.erase(header_line.size() - 1);
-//                 }
-//                 size_t colon_pos = header_line.find(":");
-//                 if (colon_pos != std::string::npos) {
-//                     std::string header_name = header_line.substr(0, colon_pos);
-//                     std::string header_value = header_line.substr(colon_pos + 1);
-//                     // Trim whitespace
-//                     header_name.erase(0, header_name.find_first_not_of(" \t"));
-//                     header_name.erase(header_name.find_last_not_of(" \t") + 1);
-//                     header_value.erase(0, header_value.find_first_not_of(" \t"));
-//                     header_value.erase(header_value.find_last_not_of(" \t") + 1);
-
-//                     if (header_name == "Content-Length") {
-//                         content_length = static_cast<size_t>(atoi(header_value.c_str()));
-//                         break;
-//                     }
-//                 }
-//             }
-
-//             // Log pour vérifier la taille de `Content-Length` et `max_body_size`
-//             Logger::instance().log(DEBUG, "Content-Length detected: " + to_string(content_length));
-//             Logger::instance().log(DEBUG, "Configured client_max_body_size: " + to_string(max_body_size));
-
-//             // Vérifier si Content-Length dépasse la limite
-//             if (content_length > static_cast<size_t>(max_body_size)) {
-//                 Logger::instance().log(WARNING, "Content-Length exceeds the configured maximum.");
-//                 requestTooLarge = true;
-//                 break;
-//             }
-
-//             // Si pas de corps, on peut arrêter la lecture
-//             if (content_length == 0) {
-//                 break;
-//             }
-//         }
-//         // Nous avons déjà reçu les en-têtes
-//         body_received = request.size() - request.find("\r\n\r\n") - 4;
-
-//         // Vérifier si la taille du corps dépasse la limite
-
-//         // Vérifier si nous avons reçu tout le corps
-//         if (body_received >= content_length) {
-//             break;
-//         }
-//     }
-
-//     if (body_received > static_cast<size_t>(max_body_size)) {
-//         Logger::instance().log(WARNING, "Request body size exceeds the configured maximum.");
-//         //requestTooLarge = true;
-//         return request;
-//     }
-
-//     Logger::instance().log(INFO, "Full request read.");
-//     return request;
-// }
 
 void Server::sendResponse(int client_fd, HTTPResponse response) {
 	std::string responseString = response.toString();
@@ -261,7 +127,7 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPRe
         response.setHeader("Location", location->returnUrl);
         sendResponse(client_fd, response);
         Logger::instance().log(INFO, "Redirecting " + request.getPath() + " to " + location->returnUrl);
-        return;
+        return ;
     }
 
     // Vérification de l'hôte et du port (code existant)
@@ -299,11 +165,6 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPRe
 bool Server::hasCgiExtension(const std::string& path) const {
     // Logger le message initial
     std::ostringstream oss;
-    oss << "CGI Extensions for this server:" << std::endl;
-    for (size_t i = 0; i < _config.cgiExtensions.size(); ++i) {
-        oss << " - \"" << _config.cgiExtensions[i] << "\"";
-    }
-
     for (size_t i = 0; i < _config.cgiExtensions.size(); ++i) {
         if (endsWith(path, _config.cgiExtensions[i])) {
             oss << "hasCgiExtension: Matched extension " << _config.cgiExtensions[i]
@@ -311,7 +172,6 @@ bool Server::hasCgiExtension(const std::string& path) const {
             return true;
         }
     }
-
     oss << "hasCgiExtension: No matching CGI extension for path " << path << std::endl;
     Logger::instance().log(DEBUG, oss.str());
     return false;
