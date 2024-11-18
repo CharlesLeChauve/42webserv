@@ -103,7 +103,7 @@ void Server::receiveRequest(int client_fd, HTTPRequest& request) {
 
 void Server::sendResponse(int client_fd, HTTPResponse response) {
 	std::string responseString = response.toString();
-	int bytes_written = write(client_fd, responseString.c_str(), responseString.size()); // Check error
+	int bytes_written = write(client_fd, responseString.c_str(), responseString.size()); //?? Check error 0?
     if (bytes_written == -1) {
         sendErrorResponse(client_fd, 500); // Internal server error
         Logger::instance().log(WARNING, "500 error (Internal Server Error) for failing to send response");
@@ -319,6 +319,12 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
             size_t filenamePos = partHeaders.find("filename=\"") + 10;
             size_t filenameEnd = partHeaders.find("\"", filenamePos);
             filename = partHeaders.substr(filenamePos, filenameEnd - filenamePos);
+            
+            if (filename.empty()) {
+                Logger::instance().log(ERROR, "No file selected for upload.");
+                response.beError(400, "No file selected for upload.");
+                return;
+            }
 
             // Sanitize filename to prevent directory traversal attacks
             filename = sanitizeFilename(filename);
@@ -414,7 +420,7 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
                     CGIHandler cgiHandler;
                     std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
 
-                    int bytes_written = write(client_fd, cgiOutput.c_str(), cgiOutput.length());
+                    int bytes_written = write(client_fd, cgiOutput.c_str(), cgiOutput.length()); //?? Check 0 ?
                     if (bytes_written == -1) {
                         sendErrorResponse(client_fd, 500); // Internal Server Error
                         Logger::instance().log(WARNING, "500 error (Internal Server Error): Failed to send CGI output response.");
@@ -444,7 +450,7 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
                 CGIHandler cgiHandler;
                 std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
 
-                int bytes_written = write(client_fd, cgiOutput.c_str(), cgiOutput.length());
+                int bytes_written = write(client_fd, cgiOutput.c_str(), cgiOutput.length()); // ??Check 0
                 if (bytes_written == -1) {
                     sendErrorResponse(client_fd, 500); // Internal Server Error
                     Logger::instance().log(WARNING, "500 error (Internal Server Error): Failed to send CGI output response.");
@@ -627,10 +633,13 @@ void Server::sendErrorResponse(int client_fd, int errorCode) {
 			// Laisser errorContent vide pour utiliser la page d'erreur par défaut
 		}
 	}
-
 	// Passer errorContent à beError, qui utilisera la page par défaut si errorContent
 	// est vide
-	response.beError(errorCode, errorContent);
+    response.setStatusCode(errorCode);
+    if (!errorContent.empty())
+    	response.setBody(errorContent);
+    else
+        response.beError(errorCode);
 	sendResponse(client_fd, response);
 }
 

@@ -41,11 +41,12 @@ std::string HTTPResponse::generateErrorPage(std::string infos) {
 	std::stringstream page;
 	page << "<html><head><title>Error " << _statusCode << "</title>";
 	page << "<link rel=\"stylesheet\" href=\"../css/err_style.css\"><meta charset=UTF-8></head>";
-	page << "<body><h1>Error " << _statusCode << ": " << _reasonPhrase << "</h1>";
+	page << "<body><div class=\"container\"><h1>Error " << _statusCode << ": " << _reasonPhrase << "</h1>";
 	page << "<h3>" + infos + "</h3>";
 	page << "<img src=\"" << getSorryPath() << "\" alt=\"Error Image\">";
+	page << "<a href=\"index.html\">Retour à l'accueil</a>";
 	page << "<p>The server encountered an issue processing your request.</p>";
-	page << "</body></html>";
+	page << "</div></body></html>";
 	return page.str();
 }
 
@@ -53,18 +54,18 @@ std::string HTTPResponse::generateErrorPage() {
 	std::stringstream page;
 	page << "<html><head><title>Error " << _statusCode << "</title>";
 	page << "<link rel=\"stylesheet\" href=\"../css/err_style.css\"><meta charset=UTF-8></head>";
-	page << "<body><h1>Error " << _statusCode << ": " << _reasonPhrase << "</h1>";
+	page << "<body><div class=\"container\"><h1>Error " << _statusCode << ": " << _reasonPhrase << "</h1>";
 	page << "<img src=\"" << getSorryPath() << "\" alt=\"Error Image\">";
 	page << "<a href=\"index.html\">Retour à l'accueil</a>";
 	page << "<p>The server encountered an issue processing your request.</p>";
-	page << "</body></html>";
+	page << "</div></body></html>";
 	return page.str();
 }
 
 HTTPResponse& HTTPResponse::beError(int err_code, const std::string& errorContent) {
 	setStatusCode(err_code);
 	if (!errorContent.empty()) {
-		setBody(errorContent);
+		setBody(generateErrorPage(errorContent));
 	} else {
 		setBody(generateErrorPage());
 	}

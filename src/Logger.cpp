@@ -11,7 +11,7 @@ Logger& Logger::instance() {
     return instance;
 }
 
-Logger::Logger() : repeatCount(0), logToStderr(false) {
+Logger::Logger() : repeatCount(0), logToStderr(false), mute(false) {
     struct stat st;
     if (stat("logs", &st) != 0) {
         mkdir("logs", 0755);
@@ -68,6 +68,8 @@ Logger::~Logger() {
 
     // Boucle pour valider l'entrée
     while (true) {
+        if (mute)
+            break;
         std::cout << "Would you like to [K]eep this session logs or [D]elete? (d/k): ";
         std::getline(std::cin, user_input);
 
@@ -89,15 +91,17 @@ Logger::~Logger() {
                     std::cout << "Warning log deleted successfully.\n";
                 if (std::remove(std::string(_logsDir + "/error.log").c_str()) == 0)
                     std::cout << "Error log deleted successfully.\n";
-                break;
-            } else {
-                std::cout << "Invalid option. Please enter 'd' to delete or 'k' to keep.\n";
             }
+            break;
+        } else {
+            std::cout << "Invalid option. Please enter 'd' to delete or 'k' to keep.\n";
         }
     }
 }
 
 void Logger::log(LoggerLevel level, const std::string& message) {
+    if (mute)
+        return ;
     if (repeatCount == 0) {
         std::string output = getLevelString(level) + ": " + message + "\n";
         writeToLogs(level, output);
@@ -137,4 +141,9 @@ std::string Logger::getLevelString(LoggerLevel level) {
         case ERROR:   return "ERROR";
         default:      return "UNKNOWN";
     }
+}
+
+void Logger::setMute(bool mute_flag) {
+    log(INFO, "Muting this Logger");
+    mute = mute_flag;
 }

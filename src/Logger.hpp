@@ -103,6 +103,7 @@ public:
 
     // Méthode pour obtenir l'instance singleton
     static Logger& instance();
+    void setMute(bool mute_flag);
 
     // Méthode pour enregistrer un message avec un niveau spécifique
     void log(LoggerLevel level, const std::string& message);
@@ -110,6 +111,8 @@ public:
 
     template <typename T>
     void writeToLogs(LoggerLevel level, const T& output) {
+        if (mute)
+            return;
         if (logToStderr) {
             std::cerr << output;
             std::cerr.flush();
@@ -163,6 +166,7 @@ private:
     std::string _logsDir;
 
 	bool logToStderr;
+    bool mute;
 };
 
 #endif // LOGGER_HPP

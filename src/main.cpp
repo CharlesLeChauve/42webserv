@@ -46,16 +46,20 @@ int main(int argc, char* argv[]) {
     bool stopServer = false;
 
     std::string configFile;
-    if (argc > 2) {
-        std::cerr << "Usage: " << argv[0] << " [path/to/file]" << std::endl;
+    if (argc > 3) {
+        std::cerr << "Usage: " << argv[0] << " [path/to/file] [-m (mute logger)]" << std::endl;
         return 1;
     } else {
-        if (argc == 1) {
+        if (argc == 1 || (argc == 2 && argv[1][0] == '-')) {
             configFile = "config/server.conf";
             Logger::instance().log(DEBUG, "Default configuration file loaded : " + configFile);
         } else {
             configFile = argv[1];
             Logger::instance().log(DEBUG, "Custom configuration file loaded : " + configFile);
+        }
+        if ((argc == 3 && std::string(argv[2]) == "-m") || (argc == 2 && std::string(argv[1]) == "-m")) {
+            Logger& logger = Logger::instance();
+            logger.setMute(true);
         }
     }
 
@@ -271,7 +275,6 @@ int main(int argc, char* argv[]) {
                         Logger::instance().log(INFO, "Begin to handle request for client FD: " + to_string(poll_fds[i].fd));
                         server->handleClient(poll_fds[i].fd, request);
                     }
-
                     // Check if the request is complete or connection is closed
                     if (request->isComplete() || request->getConnectionClosed() || request->getRequestTooLarge()) {
                         // Clean up

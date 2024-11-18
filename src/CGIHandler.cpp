@@ -86,6 +86,7 @@ std::string CGIHandler::executeCGI(const std::string& scriptPath, const HTTPRequ
 
         if (request.getMethod() == "POST") {
             int bytes_written = write(pipefd_in[1], request.getBody().c_str(), request.getBody().size());
+            //?? Check 0 ?
             if (bytes_written == -1) {
                 Logger::instance().log(WARNING, "500 error (Internal Server Error) for writing"); // To specify i'm tired.
                 return response.beError(500, "500 error (Internal Server Error) for writing").toString(); // Internal server error
