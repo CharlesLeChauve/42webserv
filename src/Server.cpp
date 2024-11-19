@@ -607,11 +607,50 @@ void Server::handleClient(int client_fd, HTTPRequest* request) {
     }
 
     SessionManager session(request->getStrHeader("Cookie"));
-    if (session.getFirstCon())
-        response.setHeader("Set-Cookie", session.getSessionId() + "; Path=/; HttpOnly");
+    manageUserSession(request, response, client_fd, session);
 
     Logger::instance().log(INFO, "Parsing OK, handling request for client fd: " + to_string(client_fd));
     handleHttpRequest(client_fd, *request, response);
+
+    session.persistSession();
+}
+
+void    Server::manageUserSession(HTTPRequest* request, HTTPResponse& response, int client_fd, SessionManager& session) {
+
+    session.loadSession(); // Charger les données existantes
+
+    if (session.getFirstCon()) {
+        response.setHeader("Set-Cookie", session.getSessionId() + "; Path=/; HttpOnly");
+        session.setData("status", "new user"); // Set up uniquement lors de la première connexion
+    }
+    else {
+        if (session.getData("status") == "new user") {
+            session.setData("status", "existing user"); // Met à jour pour les connexions suivantes
+        }
+        Logger::instance().log(INFO, "Returning user: " + session.getSessionId());
+    }
+
+
+    // Mise à jour des informations
+    session.setData("last_access_time", to_string(session.curr_time()), true);
+    std::string path = request->getPath();
+    std::string method = request->getMethod();
+    std::string user_agent = request->getStrHeader("User-Agent");
+
+    if (!path.empty())
+        session.setData("requested_pages", path, true);
+    else
+        Logger::instance().log(WARNING, "Request path is empty for client fd: " + to_string(client_fd));
+
+    if (!method.empty())
+        session.setData("methods", method, true);
+    else
+        Logger::instance().log(WARNING, "Request method is empty for client fd: " + to_string(client_fd));
+
+    if (user_agent.empty())
+        user_agent = "Unknown"; // By default
+    else
+        session.setData("user_agent", user_agent, false); // False pour ne pas accumuler pls valeurs pour un user.
 }
 
 void Server::sendErrorResponse(int client_fd, int errorCode) {
@@ -638,8 +677,9 @@ void Server::sendErrorResponse(int client_fd, int errorCode) {
     response.setStatusCode(errorCode);
     if (!errorContent.empty())
     	response.setBody(errorContent);
-    else
+    else {
         response.beError(errorCode);
+    }
 	sendResponse(client_fd, response);
 }
 
