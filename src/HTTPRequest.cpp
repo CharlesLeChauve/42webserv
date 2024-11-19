@@ -8,11 +8,15 @@
 
 HTTPRequest::HTTPRequest()
     : _complete(false), _connectionClosed(false), _maxBodySize(0),
-      _contentLength(0), _bodyReceived(0), _headersParsed(false), _requestTooLarge(false) {}
+      _contentLength(0), _bodyReceived(0), _headersParsed(false), _requestTooLarge(false) {
+        setLastActivity(curr_time_ms());
+      }
 
 HTTPRequest::HTTPRequest(int max_body_size)
     : _complete(false), _connectionClosed(false), _maxBodySize(max_body_size),
-      _contentLength(0), _bodyReceived(0), _headersParsed(false), _requestTooLarge(false) {}
+      _contentLength(0), _bodyReceived(0), _headersParsed(false), _requestTooLarge(false) {
+        setLastActivity(curr_time_ms());
+      }
 
 HTTPRequest::~HTTPRequest() {}
 

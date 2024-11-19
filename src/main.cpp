@@ -9,10 +9,10 @@
 #include "ServerConfig.hpp"
 #include <poll.h>
 #include <unistd.h>
-#include <sys/time.h>
 #include <ctime>
 #include <signal.h>
 #include <map>
+#include "ClientConnection.hpp"
 
 // Définition du functoOor
 struct MatchFD {
@@ -35,11 +35,6 @@ void initialize_random_generator() {
     srand(seed);
 }
 
-unsigned long curr_time_ms() {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return static_cast<unsigned long>(tv.tv_sec) * 1000 + tv.tv_usec / 1000;
-}
 
 int main(int argc, char* argv[]) {
     Logger::instance().log(INFO, "Starting main");
@@ -89,14 +84,26 @@ int main(int argc, char* argv[]) {
     sa.sa_flags = 0;
     sigaction(SIGINT, &sa, NULL);
 
+    /*std::map<int client_fd, Exchange class;
+            OR
+    std::vector<std::pair<int client_fd, Exchange class> >; 
+
+    Exchange will contain : 
+        - Server pointer (wich configured server will handle this exchange)
+        - Request (request send by client, read by pollin)
+        - Response (to form after the request is received)
+        - Client FD ? (Either in the class or as first member of pair or map, to identify th struct. What-'s the better choice ? What are th benefits ?)
+
+    */
+
+    std::map<int, ClientConnection> connections;
+
     std::vector<Server*> servers;
     std::vector<Socket*> sockets;
     std::vector<pollfd> poll_fds;
     std::map<int, Server*> fdToServerMap;
-    std::map<int, Server*> clientFdToServerMap;
-    std::map<int, HTTPRequest*> clientFdToRequestMap; // Map to keep track of HTTPRequest objects
-    
 
+    //Add a POLLIN pipe to poll_fd so poll can receive it and stop;
     {
         pollfd pfd;
         pfd.fd = serverSignal::pipe_fd[0];
@@ -132,48 +139,53 @@ int main(int argc, char* argv[]) {
         unsigned long min_remaining_time = TIMEOUT_MS;
         bool has_active_connections = false;
 
-        // Timeout checks
-        std::map<int, HTTPRequest*>::iterator it;
-        for (it = clientFdToRequestMap.begin(); it != clientFdToRequestMap.end(); /* no increment here */) {
+        //Timeout checks
+        std::map<int, ClientConnection>::iterator it;
+        for (it = connections.begin(); it != connections.end(); /* no increment here */) {
             int client_fd = it->first;
-            HTTPRequest& request = *(it->second);
+            HTTPRequest* request = (it->second).getRequest();
 
-            unsigned long time_since_last_activity = now - request.getLastActivity();
+            unsigned long time_since_last_activity = now - request->getLastActivity();
 
             if (time_since_last_activity >= TIMEOUT_MS) {
                 // Connection has timed out
                 Logger::instance().log(INFO, "Connection timed out for client FD: " + to_string(client_fd));
-                //?? sendError avant de close (408)
+
                 // Close the connection and clean up
-                Server *server = clientFdToServerMap[client_fd];
-                server->sendErrorResponse(client_fd, 408);
-                close(client_fd);
-                clientFdToServerMap.erase(client_fd);
-                poll_fds.erase(
-                    std::remove_if(poll_fds.begin(), poll_fds.end(), MatchFD(client_fd)),
-                    poll_fds.end()
-                );
-                clientFdToRequestMap.erase(it++);
+
+                std::map<int, ClientConnection>::iterator conn_it = connections.find(client_fd);
+                if (conn_it != connections.end()) {
+                    Server *server = conn_it->second.getServer();
+                    server->sendErrorResponse(client_fd, 408);
+                    close(client_fd);
+                    poll_fds.erase(
+                        std::remove_if(poll_fds.begin(), poll_fds.end(), MatchFD(client_fd)),
+                        poll_fds.end()
+                    );
+                    connections.erase(conn_it);  // Supprime le client en timeout // Redémarrer l'itération depuis le début
+                } 
             } else {
+                // Mise à jour du temps restant et continuation de l'itération
                 unsigned long remaining_time = TIMEOUT_MS - time_since_last_activity;
                 if (remaining_time < min_remaining_time) {
                     min_remaining_time = remaining_time;
                 }
                 has_active_connections = true;
-                ++it;
+                ++it;  // Incrément de l'itérateur
             }
         }
 
+        //?? Je serais surement obligé de gérer ici aussi le gateway timeout
         // Call poll()
         int poll_timeout;
         if (has_active_connections) {
             poll_timeout = static_cast<int>(min_remaining_time);
         } else {
-            poll_timeout = -1; // Bloquer indéfiniment si aucune connexion active
+            poll_timeout = -1; // Bloquer indéfiniment si aucune Connection active
         }
         int poll_count = poll(&poll_fds[0], poll_fds.size(), poll_timeout); 
         // Ici on attend le temps le plus court avant expiration d'une des requetes. Si une requête timeout dans 500ms, on dit a poll d'attendre au maximum 500ms
-        // Comme ca on sort du poll, on coupe la connexion avec le client expiré et on peut relancer une boucle poll avec le nouveau temps le plus court avant time out d'une requete 
+        // Comme ca on sort du poll, on coupe la Connection avec le client expiré et on peut relancer une boucle poll avec le nouveau temps le plus court avant time out d'une requete 
         if (poll_count < 0) {
             if (errno == EINTR) {
                 // poll() was interrupted by a signal, continue the loop
@@ -214,8 +226,7 @@ int main(int argc, char* argv[]) {
                     // It's a client socket
                     Logger::instance().log(ERROR, "Error on client socket detected in poll");
                     close(poll_fds[i].fd);
-                    clientFdToServerMap.erase(poll_fds[i].fd);
-                    clientFdToRequestMap.erase(poll_fds[i].fd);
+                    connections.erase(poll_fds[i].fd);
                     poll_fds.erase(poll_fds.begin() + i);
                     --i;
                 }
@@ -226,8 +237,7 @@ int main(int argc, char* argv[]) {
             if (poll_fds[i].revents & POLLHUP) {
                 Logger::instance().log(INFO, "Disconnected client FD: " + to_string(poll_fds[i].fd));
                 close(poll_fds[i].fd);
-                clientFdToServerMap.erase(poll_fds[i].fd);
-                clientFdToRequestMap.erase(poll_fds[i].fd);
+                connections.erase(poll_fds[i].fd);
                 poll_fds.erase(poll_fds.begin() + i);
                 --i;
                 continue;
@@ -248,13 +258,22 @@ int main(int argc, char* argv[]) {
                     int client_fd = server->acceptNewClient(poll_fds[i].fd);
 
                     if (client_fd != -1) {
-                        clientFdToServerMap[client_fd] = server; // Register the client_fd -> server association
+                        connections.insert(std::make_pair(client_fd, ClientConnection(server))); // Register the client_fd -> server association
 
                         // Create a new HTTPRequest object and store it in the map
                         int max_body_size = serverConfigs[0].clientMaxBodySize;
-                        HTTPRequest* request = new HTTPRequest(max_body_size);
-                        request->setLastActivity(curr_time_ms());
-                        clientFdToRequestMap[client_fd] = request;
+                        std::map<int, ClientConnection>::iterator conn_it = connections.find(client_fd);
+                        if (conn_it == connections.end()) {
+                            // Insertion uniquement si `client_fd` n'existe pas
+                            std::pair<std::map<int, ClientConnection>::iterator, bool> result =
+                                connections.insert(std::make_pair(client_fd, ClientConnection(server)));
+
+                            // Accès à l'itérateur nouvellement inséré
+                            conn_it = result.first;
+                        }
+
+                        // Maintenant, `conn_it` est garanti d'être valide et on peut l'utiliser
+                        conn_it->second.setRequest(new HTTPRequest(max_body_size));
 
                         pollfd client_pollfd;
                         client_pollfd.fd = client_fd;
@@ -267,8 +286,13 @@ int main(int argc, char* argv[]) {
                     }
                 } else {
                     // It's a client socket descriptor, handle the request
-                    Server* server = clientFdToServerMap[poll_fds[i].fd];
-                    HTTPRequest* request = clientFdToRequestMap[poll_fds[i].fd];
+                    Server* server = NULL;
+                    HTTPRequest* request = NULL;
+                    std::map<int, ClientConnection>::iterator conn_it = connections.find(poll_fds[i].fd);
+                    if (conn_it != connections.end()) {
+                        server = conn_it->second.getServer();
+                        request = conn_it->second.getRequest();
+                    }
                     request->setLastActivity(curr_time_ms());
 
                     if (server != NULL && request != NULL) {
@@ -278,11 +302,8 @@ int main(int argc, char* argv[]) {
                     // Check if the request is complete or connection is closed
                     if (request->isComplete() || request->getConnectionClosed() || request->getRequestTooLarge()) {
                         // Clean up
-                        delete request;
-                        clientFdToRequestMap.erase(poll_fds[i].fd);
-
                         close(poll_fds[i].fd);
-                        clientFdToServerMap.erase(poll_fds[i].fd);
+                        connections.erase(poll_fds[i].fd);
                         poll_fds.erase(poll_fds.begin() + i);
                         --i;
                     }
@@ -295,10 +316,10 @@ int main(int argc, char* argv[]) {
     }
 
     // Clean up any remaining HTTPRequest objects
-    for (std::map<int, HTTPRequest*>::iterator it = clientFdToRequestMap.begin(); it != clientFdToRequestMap.end(); ++it) {
-        delete it->second;
-    }
-    clientFdToRequestMap.clear();
+    // for (std::map<int, ClientConnection>::iterator it = connections.begin(); it != connections.end(); ++it) {
+    //     delete it->second;
+    // }
+    connections.clear();
 
     // Clean up memory
     for (size_t i = 0; i < servers.size(); ++i) {

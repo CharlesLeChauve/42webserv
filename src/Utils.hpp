@@ -4,6 +4,8 @@
 #include <sstream>
 #include <string>
 #include <unistd.h>
+#include <sys/time.h>
+
 
 #define TIMEOUT_MS 30000
 
@@ -20,5 +22,7 @@ namespace serverSignal {
 }
 
 enum LoggerLevel { DEBUG, INFO, WARNING, ERROR };
+
+unsigned long curr_time_ms();
 
 #endif

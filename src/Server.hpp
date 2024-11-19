@@ -46,11 +46,12 @@ public:
     // Méthodes pour la gestion des erreurs et la réception/gestion des requêtes
     void sendErrorResponse(int client_fd, int errorCode);
 
-    // Accepter une nouvelle connexion client
+    // Accepter une nouvelle Connection client
     int acceptNewClient(int server_fd);
 
     // Gérer les requêtes d'un client connecté
     void handleClient(int client_fd, HTTPRequest* request);
+    const ServerConfig& getConfig() const;
 };
 
 #endif

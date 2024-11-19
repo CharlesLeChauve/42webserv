@@ -684,3 +684,5 @@ std::string Server::generateDirectoryListing(const std::string& directoryPath, c
     listing += "</ul></body></html>";
     return listing;
 }
+
+const ServerConfig& Server::getConfig() const {return _config;}

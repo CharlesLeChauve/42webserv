@@ -9,3 +9,10 @@ namespace serverSignal {
         write(pipe_fd[1], &byte, sizeof(byte));
     }
 }
+
+
+unsigned long curr_time_ms() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return static_cast<unsigned long>(tv.tv_sec) * 1000 + tv.tv_usec / 1000;
+}
