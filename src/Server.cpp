@@ -105,7 +105,7 @@ void Server::sendResponse(int client_fd, HTTPResponse response) {
 	std::string responseString = response.toString();
 	int bytes_written = write(client_fd, responseString.c_str(), responseString.size()); //?? Check error 0?
     if (bytes_written == -1) {
-        sendErrorResponse(client_fd, 500); // Internal server error
+        response.beError(500, "(Internal Server Error) for failing to send response"); // Internal server error
         Logger::instance().log(WARNING, "500 error (Internal Server Error) for failing to send response");
     }
     Logger::instance().log(WARNING, "Response sent to client; No verif on write : \n" + response.toStringHeaders());
@@ -125,7 +125,7 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPRe
 	if (location && location->returnCode != 0) {
         response.setStatusCode(location->returnCode);
         response.setHeader("Location", location->returnUrl);
-        sendResponse(client_fd, response);
+        //sendResponse(client_fd, response);
         Logger::instance().log(INFO, "Redirecting " + request.getPath() + " to " + location->returnUrl);
         return ;
     }
@@ -229,15 +229,7 @@ std::string Server::sanitizeFilename(const std::string& filename) {
     return safeFilename;
 }
 
-
 void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response, const std::string& boundary) {
-    std::string requestBody = request.getBody();
-    std::string boundaryMarker = "--" + boundary;
-    std::string endBoundaryMarker = boundaryMarker + "--";
-    std::string filename;
-    size_t pos = 0;
-    size_t endPos = 0;
-
     const Location* location = _config.findLocation(request.getPath());
     if (!location || !location->uploadOn) {
         Logger::instance().log(ERROR, "Upload not allowed for this location.");
@@ -252,13 +244,13 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
         return;
     }
 
-    // Prepend _config.root to uploadPath if it's a relative path
+    // Préparer le répertoire de téléchargement
     std::string uploadDir = location->uploadPath;
     if (!uploadDir.empty() && uploadDir[0] != '/') {
         uploadDir = _config.root + "/" + uploadDir;
     }
 
-    // Ensure the upload directory exists
+    // Vérifier que le répertoire de téléchargement existe
     struct stat st;
     if (stat(uploadDir.c_str(), &st) != 0 || !S_ISDIR(st.st_mode)) {
         Logger::instance().log(ERROR, "Upload directory does not exist or is not a directory: " + uploadDir);
@@ -267,103 +259,16 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
         return;
     }
 
-    while (true) {
-        pos = requestBody.find(boundaryMarker, endPos);
-        if (pos == std::string::npos) {
-            Logger::instance().log(DEBUG, "No more parts to process.");
-            break;
-        }
-        pos += boundaryMarker.length();
-
-        if (requestBody.substr(pos, 2) == "--") {
-            Logger::instance().log(DEBUG, "End of multipart data.");
-            break;
-        }
-        if (requestBody.substr(pos, 2) == "\r\n") {
-            pos += 2;
-        }
-
-        // Extract headers of the part
-        size_t headersEnd = requestBody.find("\r\n\r\n", pos);
-        if (headersEnd == std::string::npos) {
-            Logger::instance().log(WARNING, "Missing \\r\\n\\r\\n in request for Upload");
-            response.setStatusCode(400);
-            response.setBody("Bad Request: Missing headers in request for Upload");
-            return;
-        }
-        std::string partHeaders = requestBody.substr(pos, headersEnd - pos);
-        pos = headersEnd + 4; // Position of the beginning of the content
-
-        // Find the next boundary
-        endPos = requestBody.find(boundaryMarker, pos);
-        if (endPos == std::string::npos) {
-            Logger::instance().log(ERROR, "End Boundary Marker not found.");
-            response.setStatusCode(400);
-            response.setBody("Bad Request: End Boundary Marker not found.");
-            return;
-        }
-        size_t contentEnd = endPos;
-
-        // Remove any \r\n before the boundary
-        if (requestBody.substr(contentEnd - 2, 2) == "\r\n") {
-            contentEnd -= 2;
-        }
-
-        // Extract the content of the part
-        std::string partContent = requestBody.substr(pos, contentEnd - pos);
-
-        // Check if it's a file
-        if (partHeaders.find("Content-Disposition") != std::string::npos &&
-            partHeaders.find("filename=\"") != std::string::npos)
-        {
-            size_t filenamePos = partHeaders.find("filename=\"") + 10;
-            size_t filenameEnd = partHeaders.find("\"", filenamePos);
-            filename = partHeaders.substr(filenamePos, filenameEnd - filenamePos);
-
-            if (filename.empty()) {
-                Logger::instance().log(ERROR, "No file selected for upload.");
-                response.beError(400, "No file selected for upload.");
-                return;
-            }
-
-            // Sanitize filename to prevent directory traversal attacks
-            filename = sanitizeFilename(filename);
-
-            // Construct the destination path
-            std::string destPath = uploadDir + "/" + filename;
-
-            if (!isPathAllowed(destPath, uploadDir)) {
-                Logger::instance().log(ERROR, "Attempt to upload outside of allowed path.");
-                response.setStatusCode(403);
-                response.setBody("Attempt to upload outside of allowed path.");
-                return;
-            }
-
-            try {
-                // Save the file to the authorized path
-                UploadHandler uploadHandler(destPath, partContent, _config);
-            } catch (const std::exception& e) {
-                Logger::instance().log(ERROR, std::string("Error while saving file: ") + e.what());
-                response.setStatusCode(500);
-                response.setBody("Internal Server Error: Error during file upload.");
-                return;
-            }
-        } else {
-            Logger::instance().log(ERROR, std::string("Error while parsing the file in the request:") + partHeaders);
-            response.setStatusCode(400);
-            response.setBody("Bad Request: File not found.");
-            return;
-        }
-        endPos = endPos + boundaryMarker.length();
+    try {
+        // Déléguer le traitement à UploadHandler
+        UploadHandler uploadHandler(request, response, boundary, uploadDir, _config);
+        uploadHandler.handleUpload();
+    } catch (const std::exception& e) {
+        Logger::instance().log(ERROR, std::string("Error while handling file upload: ") + e.what());
+        response.setStatusCode(500);
+        response.setBody("Internal Server Error: Error during file upload.");
+        return;
     }
-    response.setStatusCode(201);
-    std::string script = "<script type=\"text/javascript\">"
-                         "setTimeout(function() {"
-                         "    window.location.href = 'index.html';"
-                         "}, 3500);"
-                         "</script>";
-    response.setBody(script + "<html><body><h1>File successfully uploaded, you'll be redirected on HomePage</h1></body></html>");
-    Logger::instance().log(INFO, "Successfully uploaded file: " + filename + " to " + uploadDir);
 }
 
 void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response) {
@@ -394,7 +299,7 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
                     handleFileUpload(request, response, boundary);
 
                     // Envoyer la réponse
-                    sendResponse(client_fd, response);
+                    //sendResponse(client_fd, response);
                     return;
                 } else {
                     // Boundary manquant dans Content-Type
@@ -435,7 +340,7 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
                 response.setStatusCode(200);
                 response.setHeader("Content-Type", "text/html");
                 response.setBody("<html><body><h1>POST request received</h1></body></html>");
-                sendResponse(client_fd, response);
+                //sendResponse(client_fd, response);
                 return;
             }
         }
@@ -484,7 +389,7 @@ void Server::handleDeleteRequest(int client_fd, const HTTPRequest& request) {
 			response.setHeader("Content-Length", to_string(body.size()));
 			response.setBody(body);
             Logger::instance().log(INFO, "Successful DELETE on resource : " + fullPath);
-			sendResponse(client_fd, response);
+			//sendResponse(client_fd, response);
 		} else {
             Logger::instance().log(WARNING, "500 error (Internal Server Error) to DELETE: " + fullPath + ": remove() failed");
 			sendErrorResponse(client_fd, 500);
@@ -519,7 +424,7 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath,
                 response.setHeader("Content-Type", "text/html");
                 response.setBody(directoryListing);
                 response.setHeader("Content-Length", to_string(directoryListing.size()));
-                sendResponse(client_fd, response);
+                //sendResponse(client_fd, response);
             } else {
                 // Si autoindex est désactivé, retourner une erreur 403 Forbidden
                 Logger::instance().log(INFO, "Index page not found and autoindex is off. Sending 403 Forbidden.");

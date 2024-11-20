@@ -37,29 +37,43 @@ void HTTPResponse::setStatusCode(int code) {
 	}
 }
 
-std::string HTTPResponse::generateErrorPage(std::string infos) {
-	std::stringstream page;
-	page << "<html><head><title>Error " << _statusCode << "</title>";
-	page << "<link rel=\"stylesheet\" href=\"../css/err_style.css\"><meta charset=UTF-8></head>";
-	page << "<body><div class=\"container\"><h1>Error " << _statusCode << ": " << _reasonPhrase << "</h1>";
-	page << "<h3>" + infos + "</h3>";
-	page << "<img src=\"" << getSorryPath() << "\" alt=\"Error Image\">";
-	page << "<a href=\"index.html\">Retour à l'accueil</a>";
-	page << "<p>The server encountered an issue processing your request.</p>";
-	page << "</div></body></html>";
-	return page.str();
+std::string replacePlaceholders(const std::string& templateStr, const std::map<std::string, std::string>& values) {
+    std::string result = templateStr;
+    for (std::map<std::string, std::string>::const_iterator it = values.begin(); it != values.end(); ++it) {
+        std::string placeholder = "{{" + it->first + "}}";
+        size_t pos = result.find(placeholder);
+        while (pos != std::string::npos) {
+            result.replace(pos, placeholder.length(), it->second);
+            pos = result.find(placeholder, pos + it->second.length());
+        }
+    }
+    return result;
 }
 
-std::string HTTPResponse::generateErrorPage() {
-	std::stringstream page;
-	page << "<html><head><title>Error " << _statusCode << "</title>";
-	page << "<link rel=\"stylesheet\" href=\"../css/err_style.css\"><meta charset=UTF-8></head>";
-	page << "<body><div class=\"container\"><h1>Error " << _statusCode << ": " << _reasonPhrase << "</h1>";
-	page << "<img src=\"" << getSorryPath() << "\" alt=\"Error Image\">";
-	page << "<a href=\"index.html\">Retour à l'accueil</a>";
-	page << "<p>The server encountered an issue processing your request.</p>";
-	page << "</div></body></html>";
-	return page.str();
+std::string readFile(const std::string& filename) {
+    std::ifstream file(filename.c_str());
+    if (!file) {
+        // Gérer l'erreur de fichier non trouvé ou non accessible
+        return "";
+    }
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
+}
+
+
+std::string HTTPResponse::generateErrorPage(const std::string& infos) {
+    std::string templateStr = readFile("templates/error_template.html");
+    if (templateStr.empty()) {
+        return "<html><body><h1>Error generating page</h1></body></html>";
+    }
+
+    std::map<std::string, std::string> values;
+    values["STATUS_CODE"] = to_string(_statusCode);
+    values["REASON_PHRASE"] = _reasonPhrase;
+    values["SORRY_PATH"] = getSorryPath();
+    values["INFOS_SECTION"] = infos;
+    return replacePlaceholders(templateStr, values);
 }
 
 HTTPResponse& HTTPResponse::beError(int err_code, const std::string& errorContent) {

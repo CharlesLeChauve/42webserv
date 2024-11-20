@@ -17,8 +17,9 @@ public:
 
     int getStatusCode() const;
     std::string getReasonPhrase() const;
-    std::string generateErrorPage();
-    std::string generateErrorPage(std::string infos);
+    // std::string generateErrorPage();
+    // std::string generateErrorPage(std::string infos);
+    std::string generateErrorPage(const std::string& infos = "");
     std::map<std::string, std::string> getHeaders() const;
     std::string getBody() const;
     std::string getStrHeader(std::string header) const;
