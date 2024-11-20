@@ -13,6 +13,7 @@
 #include "CGIHandler.hpp"
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
+#include "SessionManager.hpp"
 #include <algorithm>
 #include "ClientConnection.hpp"
 
@@ -25,6 +26,7 @@ private:
 
     void receiveRequest(int client_fd, HTTPRequest& request);
     void sendResponse(int client_fd, HTTPResponse response);
+    void manageUserSession(HTTPRequest* request, HTTPResponse& response, int client_fd, SessionManager& session);
     void handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response);
     void handleGetOrPostRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response);
     void handleDeleteRequest(int client_fd, const HTTPRequest& request);
