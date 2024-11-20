@@ -84,18 +84,6 @@ int main(int argc, char* argv[]) {
     sa.sa_flags = 0;
     sigaction(SIGINT, &sa, NULL);
 
-    /*std::map<int client_fd, Exchange class;
-            OR
-    std::vector<std::pair<int client_fd, Exchange class> >; 
-
-    Exchange will contain : 
-        - Server pointer (wich configured server will handle this exchange)
-        - Request (request send by client, read by pollin)
-        - Response (to form after the request is received)
-        - Client FD ? (Either in the class or as first member of pair or map, to identify th struct. What-'s the better choice ? What are th benefits ?)
-
-    */
-
     std::map<int, ClientConnection> connections;
 
     std::vector<Server*> servers;
@@ -103,7 +91,7 @@ int main(int argc, char* argv[]) {
     std::vector<pollfd> poll_fds;
     std::map<int, Server*> fdToServerMap;
 
-    //Add a POLLIN pipe to poll_fd so poll can receive it and stop;
+    // Ajouter le descripteur du pipe à poll_fds pour pouvoir détecter le signal d'arrêt
     {
         pollfd pfd;
         pfd.fd = serverSignal::pipe_fd[0];
@@ -112,7 +100,7 @@ int main(int argc, char* argv[]) {
         poll_fds.push_back(pfd);
     }
 
-    // Create servers and sockets
+    // Créer les serveurs et les sockets
     for (size_t i = 0; i < serverConfigs.size(); ++i) {
         Server* server = new Server(serverConfigs[i]);
         Socket* socket = new Socket(serverConfigs[i].ports[0]);
@@ -124,7 +112,7 @@ int main(int argc, char* argv[]) {
         pfd.revents = 0; // Initialize revents to 0
         poll_fds.push_back(pfd);
 
-        // Associate server sockets with servers
+        // Associer les sockets serveurs avec les serveurs
         fdToServerMap[socket->getSocket()] = server;
 
         servers.push_back(server);
@@ -135,64 +123,59 @@ int main(int argc, char* argv[]) {
 
     while (!stopServer) {
         unsigned long now = curr_time_ms();
-        std::vector<int> timed_out_fds;
         unsigned long min_remaining_time = TIMEOUT_MS;
         bool has_active_connections = false;
 
-        //Timeout checks
-        std::map<int, ClientConnection>::iterator it;
-        for (it = connections.begin(); it != connections.end(); /* no increment here */) {
-            int client_fd = it->first;
-            HTTPRequest* request = (it->second).getRequest();
+        // Vérifications des timeout
+        std::map<int, ClientConnection>::iterator it_conn;
+        for (it_conn = connections.begin(); it_conn != connections.end(); /* pas d'incrément ici */) {
+            int client_fd = it_conn->first;
+            HTTPRequest* request = it_conn->second.getRequest();
 
             unsigned long time_since_last_activity = now - request->getLastActivity();
 
             if (time_since_last_activity >= TIMEOUT_MS) {
-                // Connection has timed out
+                // Connection expirée
                 Logger::instance().log(INFO, "Connection timed out for client FD: " + to_string(client_fd));
 
-                // Close the connection and clean up
+                // Envoyer une erreur de timeout
+                Server* server = it_conn->second.getServer();
+                server->sendErrorResponse(client_fd, 408);
 
-                std::map<int, ClientConnection>::iterator conn_it = connections.find(client_fd);
-                if (conn_it != connections.end()) {
-                    Server *server = conn_it->second.getServer();
-                    server->sendErrorResponse(client_fd, 408);
-                    close(client_fd);
-                    poll_fds.erase(
-                        std::remove_if(poll_fds.begin(), poll_fds.end(), MatchFD(client_fd)),
-                        poll_fds.end()
-                    );
-                    connections.erase(conn_it);  // Supprime le client en timeout // Redémarrer l'itération depuis le début
-                } 
+                // Fermer la connexion
+                close(client_fd);
+                poll_fds.erase(
+                    std::remove_if(poll_fds.begin(), poll_fds.end(), MatchFD(client_fd)),
+                    poll_fds.end()
+                );
+                connections.erase(it_conn++);  // Supprime et incrémente l'itérateur
             } else {
-                // Mise à jour du temps restant et continuation de l'itération
+                // Mettre à jour le temps restant et continuer
                 unsigned long remaining_time = TIMEOUT_MS - time_since_last_activity;
                 if (remaining_time < min_remaining_time) {
                     min_remaining_time = remaining_time;
                 }
                 has_active_connections = true;
-                ++it;  // Incrément de l'itérateur
+                ++it_conn;  // Incrément de l'itérateur
             }
         }
 
-        //?? Je serais surement obligé de gérer ici aussi le gateway timeout
-        // Call poll()
+        // Appel à poll()
         int poll_timeout;
         if (has_active_connections) {
             poll_timeout = static_cast<int>(min_remaining_time);
         } else {
-            poll_timeout = -1; // Bloquer indéfiniment si aucune Connection active
+            poll_timeout = -1; // Bloquer indéfiniment si aucune connexion active
         }
-        int poll_count = poll(&poll_fds[0], poll_fds.size(), poll_timeout); 
-        // Ici on attend le temps le plus court avant expiration d'une des requetes. Si une requête timeout dans 500ms, on dit a poll d'attendre au maximum 500ms
-        // Comme ca on sort du poll, on coupe la Connection avec le client expiré et on peut relancer une boucle poll avec le nouveau temps le plus court avant time out d'une requete 
+        int poll_count = poll(&poll_fds[0], poll_fds.size(), poll_timeout);
+
         if (poll_count < 0) {
             if (errno == EINTR) {
-                // poll() was interrupted by a signal, continue the loop
+                // poll() a été interrompu par un signal, continuer la boucle
                 continue;
             } else {
                 perror("Error calling poll");
-                break; // Or handle the error appropriately
+                break; // Ou gérer l'erreur de manière appropriée
             }
         }
 
@@ -202,11 +185,10 @@ int main(int argc, char* argv[]) {
 
             if (poll_fds[i].fd == serverSignal::pipe_fd[0]) {
                 if (poll_fds[i].revents & POLLIN) {
-                    // Read the byte(s) from the pipe to clear the buffer
+                    // Lire le(s) octet(s) du pipe pour vider le buffer
                     uint8_t byte;
                     ssize_t bytesRead = read(serverSignal::pipe_fd[0], &byte, sizeof(byte));
                     if (bytesRead > 0) {
-                        // You can set a variable to properly stop the server
                         Logger::instance().log(INFO, "Signal received, stopping the server...");
                         stopServer = true;
                         break;
@@ -215,15 +197,15 @@ int main(int argc, char* argv[]) {
                 continue;
             }
 
-            // Handle errors
+            // Gérer les erreurs
             if (poll_fds[i].revents & POLLERR) {
                 Logger::instance().log(ERROR, "Error on file descriptor: " + to_string(poll_fds[i].fd));
                 if (fdToServerMap.find(poll_fds[i].fd) != fdToServerMap.end()) {
-                    // It's a server socket
+                    // C'est un socket serveur
                     Logger::instance().log(ERROR, "Error on server socket detected in poll");
-                    // Decide how to handle server socket errors
+                    // Décider comment gérer les erreurs des sockets serveurs
                 } else {
-                    // It's a client socket
+                    // C'est un socket client
                     Logger::instance().log(ERROR, "Error on client socket detected in poll");
                     close(poll_fds[i].fd);
                     connections.erase(poll_fds[i].fd);
@@ -233,7 +215,7 @@ int main(int argc, char* argv[]) {
                 continue;
             }
 
-            // Handle disconnections
+            // Gérer les déconnexions
             if (poll_fds[i].revents & POLLHUP) {
                 Logger::instance().log(INFO, "Disconnected client FD: " + to_string(poll_fds[i].fd));
                 close(poll_fds[i].fd);
@@ -245,34 +227,28 @@ int main(int argc, char* argv[]) {
 
             if (poll_fds[i].revents & POLLNVAL) {
                 Logger::instance().log(ERROR, "File descriptor not valid: " + to_string(poll_fds[i].fd));
-                // Remove the invalid descriptor
+                // Supprimer le descripteur invalide
                 poll_fds.erase(poll_fds.begin() + i);
                 --i;
                 continue;
             }
 
+            // Gérer POLLIN et POLLOUT
             if (poll_fds[i].revents & POLLIN) {
                 if (fdToServerMap.find(poll_fds[i].fd) != fdToServerMap.end()) {
-                    // It's a server socket descriptor, accept a new connection
+                    // C'est un socket serveur, accepter une nouvelle connexion
                     Server* server = fdToServerMap[poll_fds[i].fd];
                     int client_fd = server->acceptNewClient(poll_fds[i].fd);
 
                     if (client_fd != -1) {
-                        connections.insert(std::make_pair(client_fd, ClientConnection(server))); // Register the client_fd -> server association
+                        // Enregistrer l'association client_fd -> server
+                        std::pair<std::map<int, ClientConnection>::iterator, bool> result =
+                            connections.insert(std::make_pair(client_fd, ClientConnection(server)));
 
-                        // Create a new HTTPRequest object and store it in the map
+                        // Créer un nouvel objet HTTPRequest et le stocker dans la connexion
                         int max_body_size = serverConfigs[0].clientMaxBodySize;
-                        std::map<int, ClientConnection>::iterator conn_it = connections.find(client_fd);
-                        if (conn_it == connections.end()) {
-                            // Insertion uniquement si `client_fd` n'existe pas
-                            std::pair<std::map<int, ClientConnection>::iterator, bool> result =
-                                connections.insert(std::make_pair(client_fd, ClientConnection(server)));
+                        std::map<int, ClientConnection>::iterator conn_it = result.first;
 
-                            // Accès à l'itérateur nouvellement inséré
-                            conn_it = result.first;
-                        }
-
-                        // Maintenant, `conn_it` est garanti d'être valide et on peut l'utiliser
                         conn_it->second.setRequest(new HTTPRequest(max_body_size));
 
                         pollfd client_pollfd;
@@ -285,43 +261,70 @@ int main(int argc, char* argv[]) {
                         Logger::instance().log(ERROR, "Failure accepting client on server FD: " + to_string(poll_fds[i].fd));
                     }
                 } else {
-                    // It's a client socket descriptor, handle the request
+                    // C'est un socket client, lire la requête
                     Server* server = NULL;
-                    HTTPRequest* request = NULL;
+                    ClientConnection* connection = NULL;
                     std::map<int, ClientConnection>::iterator conn_it = connections.find(poll_fds[i].fd);
                     if (conn_it != connections.end()) {
                         server = conn_it->second.getServer();
-                        request = conn_it->second.getRequest();
+                        connection = &conn_it->second;
                     }
-                    request->setLastActivity(curr_time_ms());
+                    if (server != NULL && connection != NULL) {
+                        server->handleClient(poll_fds[i].fd, *connection);
 
-                    if (server != NULL && request != NULL) {
-                        Logger::instance().log(INFO, "Begin to handle request for client FD: " + to_string(poll_fds[i].fd));
-                        server->handleClient(poll_fds[i].fd, request);
+                        // Préparer l'envoi de la réponse si nécessaire
+                        if (connection->getResponse() != NULL) {
+                            connection->prepareResponse();
+                            // Ajouter POLLOUT pour ce socket
+                            poll_fds[i].events |= POLLOUT;
+                        }
                     }
-                    // Check if the request is complete or connection is closed
-                    if (request->isComplete() || request->getConnectionClosed() || request->getRequestTooLarge()) {
-                        // Clean up
-                        close(poll_fds[i].fd);
-                        connections.erase(poll_fds[i].fd);
-                        poll_fds.erase(poll_fds.begin() + i);
-                        --i;
+
+                    // Vérifier si la requête est complète ou la connexion est fermée
+                    if (connection != NULL && (connection->getRequest()->isComplete() || connection->getRequest()->getConnectionClosed() || connection->getRequest()->getRequestTooLarge())) {
+                        // Si une réponse est prête à être envoyée, l'envoi sera géré dans POLLOUT
+                        if (connection->getResponse() != NULL) {
+                            // Ne pas fermer immédiatement, attendre que POLLOUT soit traité
+                        } else {
+                            // Fermer la connexion si aucune réponse n'est prête
+                            close(poll_fds[i].fd);
+                            connections.erase(poll_fds[i].fd);
+                            poll_fds.erase(poll_fds.begin() + i);
+                            --i;
+                        }
                     }
                 }
             }
+
+            if (poll_fds[i].revents & POLLOUT) {
+    // C'est un socket prêt à écrire
+    std::map<int, ClientConnection>::iterator conn_it = connections.find(poll_fds[i].fd);
+    if (conn_it != connections.end()) {
+        Server* server = conn_it->second.getServer();
+        server->handleResponseSending(poll_fds[i].fd, conn_it->second);
+        if (conn_it->second.isResponseComplete()) {
+            // Supprimer POLLOUT de ce socket
+            poll_fds[i].events &= ~POLLOUT;
+            // Fermer la connexion
+            close(poll_fds[i].fd);
+            connections.erase(conn_it);
+            poll_fds.erase(poll_fds.begin() + i);
+            --i;
+            continue;
+        }
+    }
+}
+
         }
 
         if (stopServer)
             break;
     }
 
-    // Clean up any remaining HTTPRequest objects
-    // for (std::map<int, ClientConnection>::iterator it = connections.begin(); it != connections.end(); ++it) {
-    //     delete it->second;
-    // }
+    // Nettoyer les objets HTTPRequest restants
     connections.clear();
 
-    // Clean up memory
+    // Nettoyer la mémoire
     for (size_t i = 0; i < servers.size(); ++i) {
         delete servers[i];
         delete sockets[i];

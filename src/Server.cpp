@@ -319,7 +319,7 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
             size_t filenamePos = partHeaders.find("filename=\"") + 10;
             size_t filenameEnd = partHeaders.find("\"", filenamePos);
             filename = partHeaders.substr(filenamePos, filenameEnd - filenamePos);
-            
+
             if (filename.empty()) {
                 Logger::instance().log(ERROR, "No file selected for upload.");
                 response.beError(400, "No file selected for upload.");
@@ -559,7 +559,7 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath,
             response.setBody(content);
             Logger::instance().log(DEBUG, "Set-Cookie header: " + response.getStrHeader("Set-Cookie"));
 
-            sendResponse(client_fd, response);
+            // sendResponse(client_fd, response);
         } else {
             Logger::instance().log(WARNING, "Requested file not found: " + filePath + "; 404 error sent");
             sendErrorResponse(client_fd, 404);
@@ -586,32 +586,51 @@ int Server::acceptNewClient(int server_fd) {
 	return client_fd;
 }
 
-void Server::handleClient(int client_fd, HTTPRequest* request) {
+void Server::handleClient(int client_fd, ClientConnection& connection) {
     if (client_fd <= 0) {
         Logger::instance().log(ERROR, "Invalid client FD: " + to_string(client_fd));
         return;
     }
 
-    receiveRequest(client_fd, *request);
-    if (!request->isComplete()) {
+    receiveRequest(client_fd, *connection.getRequest());
+
+    if (!connection.getRequest()->isComplete()) {
         // Request is incomplete, return and wait for more data
         return;
     }
 
     HTTPResponse response;
 
-    if (!request->parse()) {
+    if (!connection.getRequest()->parse()) {
         Logger::instance().log(ERROR, "Failed to parse client request on fd " + to_string(client_fd));
         sendErrorResponse(client_fd, 400);  // Bad Request
         return;
     }
 
-    SessionManager session(request->getStrHeader("Cookie"));
+    SessionManager session(connection.getRequest()->getStrHeader("Cookie"));
     if (session.getFirstCon())
         response.setHeader("Set-Cookie", session.getSessionId() + "; Path=/; HttpOnly");
 
     Logger::instance().log(INFO, "Parsing OK, handling request for client fd: " + to_string(client_fd));
-    handleHttpRequest(client_fd, *request, response);
+    handleHttpRequest(client_fd, *connection.getRequest(), response);
+
+    // Préparer la réponse pour l'envoi
+    connection.setResponse(new HTTPResponse(response));
+    connection.prepareResponse();
+}
+
+void Server::handleResponseSending(int client_fd, ClientConnection& connection) {
+    if (connection.isResponseComplete()) {
+        // Response already fully sent; nothing to do
+        return;
+    }
+
+    bool completed = connection.sendResponseChunk(client_fd);
+    if (completed) {
+        // Response fully sent; close the connection
+        close(client_fd);
+        Logger::instance().log(INFO, "Response fully sent and connection closed for client FD: " + to_string(client_fd));
+    }
 }
 
 void Server::sendErrorResponse(int client_fd, int errorCode) {

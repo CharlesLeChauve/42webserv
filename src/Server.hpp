@@ -14,6 +14,7 @@
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
 #include <algorithm>
+#include "ClientConnection.hpp"
 
 class Socket;
 
@@ -50,7 +51,8 @@ public:
     int acceptNewClient(int server_fd);
 
     // Gérer les requêtes d'un client connecté
-    void handleClient(int client_fd, HTTPRequest* request);
+    void handleClient(int client_fd, ClientConnection& connection);
+    void handleResponseSending(int client_fd, ClientConnection& connection);
     const ServerConfig& getConfig() const;
 };
 
