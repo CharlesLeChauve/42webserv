@@ -607,12 +607,12 @@ void Server::handleClient(int client_fd, ClientConnection& connection) {
         return;
     }
 
-    SessionManager session(connection.getRequest()->getStrHeader("Cookie"));
-    manageUserSession(request, response, client_fd, session);
+    // SessionManager session(connection.getRequest()->getStrHeader("Cookie"));
+    // manageUserSession(connection.getRequest(), *(connection.getResponse()), client_fd, session);
 
     Logger::instance().log(INFO, "Parsing OK, handling request for client fd: " + to_string(client_fd));
     handleHttpRequest(client_fd, *connection.getRequest(), response);
-	session.persistSession();
+	// session.persistSession();
 
     // Préparer la réponse pour l'envoi
     connection.setResponse(new HTTPResponse(response));
@@ -624,6 +624,8 @@ void Server::handleResponseSending(int client_fd, ClientConnection& connection) 
         // Response already fully sent; nothing to do
         return;
     }
+	HTTPRequest* request = connection.getRequest();
+	HTTPResponse& response = *(connection.getResponse());
 
     bool completed = connection.sendResponseChunk(client_fd);
     if (completed) {
@@ -631,14 +633,13 @@ void Server::handleResponseSending(int client_fd, ClientConnection& connection) 
         close(client_fd);
         Logger::instance().log(INFO, "Response fully sent and connection closed for client FD: " + to_string(client_fd));
     }
-=======
-    SessionManager session(request->getStrHeader("Cookie"));
-    manageUserSession(request, response, client_fd, session);
+    // SessionManager session(request->getStrHeader("Cookie"));
+    // manageUserSession(request, response, client_fd, session);
 
     Logger::instance().log(INFO, "Parsing OK, handling request for client fd: " + to_string(client_fd));
     handleHttpRequest(client_fd, *request, response);
 
-    session.persistSession();
+    // session.persistSession();
 }
 
 void    Server::manageUserSession(HTTPRequest* request, HTTPResponse& response, int client_fd, SessionManager& session) {
