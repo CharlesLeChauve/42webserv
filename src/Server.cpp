@@ -105,7 +105,7 @@ void Server::sendResponse(int client_fd, HTTPResponse response) {
 	std::string responseString = response.toString();
 	int bytes_written = write(client_fd, responseString.c_str(), responseString.size()); //?? Check error 0?
     if (bytes_written == -1) {
-        sendErrorResponse(client_fd, 500); // Internal server error
+        response.beError(500, "(Internal Server Error) for failing to send response"); // Internal server error
         Logger::instance().log(WARNING, "500 error (Internal Server Error) for failing to send response");
     }
     Logger::instance().log(WARNING, "Response sent to client; No verif on write : \n" + response.toStringHeaders());
