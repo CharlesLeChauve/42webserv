@@ -504,7 +504,6 @@ void Server::handleClient(int client_fd, ClientConnection& connection) {
         return;
     }
 
-    HTTPResponse response;
 
     if (!connection.getRequest()->parse()) {
         Logger::instance().log(ERROR, "Failed to parse client request on fd " + to_string(client_fd));
@@ -514,14 +513,15 @@ void Server::handleClient(int client_fd, ClientConnection& connection) {
 
     // SessionManager session(connection.getRequest()->getStrHeader("Cookie"));
     // manageUserSession(connection.getRequest(), *(connection.getResponse()), client_fd, session);
+    // HTTPResponse response;
 
-    Logger::instance().log(INFO, "Parsing OK, handling request for client fd: " + to_string(client_fd));
-    handleHttpRequest(client_fd, *connection.getRequest(), response);
-	// session.persistSession();
+    // Logger::instance().log(INFO, "Parsing OK, handling request for client fd: " + to_string(client_fd));
+    // handleHttpRequest(client_fd, *connection.getRequest(), response);
+	// // session.persistSession();
 
-    // Préparer la réponse pour l'envoi
-    connection.setResponse(new HTTPResponse(response));
-    connection.prepareResponse();
+    // // Préparer la réponse pour l'envoi
+    // connection.setResponse(new HTTPResponse(response));
+    // connection.prepareResponse();
 }
 
 void Server::handleResponseSending(int client_fd, ClientConnection& connection) {
@@ -540,9 +540,6 @@ void Server::handleResponseSending(int client_fd, ClientConnection& connection) 
     }
     // SessionManager session(request->getStrHeader("Cookie"));
     // manageUserSession(request, response, client_fd, session);
-
-    Logger::instance().log(INFO, "Parsing OK, handling request for client fd: " + to_string(client_fd));
-    // handleHttpRequest(client_fd, *request, response);
 
     // session.persistSession();
 }

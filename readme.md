@@ -10,3 +10,5 @@
 Après ca, il est très IMPORTANT de close la connection, sans quoi le navigateur pourrait croire que la réponse n'est pas terminée. 
 
 //?? Du coup, on a le même probleme pour les CGI, si on essaye de lire toute la réponse du CGI, ou de lui envoyer trop de données d'un seul coup, on se retrouve encore avec un comportement bloquant. A priori, il faudrait ouvrir les pipes dédiés au CGI dès le début et gérer la lecture/ecriture vers ce pipe depuis POLL (POLLOUT pour envoyer au CGI, POLLIN pour recevoir sa réponse);
+
+//?? Refactoriser handlegetorpost si possible
