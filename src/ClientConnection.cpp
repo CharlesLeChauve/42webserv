@@ -42,7 +42,7 @@ bool ClientConnection::sendResponseChunk(int client_fd) {
             _isSending = false;
             return true; // Response fully sent
         }
-    } else if (bytesSent == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
+    } else if (bytesSent == -1) {
         // Error during write
         _isSending = false;
         return true; // Treat as if the response is complete to close the connection

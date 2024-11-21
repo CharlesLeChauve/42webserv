@@ -529,8 +529,8 @@ void Server::handleResponseSending(int client_fd, ClientConnection& connection) 
         // Response already fully sent; nothing to do
         return;
     }
-	HTTPRequest* request = connection.getRequest();
-	HTTPResponse& response = *(connection.getResponse());
+	// HTTPRequest* request = connection.getRequest();
+	// HTTPResponse& response = *(connection.getResponse());
 
     bool completed = connection.sendResponseChunk(client_fd);
     if (completed) {
@@ -542,7 +542,7 @@ void Server::handleResponseSending(int client_fd, ClientConnection& connection) 
     // manageUserSession(request, response, client_fd, session);
 
     Logger::instance().log(INFO, "Parsing OK, handling request for client fd: " + to_string(client_fd));
-    handleHttpRequest(client_fd, *request, response);
+    // handleHttpRequest(client_fd, *request, response);
 
     // session.persistSession();
 }
