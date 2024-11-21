@@ -72,14 +72,14 @@ void Server::receiveRequest(int client_fd, HTTPRequest& request) {
 
     readFromSocket(client_fd, request);
     if (request.getRequestTooLarge()) {
-        sendErrorResponse(client_fd, 413);
+		request.setErrorCode(413);
         return;
     }
     if (!request.getHeadersParsed()) {
         request.parseRawRequest(_config);
         if (request.getRequestTooLarge()) {
-            sendErrorResponse(client_fd, 413);
-            return ;
+			request.setErrorCode(413);
+            return;
         }
     }
     if (request.getHeadersParsed()) {
@@ -96,6 +96,7 @@ void Server::receiveRequest(int client_fd, HTTPRequest& request) {
         if (request.getBodyReceived() > static_cast<size_t>(request.getMaxBodySize())) {
             Logger::instance().log(WARNING, "Request body size exceeds the configured maximum.");
             request.setRequestTooLarge(true);
+			request.setErrorCode(413);
             return;
         }
     }
@@ -140,13 +141,13 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPRe
         if (!portStr.empty()) {
             int port = std::atoi(portStr.c_str());
             if (port != _config.ports.at(0)) {
-                sendErrorResponse(client_fd, 404); // Not Found
+                response.beError(404); // Not Found
                 Logger::instance().log(WARNING, "404 error (Not Found) sent on request : \n" + request.toString());
                 return;
             }
         }
     } else {
-        sendErrorResponse(client_fd, 400); // Mauvaise requête
+        response.beError(400); // Mauvaise requête
         Logger::instance().log(WARNING, "400 error (Bad Request) sent on request : \n" + request.toString());
         return;
     }
@@ -157,7 +158,7 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPRe
     } else if (request.getMethod() == "DELETE") {
         handleDeleteRequest(client_fd, request);
     } else {
-        sendErrorResponse(client_fd, 501); // Not implemented method
+        response.beError(501); // Not implemented method
         Logger::instance().log(WARNING, "501 error (Not Implemented) sent on request : \n" + request.toString());
     }
 }
@@ -499,6 +500,14 @@ void Server::handleClient(int client_fd, ClientConnection& connection) {
 
     receiveRequest(client_fd, *connection.getRequest());
 
+	if (connection.getRequest()->getErrorCode() != 0) {
+        // Une erreur a été détectée dans receiveRequest
+        HTTPResponse* errorResponse = new HTTPResponse();
+        errorResponse->beError(connection.getRequest()->getErrorCode());
+        connection.setResponse(errorResponse);
+        connection.prepareResponse();
+        return;
+    }
     if (!connection.getRequest()->isComplete()) {
         // Request is incomplete, return and wait for more data
         return;

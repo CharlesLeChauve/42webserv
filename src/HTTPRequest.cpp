@@ -8,7 +8,7 @@
 
 HTTPRequest::HTTPRequest()
     : _complete(false), _connectionClosed(false), _maxBodySize(0),
-      _contentLength(0), _bodyReceived(0), _headersParsed(false), _requestTooLarge(false) {
+      _contentLength(0), _bodyReceived(0), _headersParsed(false), _requestTooLarge(false), _errorCode(0) {
         setLastActivity(curr_time_ms());
       }
 
@@ -248,3 +248,11 @@ void HTTPRequest::setConnectionClosed(bool value) { _connectionClosed = value; }
 void HTTPRequest::setComplete(bool value) { _complete = value; }
 
 void HTTPRequest::setLastActivity(unsigned long timestamp) { _lastActivity = timestamp; }
+
+int HTTPRequest::getErrorCode() const {
+    return _errorCode;
+}
+
+void HTTPRequest::setErrorCode(int code) {
+    _errorCode = code;
+}

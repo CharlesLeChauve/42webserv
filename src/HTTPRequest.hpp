@@ -49,6 +49,8 @@ public:
     void setConnectionClosed(bool value);
 	void setLastActivity(unsigned long timestamp);
 
+	int getErrorCode() const;
+    void setErrorCode(int code);
 
 private:
 	std::string _method;
@@ -72,6 +74,8 @@ private:
 	void parseHeaders(const std::string& headers);
 	void parseBody(const std::string& body);
 	void parseQueryString();
+
+	int _errorCode;
 };
 
 #endif
