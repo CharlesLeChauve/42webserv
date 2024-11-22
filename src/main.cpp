@@ -70,7 +70,7 @@ int manageConnections(std::map<int, ClientConnection>& connections, std::vector<
             continue;
         }
 
-        if (request->isComplete()) {
+        if (request->isComplete() && request->getErrorCode() == 0) {
             HTTPResponse response;
 
             Logger::instance().log(INFO, "Parsing OK, handling request for client fd: " + to_string(client_fd));

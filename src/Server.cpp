@@ -117,7 +117,7 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPRe
 
     if (location && !location->allowedMethods.empty()) {
         if (std::find(location->allowedMethods.begin(), location->allowedMethods.end(), request.getMethod()) == location->allowedMethods.end()) {
-            sendErrorResponse(client_fd, 405); // Méthode non autorisée
+            response.beError(405); // Méthode non autorisée
             Logger::instance().log(WARNING, "405 error (Forbidden) sent on request : \n" + request.toString());
             return;
         }
@@ -156,7 +156,7 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPRe
     if (request.getMethod() == "GET" || request.getMethod() == "POST") {
         handleGetOrPostRequest(client_fd, request, response);
     } else if (request.getMethod() == "DELETE") {
-        handleDeleteRequest(client_fd, request);
+        handleDeleteRequest(request);
     } else {
         response.beError(501); // Not implemented method
         Logger::instance().log(WARNING, "501 error (Not Implemented) sent on request : \n" + request.toString());
@@ -304,13 +304,13 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
                     return;
                 } else {
                     // Boundary manquant dans Content-Type
-                    sendErrorResponse(client_fd, 400); // Bad Request
+                    response.beError(400); // Bad Request
                     Logger::instance().log(WARNING, "400 error (Bad Request): Missing boundary in Content-Type header.");
                     return;
                 }
             } else {
                 // Upload non autorisé dans cette location
-                sendErrorResponse(client_fd, 403); // Forbidden
+                response.beError(403); // Forbidden
                 Logger::instance().log(WARNING, "403 error (Forbidden): Upload not allowed for this location.");
                 return;
             }
@@ -321,14 +321,14 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
                 Logger::instance().log(DEBUG, "CGI extension detected for path: " + fullPath);
                 if (access(fullPath.c_str(), F_OK) == -1) {
                     Logger::instance().log(DEBUG, "CGI script not found: " + fullPath);
-                    sendErrorResponse(client_fd, 404); // Not Found
+                    response.beError(404); // Not Found
                 } else {
                     CGIHandler cgiHandler;
                     std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
 
                     int bytes_written = write(client_fd, cgiOutput.c_str(), cgiOutput.length()); //?? Check 0 ?
                     if (bytes_written == -1) {
-                        sendErrorResponse(client_fd, 500); // Internal Server Error
+                        response.beError(500); // Internal Server Error
                         Logger::instance().log(WARNING, "500 error (Internal Server Error): Failed to send CGI output response.");
                     }
                     return;
@@ -351,14 +351,14 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
             Logger::instance().log(DEBUG, "CGI extension detected for path: " + fullPath);
             if (access(fullPath.c_str(), F_OK) == -1) {
                 Logger::instance().log(DEBUG, "CGI script not found: " + fullPath);
-                sendErrorResponse(client_fd, 404); // Not Found
+                response.beError(404); // Not Found
             } else {
                 CGIHandler cgiHandler;
                 std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
 
                 int bytes_written = write(client_fd, cgiOutput.c_str(), cgiOutput.length()); // ??Check 0
                 if (bytes_written == -1) {
-                    sendErrorResponse(client_fd, 500); // Internal Server Error
+                    response.beError(500); // Internal Server Error
                     Logger::instance().log(WARNING, "500 error (Internal Server Error): Failed to send CGI output response.");
                 }
                 return;
@@ -370,17 +370,17 @@ void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, H
         }
     } else {
         // Méthode non supportée
-        sendErrorResponse(client_fd, 501); // Not Implemented
+        response.beError(501); // Not Implemented
         Logger::instance().log(WARNING, "501 error (Not Implemented) sent on request: \n" + request.toString());
     }
 }
 
-void Server::handleDeleteRequest(int client_fd, const HTTPRequest& request) {
+void Server::handleDeleteRequest(const HTTPRequest& request) {
 	std::string fullPath = _config.root + request.getPath();
 	HTTPResponse response;
 	if (access(fullPath.c_str(), F_OK) == -1) {
         Logger::instance().log(WARNING, "404 error (Not Found) sent on DELETE request for address: \n" + _config.root + request.getPath());
-		sendErrorResponse(client_fd, 404);
+		response.beError(404);
 	} else {
 		if (remove(fullPath.c_str()) == 0) {
 			response.setStatusCode(200);
@@ -393,7 +393,7 @@ void Server::handleDeleteRequest(int client_fd, const HTTPRequest& request) {
 			//sendResponse(client_fd, response);
 		} else {
             Logger::instance().log(WARNING, "500 error (Internal Server Error) to DELETE: " + fullPath + ": remove() failed");
-			sendErrorResponse(client_fd, 500);
+			response.beError(500);
 		}
 	}
 }
@@ -429,7 +429,7 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath,
             } else {
                 // Si autoindex est désactivé, retourner une erreur 403 Forbidden
                 Logger::instance().log(INFO, "Index page not found and autoindex is off. Sending 403 Forbidden.");
-                sendErrorResponse(client_fd, 403);
+                response.beError(403);//Forbidden
             }
         }
     } else {
@@ -468,7 +468,7 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath,
             //sendResponse(client_fd, response);
         } else {
             Logger::instance().log(WARNING, "Requested file not found: " + filePath + "; 404 error sent");
-            sendErrorResponse(client_fd, 404);
+            response.beError(404);
         }
     }
 }
@@ -516,7 +516,7 @@ void Server::handleClient(int client_fd, ClientConnection& connection) {
 
     if (!connection.getRequest()->parse()) {
         Logger::instance().log(ERROR, "Failed to parse client request on fd " + to_string(client_fd));
-        sendErrorResponse(client_fd, 400);  // Bad Request
+        connection.getRequest()->setErrorCode(400);  // Bad Request
         return;
     }
 
@@ -607,11 +607,8 @@ void Server::sendErrorResponse(int client_fd, int errorCode) {
 			errorContent = buffer.str();
 		} else {
             Logger::instance().log(WARNING, "Failed to open custom error page : " + errorPagePath + "; Serving default");
-			// Laisser errorContent vide pour utiliser la page d'erreur par défaut
 		}
 	}
-	// Passer errorContent à beError, qui utilisera la page par défaut si errorContent
-	// est vide
     response.setStatusCode(errorCode);
     if (!errorContent.empty())
     	response.setBody(errorContent);
