@@ -1,0 +1,1567 @@
+INFO: Starting Program logs at : 20241122_174527
+INFO: Starting main
+DEBUG: Default configuration file loaded : config/server.conf
+DEBUG: Set client_max_body_size to 1048576 in server config
+DEBUG: Set autoindex to off in server config
+DEBUG:  Loaded CGI extension from location: .sh
+DEBUG:  Loaded CGI extension from location: .php
+DEBUG:  Loaded CGI extension from location: .cgi
+DEBUG: Set autoindex to on in location /images
+DEBUG: Set client_max_body_size to 1048576 in location /uploads
+DEBUG: Set uploadOn to on in location /uploads
+DEBUG: Set autoindex to on in location /uploads
+DEBUG: Set autoindex to on in location /img
+DEBUG: Loaded CGI extension from location: .cgi
+DEBUG: Loaded CGI extension from location: .php
+DEBUG: Loaded CGI extension from location: .sh
+DEBUG: Config file successfully parsed
+INFO: 2 servers successfully configured
+INFO: Server configuration is valid.
+INFO: Socket 9 successfully bound to port 8080
+DEBUG: listen() returned: 0
+INFO: Socket 9 is now listening on port 8080
+INFO: Server launched, listening on port: 8080
+INFO: Server configuration is valid.
+INFO: Socket 10 successfully bound to port 8081
+DEBUG: listen() returned: 0
+INFO: Socket 10 is now listening on port 8081
+INFO: Server launched, listening on port: 8081
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+INFO: Session id generated 6337b17d-9172-41a5-87c9-5e3c7274520c
+INFO: Data set in session: status = new user
+INFO: Data set in session: last_access_time = 2024-11-22 17:45:33
+INFO: Data set in session: requested_pages = /
+INFO: Data set in session: methods = GET
+INFO: Data set in session: user_agent = Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+INFO: Parsing OK, handling request for client fd: 11
+DEBUG: handleGetOrPostRequest: fullPath = www/
+DEBUG: hasCgiExtension: No matching CGI extension for path www/
+
+DEBUG: No CGI extension detected for path: www/. Serving as static file.
+INFO: Request File Path is a directory, searching for an index page...
+INFO: Found index page: www//index.html
+INFO: Serving static file found at: www//index.html
+DEBUG: Set-Cookie header: 6337b17d-9172-41a5-87c9-5e3c7274520c; Path=/; HttpOnly
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 13 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 14 accepted on server FD: 9
+INFO: Full request read.
+[ 0 similar lines hidden ]
+INFO: Full request read.
+INFO: Data set in session: status = existing user
+INFO: Returning user: 6337b17d-9172-41a5-87c9-5e3c7274520c
+INFO: Data set in session: last_access_time = 2024-11-22 17:45:33, 2024-11-22 17:45:33
+INFO: Data set in session: requested_pages = /css/style.css
+INFO: Data set in session: methods = GET
+INFO: Data set in session: user_agent = Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+INFO: Parsing OK, handling request for client fd: 11
+DEBUG: handleGetOrPostRequest: fullPath = www/css/style.css
+DEBUG: hasCgiExtension: No matching CGI extension for path www/css/style.css
+
+DEBUG: No CGI extension detected for path: www/css/style.css. Serving as static file.
+INFO: Serving static file found at: www/css/style.css
+DEBUG: Set-Cookie header: 
+INFO: Returning user: 6337b17d-9172-41a5-87c9-5e3c7274520c
+INFO: Data set in session: last_access_time = 2024-11-22 17:45:33, 2024-11-22 17:45:33
+INFO: Data set in session: requested_pages = /images/fleur.jpg
+INFO: Data set in session: methods = GET
+INFO: Data set in session: user_agent = Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+INFO: Parsing OK, handling request for client fd: 12
+DEBUG: handleGetOrPostRequest: fullPath = www/images/fleur.jpg
+DEBUG: hasCgiExtension: No matching CGI extension for path www/images/fleur.jpg
+
+DEBUG: No CGI extension detected for path: www/images/fleur.jpg. Serving as static file.
+INFO: Serving static file found at: www/images/fleur.jpg
+DEBUG: Set-Cookie header: 
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 13
+INFO: Response fully sent and connection closed for client FD: 14
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/4-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/5-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/2-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/4-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/4-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/4-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/4-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/4-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/6-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/1-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 12 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 12
+INFO: Accepting new Connection on socket FD: 9
+DEBUG: New pollfd added for client with FD: 11 accepted on server FD: 9
+INFO: Full request read.
+DEBUG: path for error sorry gif : images/3-sorry.gif
+INFO: Response fully sent and connection closed for client FD: 11
+INFO: Signal received, stopping the server...

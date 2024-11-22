@@ -1,0 +1,314 @@
+[General]
+last_access_time=2024-11-22 17:11:26
+status=new user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:11:26
+status=existing user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/css/style.css
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:12:27
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:12:27
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/css/style.css
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:12:27
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/images/fleur.jpg
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:12:27
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/images/recolte.avif
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:12:33
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/pages/images/4-sorry.gif
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:12:33
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/favicon.ico
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:12:35
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/pages/contact.html
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:12:35
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/css/style_contact.css
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:12:58
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/pages/apropos.html
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:12:58
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/images/tgibert.jpg
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:12:58
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/images/anporced.jpg
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:13:13
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/favicon.ico
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:13:22
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/pages/error.html
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:13:22
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/css/err_style.css
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:13:25
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/favicon.ico
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:13:28
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/pages/error.html
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:13:28
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/images/SP.jpeg
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:13:28
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/pages/error.html
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:13:29
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/css/err_style.css
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:13:32
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/pages/error.html
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:13:32
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/css/err_style.css
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:13:35
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/pages/error.html
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:13:35
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/images/SP.jpeg
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:13:35
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/favicon.ico
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:13:35
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/pages/error.html
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:13:40
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/pages/contact.html
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:13:40
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/css/style_contact.css
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:40:40
+status=existing user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:40:40
+status=existing user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/css/style.css
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:40:40
+status=existing user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/script.js
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:40:40
+status=existing user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/images/fleur.jpg
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:40:43
+status=existing user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/pages/images/1-sorry.gif
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:40:43
+status=existing user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/favicon.ico
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:40:44
+status=existing user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/pages/index.html
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:40:44
+status=existing user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/css/err_style.css
+Methods=GET
+
+[General]
+last_access_time=2024-11-22 17:40:44
+status=existing user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/pages/images/1-sorry.gif
+Methods=GET

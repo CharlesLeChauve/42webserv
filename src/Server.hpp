@@ -26,7 +26,6 @@ private:
 
     void receiveRequest(int client_fd, HTTPRequest& request);
     void sendResponse(int client_fd, HTTPResponse response);
-    void manageUserSession(HTTPRequest* request, HTTPResponse& response, int client_fd, SessionManager& session);
     void handleGetOrPostRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response);
     void handleDeleteRequest(const HTTPRequest& request);
     void serveStaticFile(int client_fd, const std::string& filePath, HTTPResponse& response, const HTTPRequest& request);

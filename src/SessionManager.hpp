@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Logger.hpp"
+#include "HTTPRequest.hpp"
+#include "HTTPResponse.hpp"
 #include <string>
 #include <cstring>
 #include <sstream>
@@ -20,17 +22,19 @@ private:
 	std::string		_session_id;
 	bool			_first_con;
 	std::map<std::string, std::string> _session_data;
+	void setData(const std::string& key, const std::string& value, bool append = false);
+	void manageUserSession(HTTPRequest* request, HTTPResponse* response, int client_fd, SessionManager& session);
+	void	persistSession();
+	void	loadSession();
 
 public:
 	SessionManager(std::string session_id);
 	SessionManager();
 	~SessionManager();
 
-	void setData(const std::string& key, const std::string& value, bool append = false);
 	std::string getData(const std::string& key) const;
-	void	persistSession();
-	void	loadSession();
 	std::string	curr_time();
+	void	getManager(HTTPRequest* request, HTTPResponse* response, int client_fd, SessionManager& session);
 
 
 	std::string generate_session_id();

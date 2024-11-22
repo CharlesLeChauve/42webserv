@@ -12,7 +12,7 @@ SessionManager::SessionManager(std::string session_id) {
         std::cout << "Welcome to User : " << _session_id << " for his first connection !" << std::endl;
         Logger::instance().log(INFO, "Session id generated " + _session_id);
     }
-    loadSession();
+    // loadSession();
 }
 
 
@@ -113,7 +113,7 @@ std::string cleanValue(const std::string& value) {
 void SessionManager::persistSession() {
     std::string filepath = "sessions/" + _session_id + ".txt"; // Définition du chemin de fichier
 
-    // Avant d'écrire dans le fichier, nettoie les données
+    // Avant d'écrire dans le file, nettoie les données
     for (std::map<std::string, std::string>::iterator it = _session_data.begin(); it != _session_data.end(); ++it) {
         it->second = cleanValue(it->second);
     }
@@ -131,7 +131,7 @@ void SessionManager::persistSession() {
         file << "\n"; // Ajoute une ligne vide
     }
 
-    // Écrit les nouvelles données sous la section [General]
+    // Écrit les nouvelles données sous [General]
     file << "[General]\n";
     if (_session_data.find("last_access_time") != _session_data.end()) {
         file << "last_access_time=" << cleanValue(curr_time()) << "\n";
@@ -145,7 +145,7 @@ void SessionManager::persistSession() {
 
     file << "\n[Requests]\n";
 
-    // Écrit les nouvelles données sous la section [Requests]
+    // Écrit les nouvelles données sous [Requests]
     if (_session_data.find("requested_pages") != _session_data.end()) {
         file << "Pages=" << cleanValue(_session_data["requested_pages"]) << "\n";
     }
@@ -157,6 +157,7 @@ void SessionManager::persistSession() {
 }
 
 void SessionManager::loadSession() {
+
     std::string filepath = "sessions/" + _session_id + ".txt";
     std::ifstream file(filepath.c_str());
     if (!file.is_open()) {
@@ -183,11 +184,6 @@ void SessionManager::loadSession() {
         }
     }
 
-    // Vérifie si le statut est défini
-    if (_session_data.find("status") == _session_data.end()) {
-        _session_data["status"] = "new user";
-    }
-
     file.close();
 }
 
@@ -204,4 +200,45 @@ std::string SessionManager::curr_time() {
     return std::string(buffer);
 }
 
+void    SessionManager::manageUserSession(HTTPRequest* request, HTTPResponse* response, int client_fd, SessionManager& session) {
 
+    session.loadSession();
+
+    if (session.getFirstCon()) {
+        response->setHeader("Set-Cookie", session.getSessionId() + "; Path=/; HttpOnly");
+        session.setData("status", "new user"); // Set up uniquement lors de la première connexion
+    }
+    else {
+        if (session.getData("status") == "new user") {
+            session.setData("status", "existing user"); // Met à jour pour les connexions suivantes
+        }
+        Logger::instance().log(INFO, "Returning user: " + session.getSessionId());
+    }
+
+    // Mise à jour des informations
+    session.setData("last_access_time", to_string(session.curr_time()), true);
+    std::string path = request->getPath();
+    std::string method = request->getMethod();
+    std::string user_agent = request->getStrHeader("User-Agent");
+
+    if (!path.empty())
+        session.setData("requested_pages", path, true);
+    else
+        Logger::instance().log(WARNING, "Request path is empty for client fd: " + to_string(client_fd));
+
+    if (!method.empty())
+        session.setData("methods", method, true);
+    else
+        Logger::instance().log(WARNING, "Request method is empty for client fd: " + to_string(client_fd));
+
+    if (user_agent.empty())
+        user_agent = "Unknown"; // By default
+    else
+        session.setData("user_agent", user_agent, false); // False pour ne pas accumuler pls valeurs pour un user.
+}
+
+void	SessionManager::getManager(HTTPRequest* request, HTTPResponse* response, int client_fd, SessionManager& session) {
+    
+    session.manageUserSession(request, response, client_fd, session);
+    session.persistSession();
+}

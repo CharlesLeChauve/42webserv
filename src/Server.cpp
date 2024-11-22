@@ -274,6 +274,8 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
 
 void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response) {
     std::string fullPath = _config.root + request.getPath();
+    // std::cerr << "Config root : " << _config.root << std::endl;
+    // std::cerr << "Request path : " << request.getPath() << std::endl;
 
     // Log pour vérifier le chemin complet
     Logger::instance().log(DEBUG, "handleGetOrPostRequest: fullPath = " + fullPath);
@@ -520,13 +522,10 @@ void Server::handleClient(int client_fd, ClientConnection& connection) {
         return;
     }
 
-    // SessionManager session(connection.getRequest()->getStrHeader("Cookie"));
-    // manageUserSession(connection.getRequest(), *(connection.getResponse()), client_fd, session);
     // HTTPResponse response;
 
     // Logger::instance().log(INFO, "Parsing OK, handling request for client fd: " + to_string(client_fd));
     // handleHttpRequest(client_fd, *connection.getRequest(), response);
-	// // session.persistSession();
 
     // // Préparer la réponse pour l'envoi
     // connection.setResponse(new HTTPResponse(response));
@@ -551,44 +550,6 @@ void Server::handleResponseSending(int client_fd, ClientConnection& connection) 
     // manageUserSession(request, response, client_fd, session);
 
     // session.persistSession();
-}
-
-void    Server::manageUserSession(HTTPRequest* request, HTTPResponse& response, int client_fd, SessionManager& session) {
-
-    session.loadSession(); // Charger les données existantes
-
-    if (session.getFirstCon()) {
-        response.setHeader("Set-Cookie", session.getSessionId() + "; Path=/; HttpOnly");
-        session.setData("status", "new user"); // Set up uniquement lors de la première connexion
-    }
-    else {
-        if (session.getData("status") == "new user") {
-            session.setData("status", "existing user"); // Met à jour pour les connexions suivantes
-        }
-        Logger::instance().log(INFO, "Returning user: " + session.getSessionId());
-    }
-
-
-    // Mise à jour des informations
-    session.setData("last_access_time", to_string(session.curr_time()), true);
-    std::string path = request->getPath();
-    std::string method = request->getMethod();
-    std::string user_agent = request->getStrHeader("User-Agent");
-
-    if (!path.empty())
-        session.setData("requested_pages", path, true);
-    else
-        Logger::instance().log(WARNING, "Request path is empty for client fd: " + to_string(client_fd));
-
-    if (!method.empty())
-        session.setData("methods", method, true);
-    else
-        Logger::instance().log(WARNING, "Request method is empty for client fd: " + to_string(client_fd));
-
-    if (user_agent.empty())
-        user_agent = "Unknown"; // By default
-    else
-        session.setData("user_agent", user_agent, false); // False pour ne pas accumuler pls valeurs pour un user.
 }
 
 void Server::sendErrorResponse(int client_fd, int errorCode) {

@@ -7,6 +7,7 @@
 #include <iostream>
 #include "Logger.hpp"
 #include "ServerConfig.hpp"
+#include "SessionManager.hpp"
 #include <poll.h>
 #include <unistd.h>
 #include <ctime>
@@ -73,6 +74,8 @@ int manageConnections(std::map<int, ClientConnection>& connections, std::vector<
         if (request->isComplete() && request->getErrorCode() == 0) {
             HTTPResponse response;
 
+            SessionManager  session(request->getStrHeader("Cookie"));
+            session.getManager(request, &response, client_fd, session);
             Logger::instance().log(INFO, "Parsing OK, handling request for client fd: " + to_string(client_fd));
             connection.getServer()->handleHttpRequest(client_fd, *request, response);
 
