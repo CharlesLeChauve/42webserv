@@ -73,6 +73,11 @@ Logger::~Logger() {
         std::cout << "Would you like to [K]eep this session logs or [D]elete? (d/k): ";
         std::getline(std::cin, user_input);
 
+             if (std::cin.eof()) {
+            std::cout << "\n EOF received. Logs will be kept by default.\n";
+            break;
+        }
+
         if (user_input == "d" || user_input == "D" || user_input == "k" || user_input == "K") {
             if (debugFile.is_open())
                 debugFile.close();

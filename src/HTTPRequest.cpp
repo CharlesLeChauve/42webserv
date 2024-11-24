@@ -14,7 +14,7 @@ HTTPRequest::HTTPRequest()
 
 HTTPRequest::HTTPRequest(int max_body_size)
     : _complete(false), _connectionClosed(false), _maxBodySize(max_body_size),
-      _contentLength(0), _bodyReceived(0), _headersParsed(false), _requestTooLarge(false) {
+      _contentLength(0), _bodyReceived(0), _headersParsed(false), _requestTooLarge(false), _errorCode(0) {
         setLastActivity(curr_time_ms());
       }
 
