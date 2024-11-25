@@ -7,7 +7,7 @@
 #include <errno.h>
 
 ClientConnection::ClientConnection(Server* server)
-    : _server(server), _request(NULL), _response(NULL), _responseOffset(0), _isSending(false) {}
+    : _server(server), _request(NULL), _response(NULL), _cgiHandler(NULL), _responseOffset(0), _isSending(false) {}
 
 ClientConnection::~ClientConnection() {
     delete _request;
@@ -17,22 +17,22 @@ ClientConnection::~ClientConnection() {
 Server* ClientConnection::getServer() { return _server; }
 HTTPRequest* ClientConnection::getRequest() { return _request; }
 HTTPResponse* ClientConnection::getResponse() { return _response; }
-// CGIHandler* ClientConnection::getCgiHandler() { return _cgiHandler; }
+CGIHandler* ClientConnection::getCgiHandler() { return _cgiHandler; }
 
 
         // if (connection.getCGIProcess())
         // {
-            // CGIHandler cgiHandler;
-            // std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
+        //     CGIHandler cgiHandler;
+        //     std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
 
-            // int bytes_written = write(client_fd, cgiOutput.c_str(), cgiOutput.length());
-            // if (bytes_written == -1) {
-            //     response.beError(500); // Internal Server Error
-            //     Logger::instance().log(WARNING, "500 error (Internal Server Error): Failed to send CGI output response.");
-            // }
+        //     int bytes_written = write(client_fd, cgiOutput.c_str(), cgiOutput.length());
+        //     if (bytes_written == -1) {
+        //         response.beError(500); // Internal Server Error
+        //         Logger::instance().log(WARNING, "500 error (Internal Server Error): Failed to send CGI output response.");
+        //     }
         // }
 
-// void ClientConnection::setCgiHandler(CGIHandler* cgiHandler) { this->_cgiHandler = cgiHandler; }
+void ClientConnection::setCgiHandler(CGIHandler* cgiHandler) { this->_cgiHandler = cgiHandler; }
 void ClientConnection::setRequest(HTTPRequest* request) { this->_request = request; }
 void ClientConnection::setResponse(HTTPResponse* response) { this->_response = response; }
 void ClientConnection::setRequestActivity(unsigned long time) { _request->setLastActivity(time); }

@@ -1,0 +1,8 @@
+[General]
+last_access_time=2024-11-25 15:48:43
+status=new user
+user_agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/uploads/5-sorry.gif
+Methods=GET

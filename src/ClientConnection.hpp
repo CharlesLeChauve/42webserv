@@ -3,6 +3,7 @@
 #define CLIENTCONNECTION_HPP
 
 #include <string>
+#include "CGIHandler.hpp"
 
 // Forward declarations
 class Server;
@@ -14,7 +15,7 @@ private:
     Server* _server;
     HTTPRequest* _request;
     HTTPResponse* _response;
-    // CGIHandler* _cgiHandler;
+    CGIHandler* _cgiHandler;
 
     // Attributes for managing response sending
     std::string _responseBuffer;
@@ -29,9 +30,9 @@ public:
     Server* getServer();
     HTTPRequest* getRequest();
     HTTPResponse* getResponse();
-    // CGIHandler* getCgiHandler();
+    CGIHandler* getCgiHandler();
 
-    // void setCgiHandler(CGIHandler* cgiHandler);
+    void setCgiHandler(CGIHandler* cgiHandler);
     void setRequest(HTTPRequest* request);
     void setResponse(HTTPResponse* response);
     void setRequestActivity(unsigned long time);

@@ -331,16 +331,21 @@ void Server::handleGetOrPostRequest(int client_fd, ClientConnection& connection)
         if (access(fullPath.c_str(), F_OK) == -1) {
             Logger::instance().log(DEBUG, "CGI script not found: " + fullPath);
             response.beError(404); // Not Found
+            return;
         } else {
-            
-            CGIHandler cgiHandler;
-            std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
-
-            int bytes_written = write(client_fd, cgiOutput.c_str(), cgiOutput.length());
-            if (bytes_written == -1) {
-                response.beError(500); // Internal Server Error
-                Logger::instance().log(WARNING, "500 error (Internal Server Error): Failed to send CGI output response.");
+            connection.setCgiHandler(new CGIHandler());
+            if (connection.getResponse() != NULL) {
+                delete connection.getResponse();
+                connection.setResponse(NULL);
             }
+            // CGIHandler cgiHandler;
+            // std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
+
+            // int bytes_written = write(client_fd, cgiOutput.c_str(), cgiOutput.length());
+            // if (bytes_written == -1) {
+            //     response.beError(500); // Internal Server Error
+            //     Logger::instance().log(WARNING, "500 error (Internal Server Error): Failed to send CGI output response.");
+            // }
             return;
         }
     }

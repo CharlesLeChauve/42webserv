@@ -47,6 +47,7 @@ int manageConnections(std::map<int, ClientConnection>& connections, std::vector<
         int client_fd = it_conn->first;
         HTTPRequest* request = it_conn->second.getRequest();
         ClientConnection& connection = it_conn->second;
+        Server* server = connection.getServer();
 
         if (connection.getResponse() != NULL && connection.isResponseComplete()) {
             // La réponse a été envoyée complètement, on peut fermer la connexion
@@ -71,8 +72,8 @@ int manageConnections(std::map<int, ClientConnection>& connections, std::vector<
             continue;
         }
 
-        if (request->isComplete() && request->getErrorCode() == 0) {
-
+        CGIHandler* cgiHandler = connection.getCgiHandler();
+        if (request->isComplete() && request->getErrorCode() == 0 && cgiHandler == NULL) {
             connection.setResponse(new HTTPResponse());
             SessionManager  session(request->getStrHeader("Cookie"));
             session.getManager(request, connection.getResponse(), client_fd, session);
@@ -92,6 +93,56 @@ int manageConnections(std::map<int, ClientConnection>& connections, std::vector<
 
             ++it_conn;
             continue;
+        }
+        if (cgiHandler) {
+            Logger::instance().log(DEBUG, "CGI Handler found");
+            if (!cgiHandler->getLaunched()) {
+                Logger::instance().log(DEBUG, "cgiHandler launched, starting CGI...");
+                cgiHandler->startCGI(server->getConfig().root + request->getPath(), *request);
+                cgiHandler->setSendBuffer(request->getBody());
+                pollfd pfd;
+                pfd.fd = cgiHandler->getInputFD();
+                pfd.events = POLLOUT;
+                pfd.revents = 0; // Initialize revents to 0
+                poll_fds.push_back(pfd);
+                ++it_conn;
+                continue;
+            }
+            if (cgiHandler->allSent() && cgiHandler->isCGIDone()) {
+                Logger::instance().log(DEBUG, "All infos sent to CGI");
+                pollfd pfd;
+                pfd.fd = cgiHandler->getOutputFD();
+                pfd.events = POLLIN;
+                pfd.revents = 0; // Initialize revents to 0
+                poll_fds.push_back(pfd);
+                ++it_conn;
+                continue;
+            }
+            if (cgiHandler->getOutputComplete())
+            {
+                Logger::instance().log(DEBUG, "All infos received from CGI");
+                std::string cgiOutput = cgiHandler->getCGIResponse();
+                size_t statusPos = cgiOutput.find("Status:");
+                if (statusPos != std::string::npos) {
+                    size_t endOfStatusLine = cgiOutput.find("\r\n", statusPos);
+                    std::string statusLine = cgiOutput.substr(statusPos, endOfStatusLine - statusPos);
+                    int statusCode = std::atoi(statusLine.substr(8, 3).c_str());
+
+                    std::string errorMessage;
+                    size_t messageStartPos = statusLine.find(" ");
+                    if (messageStartPos != std::string::npos) {
+                        errorMessage = statusLine.substr(messageStartPos + 1);
+                    }
+                    connection.getResponse()->beError(statusCode, errorMessage).toString();
+                }
+                // Si aucun en-tête "Status:" n'est trouvé, renvoyer la réponse CGI directement
+                if (cgiOutput.find("HTTP/1.1") == std::string::npos) {
+                    cgiOutput = "HTTP/1.1 200 OK\r\n" + cgiOutput;
+                }
+                ++it_conn;
+                continue;
+            }
+
         }
 
         unsigned long time_since_last_activity = now - request->getLastActivity();
@@ -331,6 +382,10 @@ int main(int argc, char* argv[]) {
                         connection = &conn_it->second;
                     }
                     if (server != NULL && connection != NULL) {
+                        CGIHandler* cgiHandler = connection->getCgiHandler();
+                        if (cgiHandler) {
+                            cgiHandler->readCGIOutput();
+                        }
                         server->handleClient(poll_fds[i].fd, *connection);
 
                         // Préparer l'envoi de la réponse si nécessaire
@@ -340,31 +395,30 @@ int main(int argc, char* argv[]) {
                             poll_fds[i].events |= POLLOUT;
                         }
                     }
-
-                    // Vérifier si la requête est complète ou la connexion est fermée
-                    // // Ne pas vérifier ici en fait, la réponse n'est plus censée etre prete
-                    // if (connection != NULL && (connection->getRequest()->isComplete() || connection->getRequest()->getConnectionClosed() || connection->getRequest()->getRequestTooLarge())) {
-                    //     // Si une réponse est prête à être envoyée, l'envoi sera géré dans POLLOUT
-                    //     if (connection->getResponse() != NULL) {
-                    //         // Ne pas fermer immédiatement, attendre que POLLOUT soit traité
-                    //     } else {
-                    //         // Fermer la connexion si aucune réponse n'est prête
-                    //         close(poll_fds[i].fd);
-                    //         connections.erase(poll_fds[i].fd);
-                    //         poll_fds.erase(poll_fds.begin() + i);
-                    //         --i;
-                    //     }
-                    // }
                 }
             }
-
             if (poll_fds[i].revents & POLLOUT) {
                 // C'est un socket prêt à écrire
                 std::map<int, ClientConnection>::iterator conn_it = connections.find(poll_fds[i].fd);
                 if (conn_it != connections.end()) {
-                    Server* server = conn_it->second.getServer();
+                    ClientConnection& connection = conn_it->second;
+                    Server* server = connection.getServer();
+                    CGIHandler* cgiHandler = connection.getCgiHandler();
+                    if (cgiHandler && cgiHandler->getLaunched() && !cgiHandler->allSent()) {
+                        cgiHandler->writeCGIInput();
+                         if (cgiHandler->allSent()) {
+                            // Supprimer POLLOUT de ce socket
+                            poll_fds[i].events &= ~POLLOUT;
+                            // Fermer la connexion
+                            close(poll_fds[i].fd);
+                            connections.erase(conn_it);
+                            poll_fds.erase(poll_fds.begin() + i);
+                            --i;
+                        }
+                        continue;
+                    }
                     server->handleResponseSending(poll_fds[i].fd, conn_it->second);
-                    if (conn_it->second.isResponseComplete()) {
+                    if (connection.isResponseComplete()) {
                         // Supprimer POLLOUT de ce socket
                         poll_fds[i].events &= ~POLLOUT;
                         // Fermer la connexion
