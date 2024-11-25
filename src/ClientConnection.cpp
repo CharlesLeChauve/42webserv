@@ -48,23 +48,31 @@ void ClientConnection::prepareResponse() {
 bool ClientConnection::sendResponseChunk(int client_fd) {
     if (!_isSending) return false;
 
-    const char* bufferPtr = _responseBuffer.c_str() + _responseOffset;
-    size_t remaining = _responseBuffer.size() - _responseOffset;
+    const size_t BUFFER_SIZE = 4096;
+    char buffer[BUFFER_SIZE];
 
-    ssize_t bytesSent = write(client_fd, bufferPtr, remaining);
+    size_t remaining = _responseBuffer.size() - _responseOffset;
+    size_t bytesToSend = std::min(remaining, BUFFER_SIZE);
+
+    // Copier les données dans le buffer fixe
+    std::memcpy(buffer, _responseBuffer.c_str() + _responseOffset, bytesToSend);
+
+    ssize_t bytesSent = write(client_fd, buffer, bytesToSend);
+
     if (bytesSent > 0) {
         _responseOffset += bytesSent;
         if (_responseOffset >= _responseBuffer.size()) {
             _isSending = false;
-            return true; // Response fully sent
+            return true; // Réponse entièrement envoyée
         }
     } else if (bytesSent == -1) {
-        // Error during write
+        // Erreur lors de l'écriture
         _isSending = false;
-        return true; // Treat as if the response is complete to close the connection
+        return true; // Considérer que la réponse est complète pour fermer la connexion
     }
-    return false; // Response not yet fully sent
+    return false; // Réponse pas encore entièrement envoyée
 }
+
 
 bool ClientConnection::isResponseComplete() const {
     return !_isSending;
