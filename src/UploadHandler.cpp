@@ -7,13 +7,12 @@
 #include "Logger.hpp"
 
 UploadHandler::UploadHandler(const HTTPRequest& request, HTTPResponse& response, const std::string& boundary, const std::string& uploadDir, const ServerConfig& config)
-    : _request(request), _response(response), _boundary("--" + boundary), _uploadDir(uploadDir), _config(config) {}
+    : _request(request), _response(response), _boundary("--" + boundary), _uploadDir(uploadDir), _config(config), _filename("") {}
 
 void UploadHandler::handleUpload() {
     std::string requestBody = _request.getBody();
     size_t pos = 0;
     size_t endPos = 0;
-    std::string filename;
 
     while (true) {
         pos = requestBody.find(_boundary, endPos);
@@ -35,8 +34,7 @@ void UploadHandler::handleUpload() {
         size_t headersEnd = requestBody.find("\r\n\r\n", pos);
         if (headersEnd == std::string::npos) {
             Logger::instance().log(WARNING, "Missing \\r\\n\\r\\n in request for Upload");
-            _response.setStatusCode(400);
-            _response.setBody("Bad Request: Missing headers in request for Upload");
+            _response.beError(400, "Bad Request: Missing headers in request for Upload");
             return;
         }
         std::string partHeaders = requestBody.substr(pos, headersEnd - pos);
@@ -46,8 +44,7 @@ void UploadHandler::handleUpload() {
         endPos = requestBody.find(_boundary, pos);
         if (endPos == std::string::npos) {
             Logger::instance().log(ERROR, "End Boundary Marker not found.");
-            _response.setStatusCode(400);
-            _response.setBody("Bad Request: End Boundary Marker not found.");
+            _response.beError(400, "Bad Request: End Boundary Marker not found.");
             return;
         }
         size_t contentEnd = endPos;
@@ -61,46 +58,11 @@ void UploadHandler::handleUpload() {
         std::string partContent = requestBody.substr(pos, contentEnd - pos);
 
         // Vérifier si c'est un fichier
-        if (partHeaders.find("Content-Disposition") != std::string::npos &&
-            partHeaders.find("filename=\"") != std::string::npos)
-        {
-            size_t filenamePos = partHeaders.find("filename=\"") + 10;
-            size_t filenameEnd = partHeaders.find("\"", filenamePos);
-            filename = partHeaders.substr(filenamePos, filenameEnd - filenamePos);
-
-            if (filename.empty()) {
-                Logger::instance().log(ERROR, "No file selected for upload.");
-                _response.setStatusCode(400);
-                _response.setBody("No file selected for upload.");
-                return;
-            }
-
-            // Sanitize filename to prevent directory traversal attacks
-            filename = sanitizeFilename(filename);
-
-            // Construct the destination path
-            std::string destPath = _uploadDir + "/" + filename;
-
-            if (!isPathAllowed(destPath, _uploadDir)) {
-                Logger::instance().log(ERROR, "Attempt to upload outside of allowed path.");
-                _response.setStatusCode(403);
-                _response.setBody("Attempt to upload outside of allowed path.");
-                return;
-            }
-
-            try {
-                // Save the file to the authorized path
-                saveFile(destPath, partContent);
-            } catch (const std::exception& e) {
-                Logger::instance().log(ERROR, std::string("Error while saving file: ") + e.what());
-                _response.setStatusCode(500);
-                _response.setBody("Internal Server Error: Error during file upload.");
-                return;
-            }
-        } else {
-            Logger::instance().log(ERROR, std::string("Error while parsing the file in the request:") + partHeaders);
-            _response.setStatusCode(400);
-            _response.setBody("Bad Request: File not found.");
+        try {
+            handleFile(partHeaders, partContent);
+        }
+        catch (std::exception& e) {
+            throw; // Relancer l'exception pour la catch
             return;
         }
         endPos = endPos + _boundary.length();
@@ -112,7 +74,50 @@ void UploadHandler::handleUpload() {
                          "}, 3500);"
                          "</script>";
     _response.setBody(script + "<html><body><h1>File successfully uploaded, you'll be redirected on HomePage</h1></body></html>");
-    Logger::instance().log(INFO, "Successfully uploaded file: " + filename + " to " + _uploadDir);
+    Logger::instance().log(INFO, "Successfully uploaded file: " + this->_filename + " to " + this->_uploadDir);
+}
+
+void    UploadHandler::handleFile(std::string& partHeaders, std::string& partContent) {
+
+     // Vérifier si c'est un fichier
+        if (partHeaders.find("Content-Disposition") != std::string::npos &&
+            partHeaders.find("filename=\"") != std::string::npos)
+        {
+            size_t filenamePos = partHeaders.find("filename=\"") + 10;
+            size_t filenameEnd = partHeaders.find("\"", filenamePos);
+            this->_filename = partHeaders.substr(filenamePos, filenameEnd - filenamePos);
+
+            if (this->_filename.empty()) {
+                Logger::instance().log(ERROR, "No file selected for upload.");
+                _response.beError(400, "No file selected for upload.");
+                return;
+            }
+
+            // Sanitize filename to prevent directory traversal attacks
+            this->_filename = sanitizeFilename(this->_filename);
+
+            // Construct the destination path
+            std::string destPath = this->_uploadDir + "/" + this->_filename;
+
+            if (!isPathAllowed(destPath, this->_uploadDir)) {
+                Logger::instance().log(ERROR, "Attempt to upload outside of allowed path.");
+                _response.beError(403, "Attempt to upload outside of allowed path.");
+                return;
+            }
+
+            try {
+                // Save the file to the authorized path
+                saveFile(destPath, partContent);
+            } catch (const std::exception& e) {
+                Logger::instance().log(ERROR, std::string("Error while saving file: ") + e.what());
+                _response.beError(500, "Internal Server Error: Error during file upload.");
+                throw; // Relancer l'exception.
+            }
+        } else {
+            Logger::instance().log(ERROR, std::string("Error while parsing the file in the request:") + partHeaders);
+            _response.beError(400, "Bad Request: File not found.");
+            throw forbiddenDest(); //?? Check if this exception could be used or create another one.
+        }
 }
 
 void UploadHandler::saveFile(const std::string& destPath, const std::string& fileContent) {

@@ -60,7 +60,7 @@ void HTTPRequest::parseRawRequest(const ServerConfig& config) {
     std::string header_line;
     while (std::getline(headers_stream, header_line)) {
         if (!header_line.empty() && header_line[header_line.size() - 1] == '\r') {
-        	header_line.erase(header_line.size() - 1); //?? CHECK IF MODIFICATION IS GOOD !
+        	header_line.erase(header_line.size() - 1);
     	}
         size_t colon_pos = header_line.find(":");
         if (colon_pos != std::string::npos) {

@@ -236,14 +236,12 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
     const Location* location = _config.findLocation(request.getPath());
     if (!location || !location->uploadOn) {
         Logger::instance().log(ERROR, "Upload not allowed for this location.");
-        response.setStatusCode(403);
-        response.setBody("Upload not allowed.");
+        response.beError(403, "Upload not allowed.");
         return;
     }
     if (location->uploadPath.empty()) {
         Logger::instance().log(ERROR, "Upload path not specified for this location.");
-        response.setStatusCode(403);
-        response.setBody("Upload path not specified.");
+        response.beError(403, "Upload path not specified.");
         return;
     }
 
@@ -257,8 +255,7 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
     struct stat st;
     if (stat(uploadDir.c_str(), &st) != 0 || !S_ISDIR(st.st_mode)) {
         Logger::instance().log(ERROR, "Upload directory does not exist or is not a directory: " + uploadDir);
-        response.setStatusCode(500);
-        response.setBody("Internal Server Error: Upload directory does not exist.");
+        response.beError(500, "Internal Server Error: Upload directory does not exist.");
         return;
     }
 
@@ -267,9 +264,9 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
         UploadHandler uploadHandler(request, response, boundary, uploadDir, _config);
         uploadHandler.handleUpload();
     } catch (const std::exception& e) {
-        Logger::instance().log(ERROR, std::string("Error while handling file upload: ") + e.what());
-        response.setStatusCode(500);
-        response.setBody("Internal Server Error: Error during file upload.");
+        // Logger::instance().log(ERROR, std::string("Error while handling file upload: ") + e.what());
+        // response.setStatusCode(500);
+        // response.setBody("Internal Server Error: Error during file upload.");
         return;
     }
 }

@@ -14,11 +14,13 @@ private:
     std::string _boundary;
     std::string _uploadDir;
     const ServerConfig& _config;
+    std::string _filename;
 
     void parseMultipartFormData();
     void saveFile(const std::string& filename, const std::string& content);
     std::string sanitizeFilename(const std::string& filename);
     bool isPathAllowed(const std::string& path, const std::string& uploadDir);
+    void    handleFile(std::string& partHeaders, std::string& partContent);
 
 public:
     class forbiddenDest : public std::exception {
