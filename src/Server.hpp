@@ -26,7 +26,7 @@ private:
 
     void receiveRequest(int client_fd, HTTPRequest& request);
     void sendResponse(int client_fd, HTTPResponse response);
-    void handleGetOrPostRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response);
+    void handleGetOrPostRequest(int client_fd, ClientConnection& connection);
     void handleDeleteRequest(const HTTPRequest& request);
     void serveStaticFile(int client_fd, const std::string& filePath, HTTPResponse& response, const HTTPRequest& request);
     void handleFileUpload(const HTTPRequest& request, HTTPResponse& response, const std::string& boundary);
@@ -44,7 +44,7 @@ public:
     Server(const ServerConfig& config);
     ~Server();
 
-    void handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response);
+    void handleHttpRequest(int client_fd, ClientConnection& connection);
     // Méthodes pour la gestion des erreurs et la réception/gestion des requêtes
     void sendErrorResponse(int client_fd, int errorCode);
 

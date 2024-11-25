@@ -14,11 +14,13 @@ private:
     Server* _server;
     HTTPRequest* _request;
     HTTPResponse* _response;
+    // CGIHandler* _cgiHandler;
 
     // Attributes for managing response sending
     std::string _responseBuffer;
     size_t _responseOffset;
     bool _isSending;
+
 
 public:
     ClientConnection(Server* server);
@@ -27,6 +29,9 @@ public:
     Server* getServer();
     HTTPRequest* getRequest();
     HTTPResponse* getResponse();
+    // CGIHandler* getCgiHandler();
+
+    // void setCgiHandler(CGIHandler* cgiHandler);
     void setRequest(HTTPRequest* request);
     void setResponse(HTTPResponse* response);
     void setRequestActivity(unsigned long time);
@@ -35,6 +40,7 @@ public:
     void prepareResponse();
     bool sendResponseChunk(int client_fd);
     bool isResponseComplete() const;
+
 };
 
 #endif // CLIENTCONNECTION_HPP

@@ -72,15 +72,14 @@ int manageConnections(std::map<int, ClientConnection>& connections, std::vector<
         }
 
         if (request->isComplete() && request->getErrorCode() == 0) {
-            HTTPResponse response;
 
+            connection.setResponse(new HTTPResponse());
             SessionManager  session(request->getStrHeader("Cookie"));
-            session.getManager(request, &response, client_fd, session);
+            session.getManager(request, connection.getResponse(), client_fd, session);
             Logger::instance().log(INFO, "Parsing OK, handling request for client fd: " + to_string(client_fd));
-            connection.getServer()->handleHttpRequest(client_fd, *request, response);
+            connection.getServer()->handleHttpRequest(client_fd, connection);
 
             // Préparer la réponse pour l'envoi
-            connection.setResponse(new HTTPResponse(response));
             connection.prepareResponse();
 
             // S'assurer que POLLOUT est activé pour ce client

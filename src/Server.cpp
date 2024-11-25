@@ -112,7 +112,9 @@ void Server::sendResponse(int client_fd, HTTPResponse response) {
     Logger::instance().log(WARNING, "Response sent to client; No verif on write : \n" + response.toStringHeaders());
 }
 
-void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response) {
+void Server::handleHttpRequest(int client_fd, ClientConnection& connection) {
+    HTTPRequest& request = *connection.getRequest();
+    HTTPResponse& response = *connection.getResponse();
     const Location* location = _config.findLocation(request.getPath());
 
     if (location && !location->allowedMethods.empty()) {
@@ -154,7 +156,7 @@ void Server::handleHttpRequest(int client_fd, const HTTPRequest& request, HTTPRe
 
     // Traitement de la requête selon la méthode
     if (request.getMethod() == "GET" || request.getMethod() == "POST") {
-        handleGetOrPostRequest(client_fd, request, response);
+        handleGetOrPostRequest(client_fd, connection);
     } else if (request.getMethod() == "DELETE") {
         handleDeleteRequest(request);
     } else {
@@ -272,108 +274,92 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
     }
 }
 
-void Server::handleGetOrPostRequest(int client_fd, const HTTPRequest& request, HTTPResponse& response) {
-    std::string fullPath = _config.root + request.getPath();
-    // std::cerr << "Config root : " << _config.root << std::endl;
-    // std::cerr << "Request path : " << request.getPath() << std::endl;
 
-    // Log pour vérifier le chemin complet
+void Server::handleGetOrPostRequest(int client_fd, ClientConnection& connection) {
+    HTTPRequest& request = *connection.getRequest();
+    HTTPResponse& response = *connection.getResponse();
+    std::string fullPath = _config.root + request.getPath();
+
+    // Log to verify the complete path
     Logger::instance().log(DEBUG, "handleGetOrPostRequest: fullPath = " + fullPath);
 
-    // Trouver la Location correspondante
+    // Find the corresponding Location
     const Location* location = _config.findLocation(request.getPath());
 
-    if (request.getMethod() == "POST") {
-        bool isFileUpload = false;
-        std::string contentType;
-        if (request.hasHeader("Content-Type")) {
-            contentType = request.getStrHeader("Content-Type");
-            if (contentType.find("multipart/form-data") != std::string::npos) {
-                isFileUpload = true;
-            }
-        }
-
-        if (isFileUpload) {
-            // Gestion de l'upload de fichier
-            if (location && location->uploadOn) {
-                size_t boundaryPos = contentType.find("boundary=");
-                if (boundaryPos != std::string::npos) {
-                    std::string boundary = contentType.substr(boundaryPos + 9);
-                    handleFileUpload(request, response, boundary);
-
-                    // Envoyer la réponse
-                    //sendResponse(client_fd, response);
-                    return;
-                } else {
-                    // Boundary manquant dans Content-Type
-                    response.beError(400); // Bad Request
-                    Logger::instance().log(WARNING, "400 error (Bad Request): Missing boundary in Content-Type header.");
-                    return;
-                }
-            } else {
-                // Upload non autorisé dans cette location
-                response.beError(403); // Forbidden
-                Logger::instance().log(WARNING, "403 error (Forbidden): Upload not allowed for this location.");
-                return;
-            }
-        } else {
-            // Traiter les autres requêtes POST (par exemple, les formulaires)
-            // Vérifier si le fichier a une extension CGI
-            if (hasCgiExtension(fullPath)) {
-                Logger::instance().log(DEBUG, "CGI extension detected for path: " + fullPath);
-                if (access(fullPath.c_str(), F_OK) == -1) {
-                    Logger::instance().log(DEBUG, "CGI script not found: " + fullPath);
-                    response.beError(404); // Not Found
-                } else {
-                    CGIHandler cgiHandler;
-                    std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
-
-                    int bytes_written = write(client_fd, cgiOutput.c_str(), cgiOutput.length()); //?? Check 0 ?
-                    if (bytes_written == -1) {
-                        response.beError(500); // Internal Server Error
-                        Logger::instance().log(WARNING, "500 error (Internal Server Error): Failed to send CGI output response.");
-                    }
-                    return;
-                }
-            } else {
-                // Autoriser la requête POST à continuer avec une réponse par défaut
-                Logger::instance().log(INFO, "POST request to static resource.");
-
-                // Vous pouvez personnaliser la réponse ici
-                response.setStatusCode(200);
-                response.setHeader("Content-Type", "text/html");
-                response.setBody("<html><body><h1>POST request received</h1></body></html>");
-                //sendResponse(client_fd, response);
-                return;
-            }
-        }
-    } else if (request.getMethod() == "GET") {
-        // Vérifier si le fichier a une extension CGI
-        if (hasCgiExtension(fullPath)) {
-            Logger::instance().log(DEBUG, "CGI extension detected for path: " + fullPath);
-            if (access(fullPath.c_str(), F_OK) == -1) {
-                Logger::instance().log(DEBUG, "CGI script not found: " + fullPath);
-                response.beError(404); // Not Found
-            } else {
-                CGIHandler cgiHandler;
-                std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
-
-                int bytes_written = write(client_fd, cgiOutput.c_str(), cgiOutput.length()); // ??Check 0
-                if (bytes_written == -1) {
-                    response.beError(500); // Internal Server Error
-                    Logger::instance().log(WARNING, "500 error (Internal Server Error): Failed to send CGI output response.");
-                }
-                return;
-            }
-        } else {
-            // Servir le fichier statique
-            Logger::instance().log(DEBUG, "No CGI extension detected for path: " + fullPath + ". Serving as static file.");
-            serveStaticFile(client_fd, fullPath, response, request);
-        }
-    } else {
-        // Méthode non supportée
+    // Check if the method is supported
+    if (request.getMethod() != "GET" && request.getMethod() != "POST" && request.getMethod() != "DELETE") {
         response.beError(501); // Not Implemented
-        Logger::instance().log(WARNING, "501 error (Not Implemented) sent on request: \n" + request.toString());
+        Logger::instance().log(WARNING, "501 error (Not Implemented): Method not supported.");
+        return;
+    }
+
+    // Handle file upload for POST requests with multipart/form-data
+    bool isFileUpload = false;
+    std::string contentType;
+    if (request.getMethod() == "POST" && request.hasHeader("Content-Type")) {
+        contentType = request.getStrHeader("Content-Type");
+        if (contentType.find("multipart/form-data") != std::string::npos) {
+            isFileUpload = true;
+        }
+    }
+
+    if (isFileUpload) {
+        // Handle file upload
+        if (location && location->uploadOn) {
+            size_t boundaryPos = contentType.find("boundary=");
+            if (boundaryPos != std::string::npos) {
+                std::string boundary = contentType.substr(boundaryPos + 9);
+                handleFileUpload(request, response, boundary);
+                return;
+            } else {
+                // Missing boundary in Content-Type
+                response.beError(400); // Bad Request
+                Logger::instance().log(WARNING, "400 error (Bad Request): Missing boundary in Content-Type header.");
+                return;
+            }
+        } else {
+            // Upload not allowed in this location
+            response.beError(403); // Forbidden
+            Logger::instance().log(WARNING, "403 error (Forbidden): Upload not allowed for this location.");
+            return;
+        }
+    }
+
+    // Check if the file has a CGI extension
+    if (hasCgiExtension(fullPath)) {
+        Logger::instance().log(DEBUG, "CGI extension detected for path: " + fullPath);
+        if (access(fullPath.c_str(), F_OK) == -1) {
+            Logger::instance().log(DEBUG, "CGI script not found: " + fullPath);
+            response.beError(404); // Not Found
+        } else {
+            
+            CGIHandler cgiHandler;
+            std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
+
+            int bytes_written = write(client_fd, cgiOutput.c_str(), cgiOutput.length());
+            if (bytes_written == -1) {
+                response.beError(500); // Internal Server Error
+                Logger::instance().log(WARNING, "500 error (Internal Server Error): Failed to send CGI output response.");
+            }
+            return;
+        }
+    }
+
+    // Handle GET and POST methods
+    if (request.getMethod() == "GET") {
+        // Serve the static file
+        Logger::instance().log(DEBUG, "Serving static file for path: " + fullPath);
+        serveStaticFile(client_fd, fullPath, response, request);
+    } else if (request.getMethod() == "POST") {
+        // Handle other POST requests (e.g., forms)
+        Logger::instance().log(INFO, "POST request to static resource.");
+
+        // Customize the response here
+        response.setStatusCode(200);
+        response.setHeader("Content-Type", "text/html");
+        response.setBody("<html><body><h1>POST request received</h1></body></html>");
+        // sendResponse(client_fd, response);
+        return;
     }
 }
 

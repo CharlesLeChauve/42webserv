@@ -17,6 +17,22 @@ ClientConnection::~ClientConnection() {
 Server* ClientConnection::getServer() { return _server; }
 HTTPRequest* ClientConnection::getRequest() { return _request; }
 HTTPResponse* ClientConnection::getResponse() { return _response; }
+// CGIHandler* ClientConnection::getCgiHandler() { return _cgiHandler; }
+
+
+        // if (connection.getCGIProcess())
+        // {
+            // CGIHandler cgiHandler;
+            // std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
+
+            // int bytes_written = write(client_fd, cgiOutput.c_str(), cgiOutput.length());
+            // if (bytes_written == -1) {
+            //     response.beError(500); // Internal Server Error
+            //     Logger::instance().log(WARNING, "500 error (Internal Server Error): Failed to send CGI output response.");
+            // }
+        // }
+
+// void ClientConnection::setCgiHandler(CGIHandler* cgiHandler) { this->_cgiHandler = cgiHandler; }
 void ClientConnection::setRequest(HTTPRequest* request) { this->_request = request; }
 void ClientConnection::setResponse(HTTPResponse* response) { this->_response = response; }
 void ClientConnection::setRequestActivity(unsigned long time) { _request->setLastActivity(time); }
@@ -53,3 +69,4 @@ bool ClientConnection::sendResponseChunk(int client_fd) {
 bool ClientConnection::isResponseComplete() const {
     return !_isSending;
 }
+
