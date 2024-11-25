@@ -234,7 +234,7 @@ void    SessionManager::manageUserSession(HTTPRequest* request, HTTPResponse* re
     if (user_agent.empty())
         user_agent = "Unknown"; // By default
     else
-        session.setData("user_agent", user_agent, false); // False pour ne pas accumuler pls valeurs pour un user.
+        session.setData("user_agent", user_agent); // False pour ne pas accumuler pls valeurs pour un user.
 }
 
 void	SessionManager::getManager(HTTPRequest* request, HTTPResponse* response, int client_fd, SessionManager& session) {
@@ -242,3 +242,38 @@ void	SessionManager::getManager(HTTPRequest* request, HTTPResponse* response, in
     session.manageUserSession(request, response, client_fd, session);
     session.persistSession();
 }
+
+// static void SessionManager::signalHandler(int signal) {
+   
+//     // std::cout << "Signal recu: " << signal << std::endl;
+//     std::string userInput;
+//     while (true) {
+//         std::cout << "Would you like to keep or delete the session file ? (k/d)" << std::endl;
+//         std::getline(std::cin, userInput);
+
+//         if (std::cin.eof()) {
+//             std::cout << "EOF received, session will be kept." << std::endl;
+//             break ; 
+//         }
+
+//         if (userInput == "k" || userInput == "K") {
+//             std::cout << "Session file has been kept." << std::endl;
+//             break ;
+//         }
+
+//         else if (userInput == "d" || userInput == "D") {
+//             std::string sessionFile = "sessions/" + getSessionId() + ".txt";
+//             if (std::remove(sessionFile.c_str()) == 0) {
+//                 std::cout << "Session file has been successfully deleted." << std::endl;
+//             }
+//             else {
+//                 std::cout << "Problem while trying to delete session file." << std::endl;
+//             }
+//             break ;
+//         }
+
+//         else {
+//             std::cout << "Invalid option. Please enter 'd' to delete or 'k' to keep." << std::endl;
+//             continue ;
+//     }
+// }
