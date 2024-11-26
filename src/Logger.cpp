@@ -96,6 +96,8 @@ Logger::~Logger() {
                     std::cout << "Warning log deleted successfully.\n";
                 if (std::remove(std::string(_logsDir + "/error.log").c_str()) == 0)
                     std::cout << "Error log deleted successfully.\n";
+                if (std::system(std::string("rm -r " + _logsDir).c_str()) == 0)
+                    std::cout << "Log directory deleted successfully.\n";
             }
             break;
         } else {

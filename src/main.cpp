@@ -24,6 +24,17 @@ struct MatchFD {
     }
 };
 
+struct MatchCGIOutputFD {
+    int fd;
+    MatchCGIOutputFD(int f) : fd(f) {}
+    bool operator()(std::pair<const int, ClientConnection>& pair) const {
+        CGIHandler* handler = pair.second.getCgiHandler();
+        if (!handler)
+            return (0);
+        return handler->getOutputFD() == fd;
+    }
+};
+
 void initialize_random_generator() {
     std::ifstream urandom("/dev/urandom", std::ios::binary);
     unsigned int seed;
@@ -79,71 +90,55 @@ int manageConnections(std::map<int, ClientConnection>& connections, std::vector<
             session.getManager(request, connection.getResponse(), client_fd, session);
             Logger::instance().log(INFO, "Parsing OK, handling request for client fd: " + to_string(client_fd));
             connection.getServer()->handleHttpRequest(client_fd, connection);
-
-            // Préparer la réponse pour l'envoi
-            connection.prepareResponse();
-
-            // S'assurer que POLLOUT est activé pour ce client
-            for (size_t i = 0; i < poll_fds.size(); ++i) {
-                if (poll_fds[i].fd == client_fd) {
-                    poll_fds[i].events |= POLLOUT;
-                    break;
-                }
-            }
-
-            ++it_conn;
-            continue;
-        }
-        if (cgiHandler) {
-            Logger::instance().log(DEBUG, "CGI Handler found");
-            if (!cgiHandler->getLaunched()) {
+            Logger::instance().log(DEBUG, "after handle http, before cgiHandler ! launched\n");
+            cgiHandler = connection.getCgiHandler();
+            if (cgiHandler && !cgiHandler->getLaunched()) {
                 Logger::instance().log(DEBUG, "cgiHandler launched, starting CGI...");
                 cgiHandler->startCGI(server->getConfig().root + request->getPath(), *request);
                 cgiHandler->setSendBuffer(request->getBody());
+                Logger::instance().log(DEBUG, "after CGI start");
                 pollfd pfd;
                 pfd.fd = cgiHandler->getInputFD();
                 pfd.events = POLLOUT;
                 pfd.revents = 0; // Initialize revents to 0
                 poll_fds.push_back(pfd);
-                ++it_conn;
-                continue;
-            }
-            if (cgiHandler->allSent() && cgiHandler->isCGIDone()) {
-                Logger::instance().log(DEBUG, "All infos sent to CGI");
-                pollfd pfd;
-                pfd.fd = cgiHandler->getOutputFD();
-                pfd.events = POLLIN;
-                pfd.revents = 0; // Initialize revents to 0
-                poll_fds.push_back(pfd);
-                ++it_conn;
-                continue;
-            }
-            if (cgiHandler->getOutputComplete())
-            {
-                Logger::instance().log(DEBUG, "All infos received from CGI");
-                std::string cgiOutput = cgiHandler->getCGIResponse();
-                size_t statusPos = cgiOutput.find("Status:");
-                if (statusPos != std::string::npos) {
-                    size_t endOfStatusLine = cgiOutput.find("\r\n", statusPos);
-                    std::string statusLine = cgiOutput.substr(statusPos, endOfStatusLine - statusPos);
-                    int statusCode = std::atoi(statusLine.substr(8, 3).c_str());
-
-                    std::string errorMessage;
-                    size_t messageStartPos = statusLine.find(" ");
-                    if (messageStartPos != std::string::npos) {
-                        errorMessage = statusLine.substr(messageStartPos + 1);
+            } else {   
+                connection.prepareResponse();
+                for (size_t i = 0; i < poll_fds.size(); ++i) {
+                    if (poll_fds[i].fd == client_fd) {
+                        poll_fds[i].events |= POLLOUT;
+                        break;
                     }
-                    connection.getResponse()->beError(statusCode, errorMessage).toString();
                 }
-                // Si aucun en-tête "Status:" n'est trouvé, renvoyer la réponse CGI directement
-                if (cgiOutput.find("HTTP/1.1") == std::string::npos) {
-                    cgiOutput = "HTTP/1.1 200 OK\r\n" + cgiOutput;
-                }
-                ++it_conn;
-                continue;
             }
-
+            ++it_conn;
+            continue;
         }
+        if (cgiHandler && cgiHandler->getOutputComplete())
+        {
+            Logger::instance().log(DEBUG, "All infos received from CGI");
+            std::string cgiOutput = cgiHandler->getCGIResponse();
+            size_t statusPos = cgiOutput.find("Status:");
+            if (statusPos != std::string::npos) {
+                size_t endOfStatusLine = cgiOutput.find("\r\n", statusPos);
+                std::string statusLine = cgiOutput.substr(statusPos, endOfStatusLine - statusPos);
+                int statusCode = std::atoi(statusLine.substr(8, 3).c_str());
+
+                std::string errorMessage;
+                size_t messageStartPos = statusLine.find(" ");
+                if (messageStartPos != std::string::npos) {
+                    errorMessage = statusLine.substr(messageStartPos + 1);
+                }
+                connection.getResponse()->beError(statusCode, errorMessage).toString();
+            }
+            // Si aucun en-tête "Status:" n'est trouvé, renvoyer la réponse CGI directement
+            if (cgiOutput.find("HTTP/1.1") == std::string::npos) {
+                cgiOutput = "HTTP/1.1 200 OK\r\n" + cgiOutput;
+            }
+            ++it_conn;
+            continue;
+        }
+        
 
         unsigned long time_since_last_activity = now - request->getLastActivity();
 
@@ -373,19 +368,27 @@ int main(int argc, char* argv[]) {
                         Logger::instance().log(ERROR, "Failure accepting client on server FD: " + to_string(poll_fds[i].fd));
                     }
                 } else {
-                    // C'est un socket client, lire la requête
                     Server* server = NULL;
                     ClientConnection* connection = NULL;
-                    std::map<int, ClientConnection>::iterator conn_it = connections.find(poll_fds[i].fd);
-                    if (conn_it != connections.end()) {
-                        server = conn_it->second.getServer();
-                        connection = &conn_it->second;
+                    std::map<int, ClientConnection>::iterator it = std::find_if(
+                        connections.begin(),
+                        connections.end(),
+                        MatchCGIOutputFD(poll_fds[i].fd)
+                    );
+                    if (it != connections.end()) {
+                        server = it->second.getServer();
+                        connection = &it->second;
+                        CGIHandler* cgiHandler = connection->getCgiHandler();
+                        cgiHandler->readCGIOutput();
+                        continue;
+                    }
+
+                    it = connections.find(poll_fds[i].fd);
+                    if (it != connections.end()) {
+                        server = it->second.getServer();
+                        connection = &it->second;
                     }
                     if (server != NULL && connection != NULL) {
-                        CGIHandler* cgiHandler = connection->getCgiHandler();
-                        if (cgiHandler) {
-                            cgiHandler->readCGIOutput();
-                        }
                         server->handleClient(poll_fds[i].fd, *connection);
 
                         // Préparer l'envoi de la réponse si nécessaire
@@ -406,13 +409,18 @@ int main(int argc, char* argv[]) {
                     CGIHandler* cgiHandler = connection.getCgiHandler();
                     if (cgiHandler && cgiHandler->getLaunched() && !cgiHandler->allSent()) {
                         cgiHandler->writeCGIInput();
-                         if (cgiHandler->allSent()) {
-                            // Supprimer POLLOUT de ce socket
-                            poll_fds[i].events &= ~POLLOUT;
-                            // Fermer la connexion
+                        if (cgiHandler->allSent() && cgiHandler->isCGIDone()) {
+                            Logger::instance().log(DEBUG, "All infos sent to CGI, CGI process done");
+
                             close(poll_fds[i].fd);
-                            connections.erase(conn_it);
                             poll_fds.erase(poll_fds.begin() + i);
+                            
+                            pollfd pfd;
+                            pfd.fd = cgiHandler->getOutputFD();
+                            pfd.events = POLLIN;
+                            pfd.revents = 0; // Initialize revents to 0
+                            poll_fds.push_back(pfd);
+
                             --i;
                         }
                         continue;

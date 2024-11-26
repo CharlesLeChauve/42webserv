@@ -7,7 +7,7 @@
 #include <sys/time.h>
 
 
-#define TIMEOUT_MS 5000
+#define TIMEOUT_MS 30000
 
 template <typename T>
 std::string to_string(T value) {
