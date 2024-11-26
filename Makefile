@@ -30,6 +30,10 @@ UNAME_S := $(shell uname -s)
 # Commande pour vérifier si php-cgi est déjà installé
 CHECK_PHP_CGI = $(shell which php-cgi > /dev/null 2>&1; echo $$?)
 
+# Commande pour delete les logs session
+SESSIONDIR = sessions
+SESSIONFILES = $(SESSIONDIR)/*.txt
+
 # Règles
 all: webserver
 
@@ -43,8 +47,11 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 clean:
 	rm -rf $(OBJDIR)
 
+clean_sessions:
+	rm -f $(SESSIONFILES)
+
 fclean: clean
-	rm -f webserver
+	rm -f webserver clean_sessions
 
 php:
 ifeq ($(CHECK_PHP_CGI), 0)
