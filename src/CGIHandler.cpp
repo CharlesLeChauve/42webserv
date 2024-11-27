@@ -129,9 +129,6 @@ ssize_t CGIHandler::readCGIOutput() {
         close(_stdout_pipe[0]);
         _stdout_pipe[0] = -1;
         _outputComplete = true;
-    } else {
-        // Échec de la lecture ou bloqué
-        // Impossible de vérifier errno, on suppose que l'opération bloquerait
     }
     return bytesRead;
 }

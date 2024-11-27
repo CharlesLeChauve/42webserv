@@ -17,8 +17,8 @@ ClientConnection::~ClientConnection() {
 Server* ClientConnection::getServer() { return _server; }
 HTTPRequest* ClientConnection::getRequest() { return _request; }
 HTTPResponse* ClientConnection::getResponse() { return _response; }
-CGIHandler* ClientConnection::getCgiHandler() { return _cgiHandler; }
-
+CGIHandler* ClientConnection::getCgiHandler() const { return _cgiHandler; }
+bool    ClientConnection::getIsSending() const {return _isSending; }
 
         // if (connection.getCGIProcess())
         // {

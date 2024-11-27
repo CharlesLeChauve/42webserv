@@ -30,7 +30,9 @@ public:
     Server* getServer();
     HTTPRequest* getRequest();
     HTTPResponse* getResponse();
-    CGIHandler* getCgiHandler();
+    CGIHandler* getCgiHandler() const;
+    bool    getIsSending() const;
+
 
     void setCgiHandler(CGIHandler* cgiHandler);
     void setRequest(HTTPRequest* request);
