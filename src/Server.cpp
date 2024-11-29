@@ -332,12 +332,6 @@ void Server::handleGetOrPostRequest(int client_fd, ClientConnection& connection)
             
             CGIHandler cgiHandler;
             std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
-
-            int bytes_written = write(client_fd, cgiOutput.c_str(), cgiOutput.length());
-            if (bytes_written == -1) {
-                response.beError(500); // Internal Server Error
-                Logger::instance().log(WARNING, "500 error (Internal Server Error): Failed to send CGI output response.");
-            }
             return;
         }
     }
@@ -473,6 +467,7 @@ int Server::acceptNewClient(int server_fd) {
         Logger::instance().log(ERROR, std::string("Error while accepting connection: ") + strerror(errno));
 		return -1;
 	}
+    setNonBlocking(client_fd);
 
 	return client_fd;
 }

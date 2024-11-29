@@ -15,6 +15,29 @@
 #include <map>
 #include "ClientConnection.hpp"
 
+enum FDType { FD_SERVER_SOCKET, FD_CLIENT_SOCKET, FD_CGI_INPUT, FD_CGI_OUTPUT, FD_UNKNOWN };
+
+FDType getFDType(int fd, const std::map<int, Server*>& fdToServerMap, const std::map<int, ClientConnection>& connections) {
+    if (fdToServerMap.find(fd) != fdToServerMap.end()) {
+        return FD_SERVER_SOCKET;
+    }
+    if (connections.find(fd) != connections.end()) {
+        return FD_CLIENT_SOCKET;
+    }
+    // for (std::map<int, ClientConnection>::const_iterator it = connections.begin(); it != connections.end(); ++it) {
+    //     CGIHandler* cgiHandler = it->second.getCgiHandler();
+    //     if (cgiHandler) {
+    //         if (cgiHandler->getInputFD() == fd) {
+    //             return FD_CGI_INPUT;
+    //         }
+    //         if (cgiHandler->getOutputFD() == fd) {
+    //             return FD_CGI_OUTPUT;
+    //         }
+    //     }
+    // }
+    return FD_UNKNOWN;
+}
+
 // Définition du functoOor
 struct MatchFD {
     int fd;
@@ -23,6 +46,38 @@ struct MatchFD {
         return pfd.fd == fd;
     }
 };
+
+// struct MatchCGIOutputFD {
+//     int fd;
+//     MatchCGIOutputFD(int f) : fd(f) {}
+//     bool operator()(const std::pair<const int, ClientConnection>& pair) const {
+//             CGIHandler* handler = pair.second.getCgiHandler();
+//             if (!handler) {
+//                 Logger::instance().log(DEBUG, "MatchCGIOutputFD: No CGIHandler for FD " + to_string(pair.first));
+//                 return false;
+//             }
+//             int handler_fd = handler->getOutputFD();
+//             Logger::instance().log(DEBUG, "MatchCGIOutputFD: Comparing handler FD " + to_string(handler_fd) + " with FD " + to_string(fd));
+//             return handler_fd == fd;
+//         }
+
+// };
+
+// struct MatchCGIInputFD {
+//     int fd;
+//     MatchCGIInputFD(int f) : fd(f) {}
+//     bool operator()(const std::pair<const int, ClientConnection>& pair) const {
+//             CGIHandler* handler = pair.second.getCgiHandler();
+//             if (!handler) {
+//                 Logger::instance().log(DEBUG, "MatchCGIInputFD: No CGIHandler for FD " + to_string(pair.first));
+//                 return false;
+//             }
+//             int handler_fd = handler->getInputFD();
+//             Logger::instance().log(DEBUG, "MatchCGIInputFD: Comparing handler FD " + to_string(handler_fd) + " with FD " + to_string(fd));
+//             return handler_fd == fd;
+//         }
+
+// };
 
 void initialize_random_generator() {
     std::ifstream urandom("/dev/urandom", std::ios::binary);
@@ -96,7 +151,7 @@ int manageConnections(std::map<int, ClientConnection>& connections, std::vector<
 
         unsigned long time_since_last_activity = now - request->getLastActivity();
 
-        if (time_since_last_activity >= TIMEOUT_MS) {
+        if (!request->isComplete() && time_since_last_activity >= TIMEOUT_MS) {
             // Connexion expirée
             Logger::instance().log(INFO, "Connection timed out for client FD: " + to_string(client_fd));
 
@@ -113,13 +168,12 @@ int manageConnections(std::map<int, ClientConnection>& connections, std::vector<
                     break;
                 }
             }
-
             // Mettre à jour le temps de dernière activité pour éviter une nouvelle expiration immédiate
             request->setLastActivity(now);
 
             ++it_conn;
             continue;
-        } else {
+        } else if (!request->isComplete()) {
             // Mettre à jour le temps restant et continuer
             unsigned long remaining_time = TIMEOUT_MS - time_since_last_activity;
             if (remaining_time < min_remaining_time) {
@@ -258,6 +312,8 @@ int main(int argc, char* argv[]) {
                 continue;
             }
 
+            FDType fdType = getFDType(poll_fds[i].fd, fdToServerMap, connections);
+
             // Gérer les erreurs
             if (poll_fds[i].revents & POLLERR) {
                 Logger::instance().log(ERROR, "Error on file descriptor: " + to_string(poll_fds[i].fd));
@@ -296,8 +352,8 @@ int main(int argc, char* argv[]) {
 
             // Gérer POLLIN et POLLOUT
             if (poll_fds[i].revents & POLLIN) {
-                if (fdToServerMap.find(poll_fds[i].fd) != fdToServerMap.end()) {
-                    // C'est un socket serveur, accepter une nouvelle connexion
+                if (fdType == FD_SERVER_SOCKET) {
+                    Logger::instance().log(DEBUG, std::string("POLLIN on server socket, new connection will be created for fd : ") + to_string(poll_fds[i].fd));
                     Server* server = fdToServerMap[poll_fds[i].fd];
                     int client_fd = server->acceptNewClient(poll_fds[i].fd);
 
@@ -321,50 +377,30 @@ int main(int argc, char* argv[]) {
                     } else {
                         Logger::instance().log(ERROR, "Failure accepting client on server FD: " + to_string(poll_fds[i].fd));
                     }
-                } else {
-                    // C'est un socket client, lire la requête
-                    Server* server = NULL;
-                    ClientConnection* connection = NULL;
+                } else if (fdType == FD_CLIENT_SOCKET) {
+                    Logger::instance().log(DEBUG, std::string("POLLIN on client communication socket, receiving request for fd : ")+ to_string(poll_fds[i].fd));
                     std::map<int, ClientConnection>::iterator conn_it = connections.find(poll_fds[i].fd);
                     if (conn_it != connections.end()) {
-                        server = conn_it->second.getServer();
-                        connection = &conn_it->second;
-                    }
-                    if (server != NULL && connection != NULL) {
-                        server->handleClient(poll_fds[i].fd, *connection);
-
-                        // Préparer l'envoi de la réponse si nécessaire
-                        if (connection->getRequest()->isComplete()) {
-                            connection->prepareResponse();
+                        ClientConnection& connection = conn_it->second;
+                        Server* server = connection.getServer();
+                        server->handleClient(poll_fds[i].fd, connection);
+                        if (connection.getRequest()->isComplete()) {
+                            connection.prepareResponse();
                             // Ajouter POLLOUT pour ce socket
                             poll_fds[i].events |= POLLOUT;
                         }
                     }
-
-                    // Vérifier si la requête est complète ou la connexion est fermée
-                    // // Ne pas vérifier ici en fait, la réponse n'est plus censée etre prete
-                    // if (connection != NULL && (connection->getRequest()->isComplete() || connection->getRequest()->getConnectionClosed() || connection->getRequest()->getRequestTooLarge())) {
-                    //     // Si une réponse est prête à être envoyée, l'envoi sera géré dans POLLOUT
-                    //     if (connection->getResponse() != NULL) {
-                    //         // Ne pas fermer immédiatement, attendre que POLLOUT soit traité
-                    //     } else {
-                    //         // Fermer la connexion si aucune réponse n'est prête
-                    //         close(poll_fds[i].fd);
-                    //         connections.erase(poll_fds[i].fd);
-                    //         poll_fds.erase(poll_fds.begin() + i);
-                    //         --i;
-                    //     }
-                    // }
-                }
+                } 
             }
-
             if (poll_fds[i].revents & POLLOUT) {
                 // C'est un socket prêt à écrire
-                std::map<int, ClientConnection>::iterator conn_it = connections.find(poll_fds[i].fd);
-                if (conn_it != connections.end()) {
-                    Server* server = conn_it->second.getServer();
+                if (fdType == FD_CLIENT_SOCKET) {
+                    Logger::instance().log(DEBUG, std::string("POLLOUT on client communication socket, sending response to fd : ")+ to_string(poll_fds[i].fd));
+                    std::map<int, ClientConnection>::iterator conn_it = connections.find(poll_fds[i].fd);
+                    ClientConnection& connection = conn_it->second;
+                    Server* server = connection.getServer();
                     server->handleResponseSending(poll_fds[i].fd, conn_it->second);
-                    if (conn_it->second.isResponseComplete()) {
+                    if (connection.isResponseComplete()) {
                         // Supprimer POLLOUT de ce socket
                         poll_fds[i].events &= ~POLLOUT;
                         // Fermer la connexion
@@ -374,7 +410,7 @@ int main(int argc, char* argv[]) {
                         --i;
                         continue;
                     }
-                }
+                } 
             }
 
         }
