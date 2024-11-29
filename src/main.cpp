@@ -91,14 +91,9 @@ void initialize_random_generator() {
     srand(seed);
 }
 
-int manageConnections(std::map<int, ClientConnection>& connections, std::vector<pollfd>& poll_fds) {
-    unsigned long now = curr_time_ms();
-    unsigned long min_remaining_time = TIMEOUT_MS;
-    bool has_active_connections = false;
-
-    // Vérifications des timeout
+void manageConnections(std::map<int, ClientConnection>& connections, std::vector<pollfd>& poll_fds) {
     std::map<int, ClientConnection>::iterator it_conn;
-    for (it_conn = connections.begin(); it_conn != connections.end(); /* pas d'incrément ici */) {
+    for (it_conn = connections.begin(); it_conn != connections.end(); ) {
         int client_fd = it_conn->first;
         HTTPRequest* request = it_conn->second.getRequest();
         ClientConnection& connection = it_conn->second;
@@ -127,9 +122,8 @@ int manageConnections(std::map<int, ClientConnection>& connections, std::vector<
         }
 
         if (request->isComplete() && request->getErrorCode() == 0) {
-
             connection.setResponse(new HTTPResponse());
-            SessionManager  session(request->getStrHeader("Cookie"));
+            SessionManager session(request->getStrHeader("Cookie"));
             session.getManager(request, connection.getResponse(), client_fd, session);
             Logger::instance().log(INFO, "Parsing OK, handling request for client fd: " + to_string(client_fd));
             connection.getServer()->handleHttpRequest(client_fd, connection);
@@ -144,11 +138,25 @@ int manageConnections(std::map<int, ClientConnection>& connections, std::vector<
                     break;
                 }
             }
-
             ++it_conn;
             continue;
         }
 
+        // Si aucune des conditions n'a été satisfaite, on passe à la suivante
+        ++it_conn;
+    }
+}
+
+int manageTimeouts(std::map<int, ClientConnection>& connections, std::vector<pollfd>& poll_fds) {
+    unsigned long now = curr_time_ms();
+    unsigned long min_remaining_time = TIMEOUT_MS;
+    bool has_active_connections = false;
+
+    std::map<int, ClientConnection>::iterator it_conn;
+    for (it_conn = connections.begin(); it_conn != connections.end(); ) {
+        int client_fd = it_conn->first;
+        HTTPRequest* request = it_conn->second.getRequest();
+        ClientConnection& connection = it_conn->second;
         unsigned long time_since_last_activity = now - request->getLastActivity();
 
         if (!request->isComplete() && time_since_last_activity >= TIMEOUT_MS) {
@@ -170,7 +178,6 @@ int manageConnections(std::map<int, ClientConnection>& connections, std::vector<
             }
             // Mettre à jour le temps de dernière activité pour éviter une nouvelle expiration immédiate
             request->setLastActivity(now);
-
             ++it_conn;
             continue;
         } else if (!request->isComplete()) {
@@ -180,6 +187,8 @@ int manageConnections(std::map<int, ClientConnection>& connections, std::vector<
                 min_remaining_time = remaining_time;
             }
             has_active_connections = true;
+            ++it_conn;
+        } else {
             ++it_conn;
         }
     }
@@ -280,7 +289,8 @@ int main(int argc, char* argv[]) {
     }
 
     while (!stopServer) {
-        int poll_timeout = manageConnections(connections, poll_fds);
+        manageConnections(connections, poll_fds);
+        int poll_timeout = manageTimeouts(connections, poll_fds);
 
         int poll_count = poll(&poll_fds[0], poll_fds.size(), poll_timeout);
 
