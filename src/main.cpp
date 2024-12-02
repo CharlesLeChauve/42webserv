@@ -79,11 +79,9 @@ struct MatchCGIOutputFD {
     bool operator()(const std::pair<const int, ClientConnection>& pair) const {
             CGIHandler* handler = pair.second.getCgiHandler();
             if (!handler) {
-                Logger::instance().log(DEBUG, "MatchCGIOutputFD: No CGIHandler for FD " + to_string(pair.first));
                 return false;
             }
             int handler_fd = handler->getOutputPipeFd();
-            Logger::instance().log(DEBUG, "MatchCGIOutputFD: Comparing handler FD " + to_string(handler_fd) + " with FD " + to_string(fd));
             return handler_fd == fd;
         }
 
@@ -95,11 +93,9 @@ struct MatchCGIInputFD {
     bool operator()(const std::pair<const int, ClientConnection>& pair) const {
             CGIHandler* handler = pair.second.getCgiHandler();
             if (!handler) {
-                Logger::instance().log(DEBUG, "MatchCGIInputFD: No CGIHandler for FD " + to_string(pair.first));
                 return false;
             }
             int handler_fd = handler->getInputPipeFd();
-            Logger::instance().log(DEBUG, "MatchCGIInputFD: Comparing handler FD " + to_string(handler_fd) + " with FD " + to_string(fd));
             return handler_fd == fd;
         }
 
@@ -120,6 +116,7 @@ void initialize_random_generator() {
 void manageConnections(std::map<int, ClientConnection>& connections, std::vector<pollfd>& poll_fds) {
     std::map<int, ClientConnection>::iterator it_conn;
     for (it_conn = connections.begin(); it_conn != connections.end(); ) {
+        Logger::instance().log(DEBUG, std::string("Managing connection for client fd : ") + to_string(it_conn->first));
         int client_fd = it_conn->first;
         HTTPRequest* request = it_conn->second.getRequest();
         ClientConnection& connection = it_conn->second;
@@ -173,8 +170,8 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
 
                     for (size_t i = 0; i < poll_fds.size(); ++i) {
                         if (poll_fds[i].fd == client_fd) {
-                            Logger::instance().log(DEBUG, "Stop listening POLLOUT on Client to wait for CGI");
-                            poll_fds[i].events &= ~POLLOUT;
+                            Logger::instance().log(DEBUG, "Stop listening events on Client to wait for CGI");
+                            poll_fds[i].events = 0;
                         }
                     }
                 }
@@ -391,11 +388,43 @@ int main(int argc, char* argv[]) {
 
             // Gérer les déconnexions
             if (poll_fds[i].revents & POLLHUP) {
-                Logger::instance().log(INFO, "Disconnected client FD: " + to_string(poll_fds[i].fd));
-                close(poll_fds[i].fd);
-                connections.erase(poll_fds[i].fd);
-                poll_fds.erase(poll_fds.begin() + i);
-                --i;
+                if (fdType == FD_CLIENT_SOCKET) {
+                    Logger::instance().log(INFO, "Disconnected client FD: " + to_string(poll_fds[i].fd));
+                    close(poll_fds[i].fd);
+                    connections.erase(poll_fds[i].fd);
+                    poll_fds.erase(poll_fds.begin() + i);
+                    --i;
+                } else if (fdType == FD_CGI_OUTPUT) {
+                    Logger::instance().log(DEBUG, "POLLHUP on CGI output pipe FD: " + to_string(poll_fds[i].fd));
+
+                    // Trouver la connexion associée
+                    std::map<int, ClientConnection>::iterator it = std::find_if(
+                        connections.begin(),
+                        connections.end(),
+                        MatchCGIOutputFD(poll_fds[i].fd)
+                    );
+                    if (it != connections.end()) {
+                        ClientConnection& connection = it->second;
+                        connection.getCgiHandler()->readFromCGI();
+                        // Fermer le descripteur de sortie du pipe
+                        connection.getCgiHandler()->closeOutputPipe();
+                        poll_fds.erase(poll_fds.begin() + i);
+                        --i;
+
+                        std::string cgiOutput = connection.getCgiHandler()->getCGIOutput();
+                        HTTPResponse* cgiResponse = new HTTPResponse();
+                        cgiResponse->parseCGIOutput(cgiOutput);
+                        connection.setResponse(cgiResponse);
+                        connection.prepareResponse();
+
+                        for (size_t j = 0; j < poll_fds.size(); ++j) {
+                            if (poll_fds[j].fd == it->first) {
+                                poll_fds[j].events |= POLLOUT;
+                                break;
+                            }
+                        }
+                    }
+                }
                 continue;
             }
 
@@ -449,34 +478,34 @@ int main(int argc, char* argv[]) {
                         // }
                     }
                     continue;
-                // } else if (fdType == FD_CGI_OUTPUT) {
-                //         std::map<int, ClientConnection>::iterator it = std::find_if(
-                //         connections.begin(),
-                //         connections.end(),
-                //         MatchCGIOutputFD(poll_fds[i].fd)
-                //     );
-                //     ClientConnection& connection = it->second;
-                //     int received = connection.getCgiHandler()->readFromCGI();
-                //     if (!received) {
-                //         poll_fds.erase(poll_fds.begin() + i);
-                //         --i;
+                } else if (fdType == FD_CGI_OUTPUT) {
+                        std::map<int, ClientConnection>::iterator it = std::find_if(
+                        connections.begin(),
+                        connections.end(),
+                        MatchCGIOutputFD(poll_fds[i].fd)
+                    );
+                    ClientConnection& connection = it->second;
+                    int received = connection.getCgiHandler()->readFromCGI();
+                    if (!received) {
+                        poll_fds.erase(poll_fds.begin() + i);
+                        --i;
 
-                //         std::string cgiOutput = connection.getCgiHandler()->getCGIOutput();
-                //         HTTPResponse* cgiResponse = new HTTPResponse();
-                //         cgiResponse->parseCGIOutput(cgiOutput);
+                        std::string cgiOutput = connection.getCgiHandler()->getCGIOutput();
+                        HTTPResponse* cgiResponse = new HTTPResponse();
+                        cgiResponse->parseCGIOutput(cgiOutput);
 
-                //         connection.setResponse(cgiResponse);
-                //         connection.prepareResponse();
+                        connection.setResponse(cgiResponse);
+                        connection.prepareResponse();
 
-                //         // Activer POLLOUT sur le descripteur du client pour envoyer la réponse
-                //         for (size_t j = 0; j < poll_fds.size(); ++j) {
-                //             if (poll_fds[j].fd == it->first) {  // it->first est le fd du client associé à cette connexion
-                //                 poll_fds[j].events |= POLLOUT;
-                //                 break;
-                //             }
-                //         }                        
-                //         continue;
-                //     }
+                        // Activer POLLOUT sur le descripteur du client pour envoyer la réponse
+                        for (size_t j = 0; j < poll_fds.size(); ++j) {
+                            if (poll_fds[j].fd == it->first) {  // it->first est le fd du client associé à cette connexion
+                                poll_fds[j].events |= POLLOUT;
+                                break;
+                            }
+                        }                        
+                        continue;
+                    }
 
                 } else {
                     Logger::instance().log(DEBUG, std::string("Unhandled POLLIN event on fd : ") + to_string(poll_fds[i].fd));

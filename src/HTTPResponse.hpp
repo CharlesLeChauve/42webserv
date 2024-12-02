@@ -27,6 +27,10 @@ public:
     std::string toString() const;
     std::string toStringHeaders() const;
 
+    void parseCGIOutput(const std::string& cgiOutput);
+    void parseHeaders(const std::string& headers);
+    std::string trim(const std::string& str);
+
 private:
     int _statusCode;
     std::string _reasonPhrase;

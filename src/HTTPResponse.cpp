@@ -143,3 +143,69 @@ std::string HTTPResponse::toString() const {
 
 	return oss.str();
 }
+
+void HTTPResponse::parseCGIOutput(const std::string& cgiOutput) {
+    // Trouver la fin des en-têtes (double saut de ligne)
+    size_t headerEnd = cgiOutput.find("\r\n\r\n");
+    if (headerEnd != std::string::npos) {
+        std::string headers = cgiOutput.substr(0, headerEnd);
+        std::string body = cgiOutput.substr(headerEnd + 4);
+
+        // Analyser les en-têtes et remplir les champs appropriés
+        parseHeaders(headers);
+
+        // Définir le corps de la réponse
+        setBody(body);
+    } else {
+        // Pas de séparation entre en-têtes et corps trouvée
+        // Traiter en conséquence (erreur ou tout mettre dans le corps)
+        setBody(cgiOutput);
+    }
+}
+
+void HTTPResponse::parseHeaders(const std::string& headers) {
+    std::istringstream stream(headers);
+    std::string line;
+    while (std::getline(stream, line)) {
+        // Supprimer les retours chariot éventuels
+        if (!line.empty() && line[line.size() - 1] == '\r') {
+            line.erase(line.size() - 1);
+        }
+        // Trouver la position du ':'
+        size_t colonPos = line.find(':');
+        if (colonPos != std::string::npos) {
+            std::string headerName = line.substr(0, colonPos);
+            std::string headerValue = line.substr(colonPos + 1);
+            // Supprimer les espaces blancs en début et fin
+            headerName = trim(headerName);
+            headerValue = trim(headerValue);
+            // Gestion spécifique de l'en-tête 'Status'
+            if (headerName == "Status") {
+                // Le format attendu est "Status: 200 OK"
+                size_t spacePos = headerValue.find(' ');
+                if (spacePos != std::string::npos) {
+                    int statusCode = atoi(headerValue.substr(0, spacePos).c_str());
+                    setStatusCode(statusCode);
+                    setReasonPhrase(headerValue.substr(spacePos + 1));
+                } else {
+                    int statusCode = atoi(headerValue.c_str());
+                    setStatusCode(statusCode);
+                }
+            } else {
+                setHeader(headerName, headerValue);
+            }
+        }
+    }
+}
+
+
+std::string HTTPResponse::trim(const std::string& str) {
+    size_t first = str.find_first_not_of(' ');
+    if (std::string::npos == first)
+    {
+        return str;
+    }
+    size_t last = str.find_last_not_of(' ');
+    return str.substr(first, (last - first + 1));
+}
+
