@@ -449,34 +449,34 @@ int main(int argc, char* argv[]) {
                         // }
                     }
                     continue;
-                } else if (fdType == FD_CGI_OUTPUT) {
-                        std::map<int, ClientConnection>::iterator it = std::find_if(
-                        connections.begin(),
-                        connections.end(),
-                        MatchCGIOutputFD(poll_fds[i].fd)
-                    );
-                    ClientConnection& connection = it->second;
-                    int received = connection.getCgiHandler()->readFromCGI();
-                    if (!received) {
-                        poll_fds.erase(poll_fds.begin() + i);
-                        --i;
+                // } else if (fdType == FD_CGI_OUTPUT) {
+                //         std::map<int, ClientConnection>::iterator it = std::find_if(
+                //         connections.begin(),
+                //         connections.end(),
+                //         MatchCGIOutputFD(poll_fds[i].fd)
+                //     );
+                //     ClientConnection& connection = it->second;
+                //     int received = connection.getCgiHandler()->readFromCGI();
+                //     if (!received) {
+                //         poll_fds.erase(poll_fds.begin() + i);
+                //         --i;
 
-                        std::string cgiOutput = connection.getCgiHandler()->getCGIOutput();
-                        HTTPResponse* cgiResponse = new HTTPResponse();
-                        cgiResponse->parseCGIOutput(cgiOutput);
-                        
-                        connection.setResponse(cgiResponse);
-                        connection.prepareResponse();
+                //         std::string cgiOutput = connection.getCgiHandler()->getCGIOutput();
+                //         HTTPResponse* cgiResponse = new HTTPResponse();
+                //         cgiResponse->parseCGIOutput(cgiOutput);
 
-                        // Activer POLLOUT sur le descripteur du client pour envoyer la réponse
-                        for (size_t j = 0; j < poll_fds.size(); ++j) {
-                            if (poll_fds[j].fd == it->first) {  // it->first est le fd du client associé à cette connexion
-                                poll_fds[j].events |= POLLOUT;
-                                break;
-                            }
-                        }                        
-                        continue;
-                    }
+                //         connection.setResponse(cgiResponse);
+                //         connection.prepareResponse();
+
+                //         // Activer POLLOUT sur le descripteur du client pour envoyer la réponse
+                //         for (size_t j = 0; j < poll_fds.size(); ++j) {
+                //             if (poll_fds[j].fd == it->first) {  // it->first est le fd du client associé à cette connexion
+                //                 poll_fds[j].events |= POLLOUT;
+                //                 break;
+                //             }
+                //         }                        
+                //         continue;
+                //     }
 
                 } else {
                     Logger::instance().log(DEBUG, std::string("Unhandled POLLIN event on fd : ") + to_string(poll_fds[i].fd));
