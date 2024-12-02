@@ -35,6 +35,9 @@ public:
     int writeToCGI();
     int readFromCGI();
 
+    void terminateCGI();
+    bool hasTimedOut() const;
+
 private:
     std::string _scriptPath;
     const HTTPRequest& _request;
@@ -48,6 +51,9 @@ private:
 
     size_t  _bytesSent;
     bool    _started;
+    
+    unsigned long _startTime;
+    static const unsigned long CGI_TIMEOUT_MS = 5000;
 
     // Setup the environment variables required for CGI execution
 	void setupEnvironment(const HTTPRequest&, std::string scriptPath);

@@ -485,28 +485,34 @@ int main(int argc, char* argv[]) {
                         MatchCGIOutputFD(poll_fds[i].fd)
                     );
                     ClientConnection& connection = it->second;
-                    int received = connection.getCgiHandler()->readFromCGI();
-                    if (!received) {
-                        poll_fds.erase(poll_fds.begin() + i);
-                        --i;
-
-                        std::string cgiOutput = connection.getCgiHandler()->getCGIOutput();
-                        HTTPResponse* cgiResponse = new HTTPResponse();
-                        cgiResponse->parseCGIOutput(cgiOutput);
-
-                        connection.setResponse(cgiResponse);
+                    CGIHandler* cgiHandler = connection.getCgiHandler();
+                    if (cgiHandler->hasTimedOut()) {
+                        connection.setResponse(new HTTPResponse());
+                        connection.getResponse()->beError(504);
                         connection.prepareResponse();
+                    } else {
+                        int received = cgiHandler->readFromCGI();
+                        if (!received) {
+                            poll_fds.erase(poll_fds.begin() + i);
+                            --i;
 
-                        // Activer POLLOUT sur le descripteur du client pour envoyer la réponse
-                        for (size_t j = 0; j < poll_fds.size(); ++j) {
-                            if (poll_fds[j].fd == it->first) {  // it->first est le fd du client associé à cette connexion
-                                poll_fds[j].events |= POLLOUT;
-                                break;
-                            }
-                        }                        
-                        continue;
+                            std::string cgiOutput = cgiHandler->getCGIOutput();
+                            HTTPResponse* cgiResponse = new HTTPResponse();
+                            cgiResponse->parseCGIOutput(cgiOutput);
+
+                            connection.setResponse(cgiResponse);
+                            connection.prepareResponse();
+
+                            // Activer POLLOUT sur le descripteur du client pour envoyer la réponse
+                            for (size_t j = 0; j < poll_fds.size(); ++j) {
+                                if (poll_fds[j].fd == it->first) {  // it->first est le fd du client associé à cette connexion
+                                    poll_fds[j].events |= POLLOUT;
+                                    break;
+                                }
+                            }                        
+                            continue;
+                        }
                     }
-
                 } else {
                     Logger::instance().log(DEBUG, std::string("Unhandled POLLIN event on fd : ") + to_string(poll_fds[i].fd));
                 }

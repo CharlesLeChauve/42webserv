@@ -4,6 +4,7 @@
 #include "Server.hpp"
 #include <unistd.h>  // For fork, exec, pipe
 #include <sys/wait.h>  // For waitpid
+#include <signal.h>
 #include <iostream>
 #include <cstring>  // For strerror
 #include "Logger.hpp"
@@ -56,7 +57,7 @@ int CGIHandler::writeToCGI() {
         _bytesSent += bytesWritten;
     } else if (bytesWritten == -1) {
         // An error occurred (since poll normally provides from getting EAGAIN error)
-        Logger::instance().log(ERROR, "writeToCGI: Write error: " + std::string(strerror(errno)));
+        Logger::instance().log(ERROR, "writeToCGI: Write error");
     }
 
     // Check if all data has been sent
@@ -86,6 +87,21 @@ int CGIHandler::readFromCGI() {
     return bytesRead;
 }
 
+bool CGIHandler::hasTimedOut() const {
+    unsigned long currentTime = curr_time_ms();
+    return (currentTime - _startTime) > CGI_TIMEOUT_MS;
+}
+
+void CGIHandler::terminateCGI() {
+    if (_pid > 0) {
+        kill(_pid, SIGKILL);
+        waitpid(_pid, NULL, 0);
+        _pid = -1;
+    }
+    closeInputPipe();
+    closeOutputPipe();
+}
+
 // Implémentation de la méthode endsWith
 bool CGIHandler::endsWith(const std::string& str, const std::string& suffix) const {
     if (str.length() >= suffix.length()) {
@@ -96,7 +112,8 @@ bool CGIHandler::endsWith(const std::string& str, const std::string& suffix) con
 }
 
 bool CGIHandler::startCGI() {
-    Logger::instance().log(DEBUG, "executeCGI: Executing script: " + _scriptPath);
+    _startTime = curr_time_ms();
+    Logger::instance().log(DEBUG, "Startin CGI script: " + _scriptPath);
 
     std::string interpreter_directory_path = "";
     #ifdef __APPLE__
