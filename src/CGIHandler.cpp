@@ -9,9 +9,82 @@
 #include "Logger.hpp"
 #include "Utils.hpp"
 
-CGIHandler::CGIHandler() /*: _server(server)*/ {}
+//?? Penser à ajouter un pointeru ou une reference vers la connection parent pour pouvoir faire des beError() quand je return false
+
+CGIHandler::CGIHandler(const std::string& scriptPath, const HTTPRequest& request) : _scriptPath(scriptPath), _request(request), _pid(-1), _CGIOutput(""), _bytesSent(0), _started(false) {
+    _outputPipeFd[0] = -1;
+    _outputPipeFd[1] = -1;
+    _inputPipeFd[0] = -1;
+    _inputPipeFd[1] = -1;
+    setCGIInput(request.getBody().c_str());
+}
 
 CGIHandler::~CGIHandler() {}
+
+// Getters
+int CGIHandler::getPid() const { return _pid; }
+int CGIHandler::getInputPipeFd() const { return _inputPipeFd[1]; }
+int CGIHandler::getOutputPipeFd() const { return _outputPipeFd[0]; }
+std::string CGIHandler::getCGIInput() const { return _CGIInput; }
+std::string CGIHandler::getCGIOutput() const { return _CGIOutput; }
+
+// Setters
+void CGIHandler::setPid(int pid) { _pid = pid; }
+void CGIHandler::setInputPipeFd(int inputPipeFd[2]) { 
+    _inputPipeFd[0] = inputPipeFd[0];
+    _inputPipeFd[1] = inputPipeFd[1]; 
+}
+void CGIHandler::setOutputPipeFd(int outputPipeFd[2]) { 
+    _outputPipeFd[0] = outputPipeFd[0];
+    _outputPipeFd[1] = outputPipeFd[1];
+}
+void CGIHandler::setCGIInput(const std::string& CGIInput) { _CGIInput = CGIInput; }
+void CGIHandler::setCGIOutput(const std::string& CGIOutput) { _CGIOutput = CGIOutput; }
+
+
+int CGIHandler::writeToCGI() {
+    if (_inputPipeFd[1] == -1) {
+        return -1;
+    }
+
+    const char* bufferPtr = _CGIInput.c_str() + _bytesSent;
+    ssize_t remaining = _CGIInput.size() - _bytesSent;
+
+    ssize_t bytesWritten = write(_inputPipeFd[1], bufferPtr, remaining);
+
+    if (bytesWritten > 0) {
+        _bytesSent += bytesWritten;
+    } else if (bytesWritten == -1) {
+        // An error occurred (since poll normally provides from getting EAGAIN error)
+        Logger::instance().log(ERROR, "writeToCGI: Write error: " + std::string(strerror(errno)));
+    }
+
+    // Check if all data has been sent
+    if (_bytesSent == _CGIInput.size()) {
+        // All data sent; close the input pipe
+        close(_inputPipeFd[1]);
+        _inputPipeFd[1] = -1;
+        return 0; // Indicate that writing is complete
+    }
+
+    return _bytesSent;
+    // Not all data sent yet; continue writing
+}
+
+int CGIHandler::readFromCGI() {
+    if (_outputPipeFd[0] == -1) {
+        return -1;
+    }
+    char buffer[4096];
+    ssize_t bytesRead = read(_outputPipeFd[0], buffer, sizeof(buffer));
+    if (bytesRead > 0) {
+        _CGIOutput.append(buffer, bytesRead);
+    } else if (bytesRead == 0) {
+        close(_outputPipeFd[0]);
+        _outputPipeFd[0] = -1;
+    }
+    return bytesRead;
+}
 
 // Implémentation de la méthode endsWith
 bool CGIHandler::endsWith(const std::string& str, const std::string& suffix) const {
@@ -22,8 +95,8 @@ bool CGIHandler::endsWith(const std::string& str, const std::string& suffix) con
     }
 }
 
-std::string CGIHandler::executeCGI(const std::string& scriptPath, const HTTPRequest& request) {
-    Logger::instance().log(DEBUG, "executeCGI: Executing script: " + scriptPath);
+bool CGIHandler::startCGI() {
+    Logger::instance().log(DEBUG, "executeCGI: Executing script: " + _scriptPath);
 
     std::string interpreter_directory_path = "";
     #ifdef __APPLE__
@@ -36,111 +109,63 @@ std::string CGIHandler::executeCGI(const std::string& scriptPath, const HTTPRequ
     #endif
 
     std::string interpreter_name = "";
-    if (endsWith(scriptPath, ".sh")) {
+    if (endsWith(_scriptPath, ".sh")) {
         interpreter_name = "bash";
-    } else if (endsWith(scriptPath, ".php")) {
+    } else if (endsWith(_scriptPath, ".php")) {
         interpreter_name = "php-cgi";
     }
-
     std::string interpreter = interpreter_directory_path + interpreter_name;
-    // .cgi utilisera le shebang du script
-
     Logger::instance().log(DEBUG, "executeCGI: Interpreter = " + (interpreter.empty() ? "Shebang" : interpreter));
-    std::string fullPath = scriptPath;
-    HTTPResponse response;
 
-    int pipefd[2];
-    if (pipe(pipefd) == -1) {
-        Logger::instance().log(ERROR, std::string("executeCGI: Pipe failed: ") + strerror(errno));
-        return response.beError(500, "Internal Server Error: Unable to create pipe.").toString();
+    if (pipe(_inputPipeFd) == -1) {
+        Logger::instance().log(ERROR, std::string("executeCGI: Input pipe failed: ") + strerror(errno));
+        return false;
+    }
+    if (pipe(_outputPipeFd) == -1) {
+        Logger::instance().log(ERROR, std::string("executeCGI: Output pipe failed: ") + strerror(errno));
+        return false;
     }
 
-    int pipefd_in[2];  // Pipe pour l'entrée standard
-    if (pipe(pipefd_in) == -1) {
-        Logger::instance().log(ERROR, std::string("executeCGI: Pipe fir STDIN failed: ") + strerror(errno));
-        return response.beError(500, "Internal Server Error: Unable to create stdin pipe.").toString();
-    }
+    Logger::instance().log(DEBUG, std::string("pipe fds : INPUT 0 : ") + to_string(_inputPipeFd[0]) + " - INPUT 1 : " + to_string(_inputPipeFd[1]) + " - OUTPUT 0 : " + to_string(_outputPipeFd[0])  + " - OUTPUT 1 : " + to_string(_outputPipeFd[1]));
 
-    pid_t pid = fork();
+    int pid = fork();
     if (pid == 0) {
         // Processus enfant : exécution du script CGI
-        close(pipefd[0]);  // Fermer l'extrémité de lecture du pipe pour stdout
-        dup2(pipefd[1], STDOUT_FILENO);  // Rediriger stdout vers le pipe
-        close(pipefd_in[1]);  // Fermer l'extrémité d'écriture du pipe pour stdin
-        dup2(pipefd_in[0], STDIN_FILENO);  // Rediriger stdin vers le pipe
+        close(_outputPipeFd[0]);  // Fermer l'extrémité de lecture du pipe pour stdout
+        dup2(_outputPipeFd[1], STDOUT_FILENO);  // Rediriger stdout vers le pipe
+        close(_outputPipeFd[1]);
+        close(_inputPipeFd[1]);  // Fermer l'extrémité d'écriture du pipe pour stdin
+        dup2(_inputPipeFd[0], STDIN_FILENO);  // Rediriger stdin vers le pipe
+        close(_inputPipeFd[0]);
 
-        setupEnvironment(request, fullPath);
+
+        setupEnvironment(_request, _scriptPath);
 
         // Exécuter le script
         if (!interpreter.empty()) {
-            execl(interpreter.c_str(), interpreter.c_str(), fullPath.c_str(), NULL);
+            execl(interpreter.c_str(), _scriptPath.c_str(), NULL);
         } else {
-            execl(fullPath.c_str(), fullPath.c_str(), NULL);
+            execl(_scriptPath.c_str(), _scriptPath.c_str(), NULL);
         }
-        Logger::instance().log(ERROR, std::string("executeCGI: Failed to execute CGI script: ") + fullPath + std::string(". Error: ") + strerror(errno));
+        Logger::instance().log(ERROR, std::string("executeCGI: Failed to execute CGI script: ") + _scriptPath + std::string(". Error: ") + strerror(errno));
         exit(EXIT_FAILURE);
-    } else if (pid > 0) {
-        // Processus parent : gestion de la sortie du CGI
-        close(pipefd[1]);
-        close(pipefd_in[0]);
-
-        if (request.getMethod() == "POST") {
-            int bytes_written = write(pipefd_in[1], request.getBody().c_str(), request.getBody().size());
-            //?? Check 0 ?
-            if (bytes_written == -1) {
-                Logger::instance().log(WARNING, "500 error (Internal Server Error) for writing"); // To specify i'm tired.
-                return response.beError(500, "500 error (Internal Server Error) for writing").toString(); // Internal server error
-            }
-        }
-        close(pipefd_in[1]);
-
-        char buffer[1024];
-        std::string cgiOutput;
-
-        ssize_t bytesRead;
-        while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0) {
-            cgiOutput.append(buffer, bytesRead);
-        }
-        close(pipefd[0]);
-
-        int status;
-        waitpid(pid, &status, 0);
-        if (WIFEXITED(status)) {
-            int exitCode = WEXITSTATUS(status);
-            if (exitCode != 0) {
-                Logger::instance().log(ERROR, std::string("executeCGI: CGI script exited with code: ") + to_string(exitCode));
-                return response.beError(500, "Internal Server Error: CGI script failed.").toString();
-            }
-        }
-
-        // Analyse des en-têtes CGI
-        size_t statusPos = cgiOutput.find("Status:");
-        if (statusPos != std::string::npos) {
-            size_t endOfStatusLine = cgiOutput.find("\r\n", statusPos);
-            std::string statusLine = cgiOutput.substr(statusPos, endOfStatusLine - statusPos);
-            int statusCode = std::atoi(statusLine.substr(8, 3).c_str());
-
-            std::string errorMessage;
-            size_t messageStartPos = statusLine.find(" ");
-            if (messageStartPos != std::string::npos) {
-                errorMessage = statusLine.substr(messageStartPos + 1);
-            }
-
-            return response.beError(statusCode, errorMessage).toString();
-        }
-
-        // Si aucun en-tête "Status:" n'est trouvé, renvoyer la réponse CGI directement
-        if (cgiOutput.find("HTTP/1.1") == std::string::npos) {
-            cgiOutput = "HTTP/1.1 200 OK\r\n" + cgiOutput;
-        }
-        Logger::instance().log(DEBUG, std::string("executeCGI: CGI Output:\n") + cgiOutput);
-        return cgiOutput;
-    } else {
-        Logger::instance().log(ERROR, std::string("executeCGI: Fork failed: ") + strerror(errno));
-        return response.beError(500, "Internal Server Error: Fork failed.").toString();
+    } else if (pid > 0){
+        _pid = pid;
+        _started = true;
+        close(_outputPipeFd[1]);
+        close(_inputPipeFd[0]);
+        return true;
+    } else if (pid == -1) {
+        Logger::instance().log(ERROR, "executeCGI: Fork failed: " + std::string(strerror(errno)));
+        // Close all open FDs before returning
+        close(_inputPipeFd[0]);
+        close(_inputPipeFd[1]);
+        close(_outputPipeFd[0]);
+        close(_outputPipeFd[1]);
+        return false;
     }
+    return true;
 }
-
 
 void CGIHandler::setupEnvironment(const HTTPRequest& request, std::string scriptPath) {
 	if (request.getMethod() == "POST") {
@@ -163,3 +188,26 @@ void CGIHandler::setupEnvironment(const HTTPRequest& request, std::string script
     setenv("SERVER_NAME", request.getStrHeader("Host").c_str(), 1);
     //setenv("SERVER_PORT", request.getPort().c_str(), 1);
 }
+
+void CGIHandler::closeInputPipe() {
+    if (_inputPipeFd[0] != -1) {
+        close(_inputPipeFd[0]);
+        _inputPipeFd[0] = -1;
+    }
+    if (_inputPipeFd[1] != -1) {
+        close(_inputPipeFd[1]);
+        _inputPipeFd[1] = -1;
+    }
+}
+
+void CGIHandler::closeOutputPipe() {
+    if (_outputPipeFd[0] != -1) {
+        close(_outputPipeFd[0]);
+        _outputPipeFd[0] = -1;
+    }
+    if (_outputPipeFd[1] != -1) {
+        close(_outputPipeFd[1]);
+        _outputPipeFd[1] = -1;
+    }
+}
+

@@ -114,20 +114,25 @@ void Server::sendResponse(int client_fd, HTTPResponse response) {
 
 void Server::handleHttpRequest(int client_fd, ClientConnection& connection) {
     HTTPRequest& request = *connection.getRequest();
-    HTTPResponse& response = *connection.getResponse();
+    HTTPResponse* response = connection.getResponse();
+
+    if (!response) {
+        response = new HTTPResponse();
+        connection.setResponse(response);
+    }
     const Location* location = _config.findLocation(request.getPath());
 
     if (location && !location->allowedMethods.empty()) {
         if (std::find(location->allowedMethods.begin(), location->allowedMethods.end(), request.getMethod()) == location->allowedMethods.end()) {
-            response.beError(405); // Méthode non autorisée
+            response->beError(405); // Méthode non autorisée
             Logger::instance().log(WARNING, "405 error (Forbidden) sent on request : \n" + request.toString());
             return;
         }
     }
 
 	if (location && location->returnCode != 0) {
-        response.setStatusCode(location->returnCode);
-        response.setHeader("Location", location->returnUrl);
+        response->setStatusCode(location->returnCode);
+        response->setHeader("Location", location->returnUrl);
         //sendResponse(client_fd, response);
         Logger::instance().log(INFO, "Redirecting " + request.getPath() + " to " + location->returnUrl);
         return ;
@@ -143,13 +148,13 @@ void Server::handleHttpRequest(int client_fd, ClientConnection& connection) {
         if (!portStr.empty()) {
             int port = std::atoi(portStr.c_str());
             if (port != _config.ports.at(0)) {
-                response.beError(404); // Not Found
+                response->beError(404); // Not Found
                 Logger::instance().log(WARNING, "404 error (Not Found) sent on request : \n" + request.toString());
                 return;
             }
         }
     } else {
-        response.beError(400); // Mauvaise requête
+        response->beError(400); // Mauvaise requête
         Logger::instance().log(WARNING, "400 error (Bad Request) sent on request : \n" + request.toString());
         return;
     }
@@ -160,7 +165,7 @@ void Server::handleHttpRequest(int client_fd, ClientConnection& connection) {
     } else if (request.getMethod() == "DELETE") {
         handleDeleteRequest(request);
     } else {
-        response.beError(501); // Not implemented method
+        response->beError(501); // Not implemented method
         Logger::instance().log(WARNING, "501 error (Not Implemented) sent on request : \n" + request.toString());
     }
 }
@@ -329,9 +334,14 @@ void Server::handleGetOrPostRequest(int client_fd, ClientConnection& connection)
             Logger::instance().log(DEBUG, "CGI script not found: " + fullPath);
             response.beError(404); // Not Found
         } else {
-            
-            CGIHandler cgiHandler;
-            std::string cgiOutput = cgiHandler.executeCGI(fullPath, request);
+            CGIHandler* cgiHandler = new CGIHandler(fullPath, request);
+            connection.setCgiHandler(cgiHandler);
+            if (!cgiHandler->startCGI()) {
+                response.beError(500, "Unable to start CGI Process");
+            } else {
+                connection.setResponse(NULL);
+                Logger::instance().log(DEBUG, "Response set to NULL to prevent from sending prematurely");
+            }
             return;
         }
     }

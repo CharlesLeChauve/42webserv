@@ -15,6 +15,32 @@
 #include <map>
 #include "ClientConnection.hpp"
 
+void modifyPollFD(std::vector<pollfd>& poll_fds, int fd, short events, bool addEvent) {
+    for (size_t i = 0; i < poll_fds.size(); ++i) {
+        if (poll_fds[i].fd == fd) {
+            if (addEvent) {
+                poll_fds[i].events |= events; // Add the event(s)
+            } else {
+                poll_fds[i].events &= ~events; // Remove the event(s)
+                if (poll_fds[i].events == 0) {
+                    // If no events are left, you may choose to remove the fd
+                    poll_fds.erase(poll_fds.begin() + i);
+                }
+            }
+            return;
+        }
+    }
+    if (addEvent) {
+        // FD not found; add a new pollfd entry
+        pollfd pfd;
+        pfd.fd = fd;
+        pfd.events = events;
+        pfd.revents = 0;
+        poll_fds.push_back(pfd);
+    }
+}
+
+
 enum FDType { FD_SERVER_SOCKET, FD_CLIENT_SOCKET, FD_CGI_INPUT, FD_CGI_OUTPUT, FD_UNKNOWN };
 
 FDType getFDType(int fd, const std::map<int, Server*>& fdToServerMap, const std::map<int, ClientConnection>& connections) {
@@ -24,17 +50,17 @@ FDType getFDType(int fd, const std::map<int, Server*>& fdToServerMap, const std:
     if (connections.find(fd) != connections.end()) {
         return FD_CLIENT_SOCKET;
     }
-    // for (std::map<int, ClientConnection>::const_iterator it = connections.begin(); it != connections.end(); ++it) {
-    //     CGIHandler* cgiHandler = it->second.getCgiHandler();
-    //     if (cgiHandler) {
-    //         if (cgiHandler->getInputFD() == fd) {
-    //             return FD_CGI_INPUT;
-    //         }
-    //         if (cgiHandler->getOutputFD() == fd) {
-    //             return FD_CGI_OUTPUT;
-    //         }
-    //     }
-    // }
+    for (std::map<int, ClientConnection>::const_iterator it = connections.begin(); it != connections.end(); ++it) {
+        CGIHandler* cgiHandler = it->second.getCgiHandler();
+        if (cgiHandler) {
+            if (cgiHandler->getInputPipeFd() == fd) {
+                return FD_CGI_INPUT;
+            }
+            if (cgiHandler->getOutputPipeFd() == fd) {
+                return FD_CGI_OUTPUT;
+            }
+        }
+    }
     return FD_UNKNOWN;
 }
 
@@ -47,37 +73,37 @@ struct MatchFD {
     }
 };
 
-// struct MatchCGIOutputFD {
-//     int fd;
-//     MatchCGIOutputFD(int f) : fd(f) {}
-//     bool operator()(const std::pair<const int, ClientConnection>& pair) const {
-//             CGIHandler* handler = pair.second.getCgiHandler();
-//             if (!handler) {
-//                 Logger::instance().log(DEBUG, "MatchCGIOutputFD: No CGIHandler for FD " + to_string(pair.first));
-//                 return false;
-//             }
-//             int handler_fd = handler->getOutputFD();
-//             Logger::instance().log(DEBUG, "MatchCGIOutputFD: Comparing handler FD " + to_string(handler_fd) + " with FD " + to_string(fd));
-//             return handler_fd == fd;
-//         }
+struct MatchCGIOutputFD {
+    int fd;
+    MatchCGIOutputFD(int f) : fd(f) {}
+    bool operator()(const std::pair<const int, ClientConnection>& pair) const {
+            CGIHandler* handler = pair.second.getCgiHandler();
+            if (!handler) {
+                Logger::instance().log(DEBUG, "MatchCGIOutputFD: No CGIHandler for FD " + to_string(pair.first));
+                return false;
+            }
+            int handler_fd = handler->getOutputPipeFd();
+            Logger::instance().log(DEBUG, "MatchCGIOutputFD: Comparing handler FD " + to_string(handler_fd) + " with FD " + to_string(fd));
+            return handler_fd == fd;
+        }
 
-// };
+};
 
-// struct MatchCGIInputFD {
-//     int fd;
-//     MatchCGIInputFD(int f) : fd(f) {}
-//     bool operator()(const std::pair<const int, ClientConnection>& pair) const {
-//             CGIHandler* handler = pair.second.getCgiHandler();
-//             if (!handler) {
-//                 Logger::instance().log(DEBUG, "MatchCGIInputFD: No CGIHandler for FD " + to_string(pair.first));
-//                 return false;
-//             }
-//             int handler_fd = handler->getInputFD();
-//             Logger::instance().log(DEBUG, "MatchCGIInputFD: Comparing handler FD " + to_string(handler_fd) + " with FD " + to_string(fd));
-//             return handler_fd == fd;
-//         }
+struct MatchCGIInputFD {
+    int fd;
+    MatchCGIInputFD(int f) : fd(f) {}
+    bool operator()(const std::pair<const int, ClientConnection>& pair) const {
+            CGIHandler* handler = pair.second.getCgiHandler();
+            if (!handler) {
+                Logger::instance().log(DEBUG, "MatchCGIInputFD: No CGIHandler for FD " + to_string(pair.first));
+                return false;
+            }
+            int handler_fd = handler->getInputPipeFd();
+            Logger::instance().log(DEBUG, "MatchCGIInputFD: Comparing handler FD " + to_string(handler_fd) + " with FD " + to_string(fd));
+            return handler_fd == fd;
+        }
 
-// };
+};
 
 void initialize_random_generator() {
     std::ifstream urandom("/dev/urandom", std::ios::binary);
@@ -99,7 +125,7 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
         ClientConnection& connection = it_conn->second;
 
         if (connection.getResponse() != NULL && connection.isResponseComplete()) {
-            // La réponse a été envoyée complètement, on peut fermer la connexion
+            Logger::instance().log(DEBUG, "ManageConnections detected a response fully sent");
             close(client_fd);
             poll_fds.erase(
                 std::remove_if(poll_fds.begin(), poll_fds.end(), MatchFD(client_fd)),
@@ -110,7 +136,7 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
         }
 
         if (connection.getResponse() != NULL) {
-            // Il y a une réponse à envoyer, s'assurer que POLLOUT est activé
+            Logger::instance().log(DEBUG, "ManageConnections detected a response");
             for (size_t i = 0; i < poll_fds.size(); ++i) {
                 if (poll_fds[i].fd == client_fd) {
                     poll_fds[i].events |= POLLOUT;
@@ -121,31 +147,49 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
             continue;
         }
 
-        if (request->isComplete() && request->getErrorCode() == 0) {
-            connection.setResponse(new HTTPResponse());
-            SessionManager session(request->getStrHeader("Cookie"));
-            session.getManager(request, connection.getResponse(), client_fd, session);
+        if (request->isComplete() && request->getErrorCode() == 0 && !connection.getCgiHandler()) {
             Logger::instance().log(INFO, "Parsing OK, handling request for client fd: " + to_string(client_fd));
             connection.getServer()->handleHttpRequest(client_fd, connection);
 
-            // Préparer la réponse pour l'envoi
-            connection.prepareResponse();
+            if (connection.getResponse() != NULL) {
+                connection.prepareResponse();
 
-            // S'assurer que POLLOUT est activé pour ce client
-            for (size_t i = 0; i < poll_fds.size(); ++i) {
-                if (poll_fds[i].fd == client_fd) {
-                    poll_fds[i].events |= POLLOUT;
-                    break;
+                // Ensure POLLOUT is enabled
+                for (size_t i = 0; i < poll_fds.size(); ++i) {
+                    if (poll_fds[i].fd == client_fd) {
+                        poll_fds[i].events |= POLLOUT;
+                        break;
+                    }
                 }
+            } else if (connection.getCgiHandler()) {
+                int cgi_input_fd = connection.getCgiHandler()->getInputPipeFd();
+                Logger::instance().log(DEBUG, "CGI Handler detected, listening POLLOUT on pipe_fd: " + to_string(cgi_input_fd));
+                if (cgi_input_fd != -1) {
+                    pollfd cgiInput;
+                    cgiInput.fd = cgi_input_fd;
+                    cgiInput.events = POLLOUT;
+                    cgiInput.revents = 0;
+                    poll_fds.push_back(cgiInput);
+
+                    for (size_t i = 0; i < poll_fds.size(); ++i) {
+                        if (poll_fds[i].fd == client_fd) {
+                            Logger::instance().log(DEBUG, "Stop listening POLLOUT on Client to wait for CGI");
+                            poll_fds[i].events &= ~POLLOUT;
+                        }
+                    }
+                }
+            } else {
+                Logger::instance().log(ERROR, "No response or CGI handler after handleHttpRequest");
             }
             ++it_conn;
             continue;
         }
 
-        // Si aucune des conditions n'a été satisfaite, on passe à la suivante
+        Logger::instance().log(DEBUG, "A connection didn't match any condition in manageConnections");
         ++it_conn;
     }
 }
+
 
 int manageTimeouts(std::map<int, ClientConnection>& connections, std::vector<pollfd>& poll_fds) {
     unsigned long now = curr_time_ms();
@@ -324,6 +368,9 @@ int main(int argc, char* argv[]) {
 
             FDType fdType = getFDType(poll_fds[i].fd, fdToServerMap, connections);
 
+            if (fdType == FD_UNKNOWN)
+                Logger::instance().log(DEBUG, std::string("Unknown FD type sent by poll, fd = ") + to_string(poll_fds[i].fd));
+
             // Gérer les erreurs
             if (poll_fds[i].revents & POLLERR) {
                 Logger::instance().log(ERROR, "Error on file descriptor: " + to_string(poll_fds[i].fd));
@@ -387,6 +434,7 @@ int main(int argc, char* argv[]) {
                     } else {
                         Logger::instance().log(ERROR, "Failure accepting client on server FD: " + to_string(poll_fds[i].fd));
                     }
+                    continue;
                 } else if (fdType == FD_CLIENT_SOCKET) {
                     Logger::instance().log(DEBUG, std::string("POLLIN on client communication socket, receiving request for fd : ")+ to_string(poll_fds[i].fd));
                     std::map<int, ClientConnection>::iterator conn_it = connections.find(poll_fds[i].fd);
@@ -394,13 +442,45 @@ int main(int argc, char* argv[]) {
                         ClientConnection& connection = conn_it->second;
                         Server* server = connection.getServer();
                         server->handleClient(poll_fds[i].fd, connection);
-                        if (connection.getRequest()->isComplete()) {
-                            connection.prepareResponse();
-                            // Ajouter POLLOUT pour ce socket
-                            poll_fds[i].events |= POLLOUT;
-                        }
+                        // if (connection.getRequest()->isComplete()) {
+                        //     connection.prepareResponse();
+                        //     // Ajouter POLLOUT pour ce socket
+                        //     poll_fds[i].events |= POLLOUT;
+                        // }
                     }
-                } 
+                    continue;
+                } else if (fdType == FD_CGI_OUTPUT) {
+                        std::map<int, ClientConnection>::iterator it = std::find_if(
+                        connections.begin(),
+                        connections.end(),
+                        MatchCGIOutputFD(poll_fds[i].fd)
+                    );
+                    ClientConnection& connection = it->second;
+                    int received = connection.getCgiHandler()->readFromCGI();
+                    if (!received) {
+                        poll_fds.erase(poll_fds.begin() + i);
+                        --i;
+
+                        std::string cgiOutput = connection.getCgiHandler()->getCGIOutput();
+                        HTTPResponse* cgiResponse = new HTTPResponse();
+                        cgiResponse->parseCGIOutput(cgiOutput);
+                        
+                        connection.setResponse(cgiResponse);
+                        connection.prepareResponse();
+
+                        // Activer POLLOUT sur le descripteur du client pour envoyer la réponse
+                        for (size_t j = 0; j < poll_fds.size(); ++j) {
+                            if (poll_fds[j].fd == it->first) {  // it->first est le fd du client associé à cette connexion
+                                poll_fds[j].events |= POLLOUT;
+                                break;
+                            }
+                        }                        
+                        continue;
+                    }
+
+                } else {
+                    Logger::instance().log(DEBUG, std::string("Unhandled POLLIN event on fd : ") + to_string(poll_fds[i].fd));
+                }
             }
             if (poll_fds[i].revents & POLLOUT) {
                 // C'est un socket prêt à écrire
@@ -420,7 +500,34 @@ int main(int argc, char* argv[]) {
                         --i;
                         continue;
                     }
-                } 
+                } else if (fdType == FD_CGI_INPUT) {
+                    std::map<int, ClientConnection>::iterator it = std::find_if(
+                        connections.begin(),
+                        connections.end(),
+                        MatchCGIInputFD(poll_fds[i].fd)
+                    );
+                    ClientConnection& connection = it->second;
+                    Logger::instance().log(DEBUG, std::string("POLLOUT event detected on pipe fd : ") + to_string(poll_fds[i].fd) + " Linked to connection with client fd : " + to_string(it->first));
+                    int sending = connection.getCgiHandler()->writeToCGI();
+                    if (!sending) {
+                        poll_fds[i].events &= ~POLLOUT;
+                        close(poll_fds[i].fd);
+                        poll_fds.erase(poll_fds.begin() + i);
+                        --i;
+
+                        int cgi_output_fd = connection.getCgiHandler()->getOutputPipeFd();
+                        if (cgi_output_fd != -1) {
+                            pollfd cgiOutput;
+                            cgiOutput.fd = cgi_output_fd;
+                            cgiOutput.events = POLLIN;
+                            cgiOutput.revents = 0;
+                            poll_fds.push_back(cgiOutput);
+                        }
+                        continue;
+                    }
+                } else {
+                    Logger::instance().log(DEBUG, std::string("Unhandled POLLOUT event on fd : ") + to_string(poll_fds[i].fd));
+                }
             }
 
         }

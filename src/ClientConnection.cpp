@@ -1,5 +1,6 @@
 // ClientConnection.cpp
 #include "ClientConnection.hpp"
+#include "CGIHandler.hpp"
 #include "Server.hpp"
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
@@ -7,17 +8,17 @@
 #include <errno.h>
 
 ClientConnection::ClientConnection(Server* server)
-    : _server(server), _request(NULL), _response(NULL), _responseOffset(0), _isSending(false) {}
+    : _server(server), _request(NULL), _response(NULL), _cgiHandler(NULL), _responseOffset(0), _isSending(false) {}
 
 ClientConnection::~ClientConnection() {
     delete _request;
     delete _response;
 }
 
-Server* ClientConnection::getServer() { return _server; }
-HTTPRequest* ClientConnection::getRequest() { return _request; }
-HTTPResponse* ClientConnection::getResponse() { return _response; }
-// CGIHandler* ClientConnection::getCgiHandler() { return _cgiHandler; }
+Server* ClientConnection::getServer() const { return _server; }
+HTTPRequest* ClientConnection::getRequest() const { return _request; }
+HTTPResponse* ClientConnection::getResponse() const { return _response; }
+CGIHandler* ClientConnection::getCgiHandler() const { return _cgiHandler; }
 
 
         // if (connection.getCGIProcess())
@@ -32,7 +33,7 @@ HTTPResponse* ClientConnection::getResponse() { return _response; }
             // }
         // }
 
-// void ClientConnection::setCgiHandler(CGIHandler* cgiHandler) { this->_cgiHandler = cgiHandler; }
+void ClientConnection::setCgiHandler(CGIHandler* cgiHandler) { this->_cgiHandler = cgiHandler; }
 void ClientConnection::setRequest(HTTPRequest* request) { this->_request = request; }
 void ClientConnection::setResponse(HTTPResponse* response) { this->_response = response; }
 void ClientConnection::setRequestActivity(unsigned long time) { _request->setLastActivity(time); }

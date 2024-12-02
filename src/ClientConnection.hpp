@@ -8,13 +8,14 @@
 class Server;
 class HTTPRequest;
 class HTTPResponse;
+class CGIHandler;
 
 class ClientConnection {
 private:
     Server* _server;
     HTTPRequest* _request;
     HTTPResponse* _response;
-    // CGIHandler* _cgiHandler;
+    CGIHandler* _cgiHandler;
 
     // Attributes for managing response sending
     std::string _responseBuffer;
@@ -26,12 +27,12 @@ public:
     ClientConnection(Server* server);
     ~ClientConnection();
 
-    Server* getServer();
-    HTTPRequest* getRequest();
-    HTTPResponse* getResponse();
-    // CGIHandler* getCgiHandler();
+    Server* getServer() const;
+    HTTPRequest* getRequest() const;
+    HTTPResponse* getResponse() const;
+    CGIHandler* getCgiHandler() const;
 
-    // void setCgiHandler(CGIHandler* cgiHandler);
+    void setCgiHandler(CGIHandler* cgiHandler);
     void setRequest(HTTPRequest* request);
     void setResponse(HTTPResponse* response);
     void setRequestActivity(unsigned long time);
