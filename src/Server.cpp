@@ -102,16 +102,6 @@ void Server::receiveRequest(int client_fd, HTTPRequest& request) {
     }
 }
 
-void Server::sendResponse(int client_fd, HTTPResponse response) {
-	std::string responseString = response.toString();
-	int bytes_written = write(client_fd, responseString.c_str(), responseString.size()); //?? Check error 0?
-    if (bytes_written == -1) {
-        response.beError(500, "(Internal Server Error) for failing to send response"); // Internal server error
-        Logger::instance().log(WARNING, "500 error (Internal Server Error) for failing to send response");
-    }
-    Logger::instance().log(WARNING, "Response sent to client; No verif on write : \n" + response.toStringHeaders());
-}
-
 void Server::handleHttpRequest(int client_fd, ClientConnection& connection) {
     HTTPRequest& request = *connection.getRequest();
     HTTPResponse* response = connection.getResponse();
@@ -510,14 +500,6 @@ void Server::handleClient(int client_fd, ClientConnection& connection) {
         return;
     }
 
-    // HTTPResponse response;
-
-    // Logger::instance().log(INFO, "Parsing OK, handling request for client fd: " + to_string(client_fd));
-    // handleHttpRequest(client_fd, *connection.getRequest(), response);
-
-    // // Préparer la réponse pour l'envoi
-    // connection.setResponse(new HTTPResponse(response));
-    // connection.prepareResponse();
 }
 
 void Server::handleResponseSending(int client_fd, ClientConnection& connection) {
@@ -525,8 +507,6 @@ void Server::handleResponseSending(int client_fd, ClientConnection& connection) 
         // Response already fully sent; nothing to do
         return;
     }
-	// HTTPRequest* request = connection.getRequest();
-	// HTTPResponse& response = *(connection.getResponse());
 
     bool completed = connection.sendResponseChunk(client_fd);
     if (completed) {
@@ -534,38 +514,8 @@ void Server::handleResponseSending(int client_fd, ClientConnection& connection) 
         close(client_fd);
         Logger::instance().log(INFO, "Response fully sent and connection closed for client FD: " + to_string(client_fd));
     }
-    // SessionManager session(request->getStrHeader("Cookie"));
-    // manageUserSession(request, response, client_fd, session);
-
-    // session.persistSession();
 }
 
-void Server::sendErrorResponse(int client_fd, int errorCode) {
-	HTTPResponse response;
-	response.setStatusCode(errorCode);
-
-	std::string errorContent;
-	std::map<int, std::string>::const_iterator it = _config.errorPages.find(errorCode);
-	if (it != _config.errorPages.end()) {
-		std::string errorPagePath = _config.root + it->second;  // Chemin complet
-		std::ifstream errorFile(errorPagePath.c_str(), std::ios::binary);
-        Logger::instance().log(INFO, "Error page found in config file, searching for : " + errorPagePath);
-		if (errorFile) {
-			std::stringstream buffer;
-			buffer << errorFile.rdbuf();
-			errorContent = buffer.str();
-		} else {
-            Logger::instance().log(WARNING, "Failed to open custom error page : " + errorPagePath + "; Serving default");
-		}
-	}
-    response.setStatusCode(errorCode);
-    if (!errorContent.empty())
-    	response.setBody(errorContent);
-    else {
-        response.beError(errorCode);
-    }
-	sendResponse(client_fd, response);
-}
 
 std::string Server::generateDirectoryListing(const std::string& directoryPath, const std::string& requestPath) {
     std::string listing;

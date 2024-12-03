@@ -45,8 +45,6 @@ public:
     ~Server();
 
     void handleHttpRequest(int client_fd, ClientConnection& connection);
-    // Méthodes pour la gestion des erreurs et la réception/gestion des requêtes
-    void sendErrorResponse(int client_fd, int errorCode);
 
     // Accepter une nouvelle Connection client
     int acceptNewClient(int server_fd);
