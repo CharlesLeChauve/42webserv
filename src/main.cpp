@@ -98,7 +98,6 @@ struct MatchCGIInputFD {
             int handler_fd = handler->getInputPipeFd();
             return handler_fd == fd;
         }
-
 };
 
 void initialize_random_generator() {

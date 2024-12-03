@@ -1,0 +1,125 @@
+[General]
+last_access_time=2024-11-26 08:24:58
+status=new user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/
+Methods=GET
+
+[General]
+last_access_time=2024-11-26 08:24:58
+status=existing user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/css/style.css
+Methods=GET
+
+[General]
+last_access_time=2024-11-26 08:24:58
+status=existing user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/script.js
+Methods=GET
+
+[General]
+last_access_time=2024-11-26 08:25:10
+status=existing user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/pages/apropos.html
+Methods=GET
+
+[General]
+last_access_time=2024-11-26 08:25:10
+status=existing user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/css/style_apropos.css
+Methods=GET
+
+[General]
+last_access_time=2024-11-26 08:25:15
+status=existing user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/pages/contact.html
+Methods=GET
+
+[General]
+last_access_time=2024-11-26 08:25:15
+status=existing user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/css/style_contact.css
+Methods=GET
+
+[General]
+last_access_time=2024-11-26 08:25:19
+status=existing user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/pages/error.html
+Methods=GET
+
+[General]
+last_access_time=2024-11-26 08:25:19
+status=existing user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/css/err_style.css
+Methods=GET
+
+[General]
+last_access_time=2024-11-26 08:25:20
+status=existing user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/pages/contact.html
+Methods=GET
+
+[General]
+last_access_time=2024-11-26 08:25:20
+status=existing user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/css/style_contact.css
+Methods=GET
+
+[General]
+last_access_time=2024-11-26 08:25:37
+status=existing user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/cgi-bin/contact.php
+Methods=POST
+
+[General]
+last_access_time=2024-11-26 08:25:58
+status=existing user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/pages/contact.html
+Methods=GET
+
+[General]
+last_access_time=2024-11-26 08:25:58
+status=existing user
+user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+
+[Requests]
+Pages=/css/style_contact.css
+Methods=GET
