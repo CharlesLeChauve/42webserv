@@ -147,6 +147,11 @@ section.carousel-wrapper {
 	/* text-align: center;
 	color: black; */
   }
+
+  /* .slide figure {
+	position: relative;
+	display: inline-block;
+  } */
   
   .slide img {
 	width: 100%;
