@@ -10,7 +10,7 @@ class Server;
 
 class CGIHandler {
 public:
-    CGIHandler(const std::string& scriptPath, const HTTPRequest& request);
+    CGIHandler(const std::string& scriptPath, const std::string& interpreterPath, const HTTPRequest& request);
     ~CGIHandler();
 
     // Execute the CGI script and return the output
@@ -41,6 +41,7 @@ public:
 private:
     std::string _scriptPath;
     const HTTPRequest& _request;
+	std::string _interpreterPath;
 
     int _pid;
     int _inputPipeFd[2];
@@ -51,7 +52,7 @@ private:
 
     size_t  _bytesSent;
     bool    _started;
-    
+
     unsigned long _startTime;
     static const unsigned long CGI_TIMEOUT_MS = 5000;
 

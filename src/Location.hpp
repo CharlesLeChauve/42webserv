@@ -17,6 +17,8 @@ struct Location {
 	bool uploadOn;
 	int autoindex;
 
+	std::map<std::string, std::string> cgiInterpreters;
+
 	Location() : clientMaxBodySize(-1), returnCode(0), uploadOn(false), autoindex(-1) {}
 };
 

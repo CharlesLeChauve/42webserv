@@ -36,9 +36,9 @@ private:
     // bool handleFileUpload(const HTTPRequest& request, HTTPResponse& response, const std::string& boundary);
 
     // Ajout des méthodes auxiliaires pour gérer les extensions CGI supplémentaires
-    bool hasCgiExtension(const std::string& path) const;
+    bool hasCgiExtension(const std::string& extension) const;
     bool endsWith(const std::string& str, const std::string& suffix) const;
-
+	std::string getInterpreterForExtension(const std::string& extension, const Location* location) const;
 public:
     // Constructeur pour inclure ServerConfig
     Server(const ServerConfig& config);
@@ -53,6 +53,7 @@ public:
     void handleClient(int client_fd, ClientConnection& connection);
     void handleResponseSending(int client_fd, ClientConnection& connection);
     const ServerConfig& getConfig() const;
+	std::string getFileExtension(const std::string& path) const;
 };
 
 #endif

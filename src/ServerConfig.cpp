@@ -16,7 +16,7 @@ ServerConfig::ServerConfig(const ServerConfig& other) {
 	host = other.host;
 	cgiExtensions = other.cgiExtensions;
 	clientMaxBodySize = other.clientMaxBodySize;
-	autoindex = other.autoindex;
+	cgiInterpreters = other.cgiInterpreters;
 }
 
 
@@ -42,6 +42,7 @@ ServerConfig& ServerConfig::operator=(const ServerConfig& other) {
 		cgiExtensions = other.cgiExtensions;
 		clientMaxBodySize = other.clientMaxBodySize;
 		autoindex = other.autoindex;
+		cgiInterpreters = other.cgiInterpreters;
 	}
 	return *this;
 }

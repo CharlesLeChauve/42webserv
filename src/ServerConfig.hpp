@@ -29,6 +29,8 @@ public:
 
     const Location* findLocation(const std::string& path) const;
     bool isValid() const;
+
+	std::map<std::string, std::string> cgiInterpreters;
 };
 
 #endif

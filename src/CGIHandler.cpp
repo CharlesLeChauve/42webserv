@@ -12,7 +12,8 @@
 
 //?? Penser à ajouter un pointeru ou une reference vers la connection parent pour pouvoir faire des beError() quand je return false
 
-CGIHandler::CGIHandler(const std::string& scriptPath, const HTTPRequest& request) : _scriptPath(scriptPath), _request(request), _pid(-1), _CGIOutput(""), _bytesSent(0), _started(false) {
+CGIHandler::CGIHandler::CGIHandler(const std::string& scriptPath, const std::string& interpreterPath, const HTTPRequest& request)
+    : _scriptPath(scriptPath), _request(request), _interpreterPath(interpreterPath), _pid(-1), _CGIOutput(""), _bytesSent(0), _started(false) {
     _outputPipeFd[0] = -1;
     _outputPipeFd[1] = -1;
     _inputPipeFd[0] = -1;
@@ -31,11 +32,11 @@ std::string CGIHandler::getCGIOutput() const { return _CGIOutput; }
 
 // Setters
 void CGIHandler::setPid(int pid) { _pid = pid; }
-void CGIHandler::setInputPipeFd(int inputPipeFd[2]) { 
+void CGIHandler::setInputPipeFd(int inputPipeFd[2]) {
     _inputPipeFd[0] = inputPipeFd[0];
-    _inputPipeFd[1] = inputPipeFd[1]; 
+    _inputPipeFd[1] = inputPipeFd[1];
 }
-void CGIHandler::setOutputPipeFd(int outputPipeFd[2]) { 
+void CGIHandler::setOutputPipeFd(int outputPipeFd[2]) {
     _outputPipeFd[0] = outputPipeFd[0];
     _outputPipeFd[1] = outputPipeFd[1];
 }
@@ -115,23 +116,8 @@ bool CGIHandler::startCGI() {
     _startTime = curr_time_ms();
     Logger::instance().log(DEBUG, "Startin CGI script: " + _scriptPath);
 
-    std::string interpreter_directory_path = "";
-    #ifdef __APPLE__
-        interpreter_directory_path = "/opt/homebrew/bin/";
-    #elif defined(__linux__)
-        interpreter_directory_path = "/usr/bin/";
-    #else
-        // Handle other OS or set a default path
-        interpreter_directory_path = "/usr/bin/";
-    #endif
+    std::string interpreter = _interpreterPath;
 
-    std::string interpreter_name = "";
-    if (endsWith(_scriptPath, ".sh")) {
-        interpreter_name = "bash";
-    } else if (endsWith(_scriptPath, ".php")) {
-        interpreter_name = "php-cgi";
-    }
-    std::string interpreter = interpreter_directory_path + interpreter_name;
     Logger::instance().log(DEBUG, "executeCGI: Interpreter = " + (interpreter.empty() ? "Shebang" : interpreter));
 
     if (pipe(_inputPipeFd) == -1) {
@@ -160,7 +146,7 @@ bool CGIHandler::startCGI() {
 
         // Exécuter le script
         if (!interpreter.empty()) {
-            execl(interpreter.c_str(), _scriptPath.c_str(), NULL);
+            execl(interpreter.c_str(), interpreter.c_str(), _scriptPath.c_str(), NULL);
         } else {
             execl(_scriptPath.c_str(), _scriptPath.c_str(), NULL);
         }

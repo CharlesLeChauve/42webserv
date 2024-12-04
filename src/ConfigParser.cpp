@@ -118,7 +118,12 @@ void ConfigParser::validateDirectiveValue(const std::string &directive, const st
     if (value != "on" && value != "off") {
         throw ConfigParserException("Invalid value for 'autoindex': " + value);
 		}
-	}
+	} else if (directive == "cgi_interpreter") {
+        if (value.empty()) {
+            throw ConfigParserException("Invalid CGI interpreter path: " + value);
+        }
+        // Optionally, you can add checks to see if the interpreter exists on the system
+    }
 
 }
 
@@ -217,7 +222,21 @@ void ConfigParser::processServerDirective(std::ifstream &file, const std::string
     		validateDirectiveValue(directive, value);
     		serverConfig.autoindex = (value == "on");
     		Logger::instance().log(DEBUG, "Set autoindex to " + value + " in server config");
-	} else {
+	} else if (directive == "cgi_interpreter") {
+        std::istringstream valueStream(value);
+        std::string extension, interpreterPath;
+        valueStream >> extension >> interpreterPath;
+
+        if (extension.empty() || interpreterPath.empty()) {
+            throw ConfigParserException("Invalid cgi_interpreter directive format");
+        }
+
+        validateDirectiveValue("cgi_extension", extension);
+        validateDirectiveValue("cgi_interpreter", interpreterPath);
+
+        serverConfig.cgiInterpreters[extension] = interpreterPath;
+        Logger::instance().log(DEBUG, "Set cgi_interpreter for " + extension + " to " + interpreterPath);
+    } else {
             throw ConfigParserException("Unknown directive: \"" + directive + "\"");
         }
     } else {
@@ -300,8 +319,20 @@ void ConfigParser::processLocationBlock(std::ifstream &file, const std::string& 
                 validateDirectiveValue(directive, value);
                 location.autoindex = (value == "on");
                 Logger::instance().log(DEBUG, "Set autoindex to " + value + " in location " + location.path);
-            } else {
-                location.options[directive] = value;
+            } if (directive == "cgi_interpreter") {
+				std::istringstream valueStream(value);
+        		std::string extension, interpreterPath;
+        		valueStream >> extension >> interpreterPath;
+
+    			if (extension.empty() || interpreterPath.empty()) {
+    			    throw ConfigParserException("Invalid cgi_interpreter directive format");
+    			}
+        		validateDirectiveValue("cgi_extension", extension);
+        		validateDirectiveValue("cgi_interpreter", interpreterPath);
+        		location.cgiInterpreters[extension] = interpreterPath;
+        		Logger::instance().log(DEBUG, "Set cgi_interpreter for " + extension + " to " + interpreterPath + " in location " + location.path);
+    		} else {
+            location.options[directive] = value;
             }
         }
     }

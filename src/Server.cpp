@@ -160,20 +160,15 @@ void Server::handleHttpRequest(int client_fd, ClientConnection& connection) {
     }
 }
 
-bool Server::hasCgiExtension(const std::string& path) const {
-    // Logger le message initial
-    std::ostringstream oss;
+bool Server::hasCgiExtension(const std::string& extension) const {
     for (size_t i = 0; i < _config.cgiExtensions.size(); ++i) {
-        if (endsWith(path, _config.cgiExtensions[i])) {
-            oss << "hasCgiExtension: Matched extension " << _config.cgiExtensions[i]
-                << " for path " << path;
+        if (extension == _config.cgiExtensions[i]) {
             return true;
         }
     }
-    oss << "hasCgiExtension: No matching CGI extension for path " << path << std::endl;
-    Logger::instance().log(DEBUG, oss.str());
     return false;
 }
+
 
 bool Server::endsWith(const std::string& str, const std::string& suffix) const {
 	if (str.length() >= suffix.length()) {
@@ -318,19 +313,30 @@ void Server::handleGetOrPostRequest(int client_fd, ClientConnection& connection)
     }
 
     // Check if the file has a CGI extension
-    if (hasCgiExtension(fullPath)) {
+       // Check if the file has a CGI extension
+    std::string extension = getFileExtension(fullPath);
+    if (hasCgiExtension(extension)) {
         Logger::instance().log(DEBUG, "CGI extension detected for path: " + fullPath);
+
+        // Get the interpreter for this extension
+        std::string interpreter = getInterpreterForExtension(extension, location);
+        if (interpreter.empty()) {
+            Logger::instance().log(ERROR, "No interpreter found for extension: " + extension);
+            response.beError(500, "No interpreter configured for this CGI extension.");
+            return;
+        }
+
         if (access(fullPath.c_str(), F_OK) == -1) {
             Logger::instance().log(DEBUG, "CGI script not found: " + fullPath);
             response.beError(404); // Not Found
         } else {
-            CGIHandler* cgiHandler = new CGIHandler(fullPath, request);
+            CGIHandler* cgiHandler = new CGIHandler(fullPath, interpreter, request);
             connection.setCgiHandler(cgiHandler);
             if (!cgiHandler->startCGI()) {
                 response.beError(500, "Unable to start CGI Process");
             } else {
                 connection.setResponse(NULL);
-                Logger::instance().log(DEBUG, "Response set to NULL to prevent from sending prematurely");
+                Logger::instance().log(DEBUG, "Response set to NULL to prevent sending prematurely");
             }
             return;
         }
@@ -510,7 +516,7 @@ void Server::handleResponseSending(int client_fd, ClientConnection& connection) 
 
     int completed = connection.sendResponseChunk(client_fd);
     if (completed == 0) {
-        
+
         Logger::instance().log(INFO, "Response fully sent to client FD: " + to_string(client_fd));
     } else if (completed == -1) {
         close(client_fd);
@@ -562,3 +568,48 @@ std::string Server::generateDirectoryListing(const std::string& directoryPath, c
 }
 
 const ServerConfig& Server::getConfig() const {return _config;}
+
+std::string Server::getFileExtension(const std::string& path) const {
+    size_t dotPos = path.find_last_of('.');
+    if (dotPos != std::string::npos) {
+        return path.substr(dotPos); // Includes the dot
+    }
+    return "";
+}
+
+
+std::string Server::getInterpreterForExtension(const std::string& extension, const Location* location) const {
+    Logger::instance().log(DEBUG, "Looking for interpreter for extension: '" + extension + "'");
+
+    // First, check if the location has an interpreter for the extension
+    if (location) {
+        Logger::instance().log(DEBUG, "Checking Location block for interpreter.");
+        for (std::map<std::string, std::string>::const_iterator it = location->cgiInterpreters.begin();
+             it != location->cgiInterpreters.end(); ++it) {
+            Logger::instance().log(DEBUG, "Location cgiInterpreters key: '" + it->first + "', value: '" + it->second + "'");
+        }
+        std::map<std::string, std::string>::const_iterator it = location->cgiInterpreters.find(extension);
+        if (it != location->cgiInterpreters.end()) {
+            Logger::instance().log(DEBUG, "Found interpreter for extension '" + extension + "' in location: " + it->second);
+            return it->second;
+        }
+    }
+
+    // Next, check if the server config has an interpreter for the extension
+    Logger::instance().log(DEBUG, "Checking ServerConfig for interpreter.");
+    for (std::map<std::string, std::string>::const_iterator it = _config.cgiInterpreters.begin();
+         it != _config.cgiInterpreters.end(); ++it) {
+        Logger::instance().log(DEBUG, "ServerConfig cgiInterpreters key: '" + it->first + "', value: '" + it->second + "'");
+    }
+    std::map<std::string, std::string>::const_iterator it = _config.cgiInterpreters.find(extension);
+    if (it != _config.cgiInterpreters.end()) {
+        Logger::instance().log(DEBUG, "Found interpreter for extension '" + extension + "' in server config: " + it->second);
+        return it->second;
+    }
+
+    // Interpreter not found
+    Logger::instance().log(DEBUG, "No interpreter found for extension: '" + extension + "'");
+    return "";
+}
+
+
