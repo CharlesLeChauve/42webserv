@@ -1,7 +1,7 @@
 
 //?? Utilisation du code 204 : Pour les requetes qui ont abouti mais qui n'attendent pas de réponse (comme une requete DELETE par exemple). 200 OK semble signifier que le serveur veut envoyer une réponse
 
-//?? In tester : 
+//?? In tester :
 		- any file with .bla as extension must answer to POST request by calling the cgi_test executable
 
 Du coup il semblerait qu'il faille définir dès le fichier de configuration qui éxecute quoi pour les cgi ^^
@@ -15,15 +15,12 @@ est /tmp/www/pouic/toto/pouet).
 toutes les opérations entrées/sorties entre le client et le serveur (listen inclus).
 Le listen inclus m'interroge... Le notre est pas du tout géré par poll mais je vois pas trop
 
-//?? SUJET : • Votre serveur doit pouvoir écouter sur plusieurs ports (cf. Fichier de configuration).
-Ca ne semble pas être le cas, ou alors je maitrise pas bien le conf, Antoine ? 
-
 //?? Pour arreter de close la connexion une fois qu'on a répondu, il manquerait pas grand chose je pense. J'imaghine une fonction cleanConnection qui remet a NULL et delete les différents éléments crées (request, response et éventuel cgi) afin que manageConnecitons le traite comme une nouvelle connection
 
 //?? Voir ce que cette phrasse veut dire : — Parce que vous n’allez pas appeler le CGI mais utiliser directement le chemin
-complet comme PATH_INFO. 
+complet comme PATH_INFO.
 Je suis vraiment pas sûr...
 
 //?? SUJET : — Le CGI doit être exécuté dans le bon répertoire pour l’accès au fichier de
-chemin relatif. 
+chemin relatif.
 Peut-être est-ce là le problème qui nous empêche d'envoyer l'image correctement quand on est dans le dossier cgi-bin du CGI
