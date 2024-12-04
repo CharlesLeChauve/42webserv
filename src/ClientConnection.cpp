@@ -8,7 +8,7 @@
 #include <errno.h>
 
 ClientConnection::ClientConnection(Server* server)
-    : _server(server), _request(NULL), _response(NULL), _cgiHandler(NULL), _responseOffset(0), _isSending(false) {}
+    : _server(server), _request(NULL), _response(NULL), _cgiHandler(NULL), _responseOffset(0), _isSending(false), _exchangeOver(false) {}
 
 ClientConnection::~ClientConnection() {
     delete _request;
@@ -19,8 +19,9 @@ Server* ClientConnection::getServer() const { return _server; }
 HTTPRequest* ClientConnection::getRequest() const { return _request; }
 HTTPResponse* ClientConnection::getResponse() const { return _response; }
 CGIHandler* ClientConnection::getCgiHandler() const { return _cgiHandler; }
+bool ClientConnection::getExchangeOver() const { return _exchangeOver; }
 
-
+void ClientConnection::setExchangeOver(bool value) { _exchangeOver = value; }
 void ClientConnection::setCgiHandler(CGIHandler* cgiHandler) { this->_cgiHandler = cgiHandler; }
 void ClientConnection::setRequest(HTTPRequest* request) { this->_request = request; }
 void ClientConnection::setResponse(HTTPResponse* response) { this->_response = response; }
@@ -34,7 +35,7 @@ void ClientConnection::prepareResponse() {
     }
 }
 
-bool ClientConnection::sendResponseChunk(int client_fd) {
+int ClientConnection::sendResponseChunk(int client_fd) {
     if (!_isSending) return false;
 
     const size_t BUFFER_SIZE = 4096;
@@ -52,14 +53,32 @@ bool ClientConnection::sendResponseChunk(int client_fd) {
         _responseOffset += bytesSent;
         if (_responseOffset >= _responseBuffer.size()) {
             _isSending = false;
-            return true; // Réponse entièrement envoyée
+            return 0; // Réponse entièrement envoyée
         }
     } else if (bytesSent == -1) {
         // Erreur lors de l'écriture
         _isSending = false;
-        return true; // Considérer que la réponse est complète pour fermer la connexion
+        return -1; // Considérer que la réponse est complète pour fermer la connexion
     }
-    return false; // Réponse pas encore entièrement envoyée
+    return 1; // Réponse pas encore entièrement envoyée
+}
+
+void ClientConnection::resetConnection() {
+    if (_request) {
+        delete _request;
+        _request = NULL;
+    }
+    if (_response) {
+        delete _response;
+        _response = NULL;
+    }
+    if (_cgiHandler) {
+        delete _cgiHandler;
+        _cgiHandler = NULL;
+    }
+    _responseOffset = 0;
+    _isSending = false;
+    _exchangeOver = false;
 }
 
 

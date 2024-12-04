@@ -508,11 +508,13 @@ void Server::handleResponseSending(int client_fd, ClientConnection& connection) 
         return;
     }
 
-    bool completed = connection.sendResponseChunk(client_fd);
-    if (completed) {
-        // Response fully sent; close the connection
+    int completed = connection.sendResponseChunk(client_fd);
+    if (completed == 0) {
+        
+        Logger::instance().log(INFO, "Response fully sent to client FD: " + to_string(client_fd));
+    } else if (completed == -1) {
         close(client_fd);
-        Logger::instance().log(INFO, "Response fully sent and connection closed for client FD: " + to_string(client_fd));
+        Logger::instance().log(ERROR, std::string("Error while writing to client fd :") + to_string(client_fd) + ". Closing Connection");
     }
 }
 

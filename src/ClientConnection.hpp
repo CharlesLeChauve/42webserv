@@ -21,6 +21,7 @@ private:
     std::string _responseBuffer;
     size_t _responseOffset;
     bool _isSending;
+    bool _exchangeOver;
 
 
 public:
@@ -31,7 +32,9 @@ public:
     HTTPRequest* getRequest() const;
     HTTPResponse* getResponse() const;
     CGIHandler* getCgiHandler() const;
+    bool getExchangeOver() const;   
 
+    void setExchangeOver(bool value);
     void setCgiHandler(CGIHandler* cgiHandler);
     void setRequest(HTTPRequest* request);
     void setResponse(HTTPResponse* response);
@@ -39,8 +42,9 @@ public:
 
     // Methods to manage sending the response
     void prepareResponse();
-    bool sendResponseChunk(int client_fd);
+    int sendResponseChunk(int client_fd);
     bool isResponseComplete() const;
+    void resetConnection();
 
 };
 
