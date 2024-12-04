@@ -118,7 +118,7 @@ bool CGIHandler::startCGI() {
 
     std::string interpreter = _interpreterPath;
 
-    Logger::instance().log(DEBUG, "executeCGI: Interpreter = " + (interpreter.empty() ? "Shebang" : interpreter));
+    Logger::instance().log(DEBUG, "executeCGI: Interpreter = " + interpreter);
 
     if (pipe(_inputPipeFd) == -1) {
         Logger::instance().log(ERROR, std::string("executeCGI: Input pipe failed: ") + strerror(errno));
@@ -145,11 +145,8 @@ bool CGIHandler::startCGI() {
         setupEnvironment(_request, _scriptPath);
 
         // Exécuter le script
-        if (!interpreter.empty()) {
-            execl(interpreter.c_str(), interpreter.c_str(), _scriptPath.c_str(), NULL);
-        } else {
-            execl(_scriptPath.c_str(), _scriptPath.c_str(), NULL);
-        }
+		// if (chdir())
+        execl(interpreter.c_str(), interpreter.c_str(), _scriptPath.c_str(), NULL);
         Logger::instance().log(ERROR, std::string("executeCGI: Failed to execute CGI script: ") + _scriptPath + std::string(". Error: ") + strerror(errno));
         exit(EXIT_FAILURE);
     } else if (pid > 0){
