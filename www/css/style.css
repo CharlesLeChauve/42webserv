@@ -169,6 +169,28 @@ section.carousel-wrapper {
 	position: absolute; /* Positionne l'élément en position absolue dans son conteneur parent. Ici, cela permet de placer la légende où l’on souhaite par rapport au conteneur de l’image. */
 	bottom: 5px; /* Place la légende à 5 pixels du bas de son conteneur parent, la positionnant ainsi au bas de l'image de la slide. */
 	width: 89%; /* Définit la largeur de la légende, +background, à 89% du conteneur parent pour qu’elle couvre presque toute la largeur de l'image, laissant un petit espace de chaque côté. */
+	left: 50%; /* Place la légende à 50% de la largeur de l'image */
+	transform: translateX(-50%);
+	box-sizing: border-box; /* S'assure que le padding ne dépasse pas la largeur */
+}
+
+/* Les @media queries : Ces règles permettent d'ajuster la taille du texte et 
+le padding en fonction de la taille de l'écran. 
+Sur des écrans plus petits, la légende sera plus petite pour éviter qu'elle 
+ne prenne trop de place. */
+
+@media (max-width: 768px) {
+	.slide figcaption {
+		font-size: 1.2rem; /* Réduire la taille du texte sur les écrans plus petits */
+		padding: 8px;
+	}
+  }
+  
+@media (max-width: 480px) {
+	.slide figcaption {
+		font-size: 1rem; /* Encore plus petit sur les petits écrans */
+		padding: 6px;
+	}
   }
   
   .carousel-wrapper .btn {
