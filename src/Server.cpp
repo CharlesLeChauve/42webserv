@@ -130,20 +130,20 @@ void Server::handleHttpRequest(int client_fd, ClientConnection& connection) {
 
     // Vérification de l'hôte et du port (code existant)
     std::string hostHeader = request.getHost();
-    if (!hostHeader.empty()) {
-        size_t colonPos = hostHeader.find(':');
-        std::string hostName = (colonPos != std::string::npos) ? hostHeader.substr(0, colonPos) : hostHeader;
-        std::string portStr = (colonPos != std::string::npos) ? hostHeader.substr(colonPos + 1) : "";
+	if (!hostHeader.empty()) {
+	    size_t colonPos = hostHeader.find(':');
+	    std::string hostName = (colonPos != std::string::npos) ? hostHeader.substr(0, colonPos) : hostHeader;
+	    std::string portStr = (colonPos != std::string::npos) ? hostHeader.substr(colonPos + 1) : "";
 
-        if (!portStr.empty()) {
-            int port = std::atoi(portStr.c_str());
-            if (port != _config.ports.at(0)) {
-                response->beError(404); // Not Found
-                Logger::instance().log(WARNING, "404 error (Not Found) sent on request : \n" + request.toString());
-                return;
-            }
-        }
-    } else {
+	    if (!portStr.empty()) {
+	        int port = std::atoi(portStr.c_str());
+	        if (std::find(_config.ports.begin(), _config.ports.end(), port) == _config.ports.end()) {
+	            response->beError(404); // Not Found
+	            Logger::instance().log(WARNING, "404 error (Not Found) sent on request : \n" + request.toString());
+	            return;
+	        }
+	    }
+	} else {
         response->beError(400); // Mauvaise requête
         Logger::instance().log(WARNING, "400 error (Bad Request) sent on request : \n" + request.toString());
         return;

@@ -309,8 +309,12 @@ int main(int argc, char* argv[]) {
 
     // Créer les serveurs et les sockets
     for (size_t i = 0; i < serverConfigs.size(); ++i) {
-        Server* server = new Server(serverConfigs[i]);
-        Socket* socket = new Socket(serverConfigs[i].ports[0]);
+    Server* server = new Server(serverConfigs[i]);
+    servers.push_back(server);
+
+    for (size_t j = 0; j < serverConfigs[i].ports.size(); ++j) {
+        int port = serverConfigs[i].ports[j];
+        Socket* socket = new Socket(port);
         socket->build_sockets();
 
         pollfd pfd;
@@ -322,11 +326,12 @@ int main(int argc, char* argv[]) {
         // Associer les sockets serveurs avec les serveurs
         fdToServerMap[socket->getSocket()] = server;
 
-        servers.push_back(server);
         sockets.push_back(socket);
 
-        Logger::instance().log(INFO, "Server launched, listening on port: " + to_string(serverConfigs[i].ports[0]));
+        Logger::instance().log(INFO, "Server launched, listening on port: " + to_string(port));
     }
+}
+
 
     while (!stopServer) {
         manageConnections(connections, poll_fds);
@@ -438,32 +443,32 @@ int main(int argc, char* argv[]) {
             // Gérer POLLIN et POLLOUT
             if (poll_fds[i].revents & POLLIN) {
                 if (fdType == FD_SERVER_SOCKET) {
-                    Logger::instance().log(DEBUG, std::string("POLLIN on server socket, new connection will be created for fd : ") + to_string(poll_fds[i].fd));
-                    Server* server = fdToServerMap[poll_fds[i].fd];
-                    int client_fd = server->acceptNewClient(poll_fds[i].fd);
+				    Logger::instance().log(DEBUG, std::string("POLLIN on server socket, new connection will be created for fd : ") + to_string(poll_fds[i].fd));
+				    Server* server = fdToServerMap[poll_fds[i].fd];
+				    int client_fd = server->acceptNewClient(poll_fds[i].fd);
 
-                    if (client_fd != -1) {
-                        // Enregistrer l'association client_fd -> server
-                        std::pair<std::map<int, ClientConnection>::iterator, bool> result =
-                            connections.insert(std::make_pair(client_fd, ClientConnection(server)));
+				    if (client_fd != -1) {
+				        // Enregistrer l'association client_fd -> server
+				        std::pair<std::map<int, ClientConnection>::iterator, bool> result =
+				            connections.insert(std::make_pair(client_fd, ClientConnection(server)));
 
-                        // Créer un nouvel objet HTTPRequest et le stocker dans la connexion
-                        int max_body_size = serverConfigs[0].clientMaxBodySize;
-                        std::map<int, ClientConnection>::iterator conn_it = result.first;
+				        // Créer un nouvel objet HTTPRequest et le stocker dans la connexion
+				        int max_body_size = server->getConfig().clientMaxBodySize;
+				        std::map<int, ClientConnection>::iterator conn_it = result.first;
 
-                        conn_it->second.setRequest(new HTTPRequest(max_body_size));
+				        conn_it->second.setRequest(new HTTPRequest(max_body_size));
 
-                        pollfd client_pollfd;
-                        client_pollfd.fd = client_fd;
-                        client_pollfd.events = POLLIN | POLLHUP | POLLERR;
-                        client_pollfd.revents = 0;
-                        poll_fds.push_back(client_pollfd);
-                        Logger::instance().log(DEBUG, "New pollfd added for client with FD: " + to_string(client_fd) + " accepted on server FD: " + to_string(poll_fds[i].fd));
-                    } else {
-                        Logger::instance().log(ERROR, "Failure accepting client on server FD: " + to_string(poll_fds[i].fd));
-                    }
-                    continue;
-                } else if (fdType == FD_CLIENT_SOCKET) {
+				        pollfd client_pollfd;
+				        client_pollfd.fd = client_fd;
+				        client_pollfd.events = POLLIN | POLLHUP | POLLERR;
+				        client_pollfd.revents = 0;
+				        poll_fds.push_back(client_pollfd);
+				        Logger::instance().log(DEBUG, "New pollfd added for client with FD: " + to_string(client_fd) + " accepted on server FD: " + to_string(poll_fds[i].fd));
+				    } else {
+				        Logger::instance().log(ERROR, "Failure accepting client on server FD: " + to_string(poll_fds[i].fd));
+				    }
+				    continue;
+				} else if (fdType == FD_CLIENT_SOCKET) {
                     Logger::instance().log(DEBUG, std::string("POLLIN on client communication socket, receiving request for fd : ")+ to_string(poll_fds[i].fd));
                     std::map<int, ClientConnection>::iterator conn_it = connections.find(poll_fds[i].fd);
                     if (conn_it != connections.end()) {
@@ -508,7 +513,7 @@ int main(int argc, char* argv[]) {
                                     poll_fds[j].events |= POLLOUT;
                                     break;
                                 }
-                            }                        
+                            }
                             continue;
                         }
                     }
