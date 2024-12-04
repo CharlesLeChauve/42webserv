@@ -15,9 +15,7 @@ est /tmp/www/pouic/toto/pouet).
 toutes les opérations entrées/sorties entre le client et le serveur (listen inclus).
 Le listen inclus m'interroge... Le notre est pas du tout géré par poll mais je vois pas trop
 
-//?? Pour arreter de close la connexion une fois qu'on a répondu, il manquerait pas grand chose je pense. J'imaghine une fonction cleanConnection qui remet a NULL et delete les différents éléments crées (request, response et éventuel cgi) afin que manageConnecitons le traite comme une nouvelle connection
-
-//?? Voir ce que cette phrasse veut dire : — Parce que vous n’allez pas appeler le CGI mais utiliser directement le chemin
+//?? Voir ce que cette phrase veut dire : — Parce que vous n’allez pas appeler le CGI mais utiliser directement le chemin
 complet comme PATH_INFO.
 Je suis vraiment pas sûr...
 
