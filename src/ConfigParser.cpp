@@ -331,7 +331,11 @@ void ConfigParser::processLocationBlock(std::ifstream &file, const std::string& 
         		validateDirectiveValue("cgi_interpreter", interpreterPath);
         		location.cgiInterpreters[extension] = interpreterPath;
         		Logger::instance().log(DEBUG, "Set cgi_interpreter for " + extension + " to " + interpreterPath + " in location " + location.path);
-    		} else {
+    		} if (directive == "root") {
+            		validateDirectiveValue(directive, value);
+            		location.root = value;
+        			Logger::instance().log(DEBUG, "Set root to " + value + " in location " + location.path);
+        	} else {
             location.options[directive] = value;
             }
         }

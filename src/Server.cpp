@@ -16,6 +16,9 @@
 #include <stdlib.h>    // Pour realpath
 #include <dirent.h>
 
+
+#include <string.h>
+
 Server::Server(const ServerConfig& config) : _config(config) {
 	if (!_config.isValid()) {
         Logger::instance().log(ERROR, "Server configuration is invalid.");
@@ -265,13 +268,38 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
 void Server::handleGetOrPostRequest(int client_fd, ClientConnection& connection) {
     HTTPRequest& request = *connection.getRequest();
     HTTPResponse& response = *connection.getResponse();
-    std::string fullPath = _config.root + request.getPath();
-
-    // Log to verify the complete path
-    Logger::instance().log(DEBUG, "handleGetOrPostRequest: fullPath = " + fullPath);
 
     // Find the corresponding Location
     const Location* location = _config.findLocation(request.getPath());
+
+
+	// Determine the root to use
+    std::string root = _config.root;
+    if (location && !location->root.empty()) {
+        root = location->root;
+    }
+
+    // Map request path to filesystem path
+    std::string pathUnderRoot;
+    if (location && !location->path.empty()) {
+		pathUnderRoot = request.getPath().substr(location->path.length());
+        // if (request.getPath().size() >= location->path.size()) {
+        //     pathUnderRoot = request.getPath().substr(location->path.length());
+        // } else {
+        //     pathUnderRoot = "";
+        // }
+    } else {
+        pathUnderRoot = request.getPath();
+    }
+
+    if (pathUnderRoot.empty() || pathUnderRoot[0] != '/') {
+        pathUnderRoot = "/" + pathUnderRoot;
+    }
+
+    std::string fullPath = root + pathUnderRoot;
+
+    // Log to verify the complete path
+    Logger::instance().log(DEBUG, "handleGetOrPostRequest: fullPath = " + fullPath);
 
     // Check if the method is supported
     if (request.getMethod() != "GET" && request.getMethod() != "POST" && request.getMethod() != "DELETE") {

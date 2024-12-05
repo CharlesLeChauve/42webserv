@@ -8,6 +8,7 @@
 
 struct Location {
 	std::string path;
+	std::string root;
 	std::map<std::string, std::string> options;
 	std::vector<std::string> allowedMethods;
 	int clientMaxBodySize;

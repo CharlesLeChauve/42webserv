@@ -23,7 +23,7 @@ ServerConfig::ServerConfig(const ServerConfig& other) {
 const Location* ServerConfig::findLocation(const std::string& path) const {
     for (size_t i = 0; i < locations.size(); ++i) {
         // Vérifie une correspondance exacte ou un chemin avec un '/' final pour les répertoires
-        if (path == locations[i].path || path == locations[i].path + "/") {
+        if (strncmp(path.c_str(), locations[i].path.c_str(), locations[i].path.size()) == 0 || strncmp(path.c_str(), std::string(locations[i].path + "/").c_str(), locations[i].path.size() + 1) == 0) {
             return &locations[i];
         }
     }
