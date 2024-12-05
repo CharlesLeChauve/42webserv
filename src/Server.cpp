@@ -396,8 +396,7 @@ void Server::handleDeleteRequest(const HTTPRequest& request) {
 		response.beError(404);
 	} else {
 		if (remove(fullPath.c_str()) == 0) {
-			response.setStatusCode(200);
-			response.setReasonPhrase("OK");
+			response.setStatusCode(204);
 			response.setHeader("Content-Type", "text/html");
 			std::string body = "<html><body><h1>File deleted successfully</h1></body></html>";
 			response.setHeader("Content-Length", to_string(body.size()));

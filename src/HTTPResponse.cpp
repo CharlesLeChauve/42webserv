@@ -13,6 +13,7 @@ void HTTPResponse::setStatusCode(int code) {
 	switch (code) {
 		case 200: _reasonPhrase = "OK"; break;
 		case 201: _reasonPhrase = "Created"; break;
+		case 204: _reasonPhrase = "No Content"; break; // requete reussie mais pas de reponse du serveur a renvoyer (genre DELETE)
 		case 301: _reasonPhrase = "Moved Permanently"; break; // indique que la ressource a définitivement été déplacée à l'URL contenue dans l'en-tête Location
 		case 303: _reasonPhrase = "See Other"; break; // renvoyé comme résultat d'une opération PUT ou POST, indique que la redirection ne fait pas le lien vers la ressource nouvellement téléversée mais vers une autre page
 		case 307: _reasonPhrase = "Temporary Redirect"; break; // indique que la ressource demandée est temporairement déplacée vers l'URL contenue dans l'en-tête Location
