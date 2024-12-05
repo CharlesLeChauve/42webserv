@@ -247,6 +247,7 @@ void ConfigParser::processServerDirective(std::ifstream &file, const std::string
 void ConfigParser::processLocationBlock(std::ifstream &file, const std::string& locationPath, ServerConfig& serverConfig) {
     Location location;
     location.path = locationPath;
+    location.root = "";
 
     std::string line;
     while (std::getline(file, line)) {

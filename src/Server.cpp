@@ -142,6 +142,7 @@ void Server::handleHttpRequest(int client_fd, ClientConnection& connection) {
 	        int port = std::atoi(portStr.c_str());
 	        if (std::find(_config.ports.begin(), _config.ports.end(), port) == _config.ports.end()) {
 	            response->beError(404); // Not Found
+                //?? 404 ici ??, ca ressemble a un probleme de port plutot 
 	            Logger::instance().log(WARNING, "404 error (Not Found) sent on request : \n" + request.toString());
 	            return;
 	        }
@@ -210,8 +211,6 @@ bool Server::isPathAllowed(const std::string& path, const std::string& uploadPat
     return directoryPathStr.find(uploadPathStr) == 0;
 }
 
-
-
 std::string Server::sanitizeFilename(const std::string& filename) {
     std::string safeFilename;
     for (size_t i = 0; i < filename.size(); ++i) {
@@ -279,16 +278,12 @@ void Server::handleGetOrPostRequest(int client_fd, ClientConnection& connection)
         root = location->root;
     }
 
-    // Map request path to filesystem path
     std::string pathUnderRoot;
-    if (location && !location->path.empty()) {
-		pathUnderRoot = request.getPath().substr(location->path.length());
-        // if (request.getPath().size() >= location->path.size()) {
-        //     pathUnderRoot = request.getPath().substr(location->path.length());
-        // } else {
-        //     pathUnderRoot = "";
-        // }
+    if (location && !location->root.empty() && !location->path.empty()) {
+        // La Location a son propre root, on enlève location->path du chemin de la requête
+        pathUnderRoot = request.getPath().substr(location->path.length());
     } else {
+        // On utilise le root global et le chemin complet de la requête
         pathUnderRoot = request.getPath();
     }
 
