@@ -35,6 +35,7 @@ public:
     int writeToCGI();
     int readFromCGI();
 
+    int isCgiDone();
     void terminateCGI();
     bool hasTimedOut() const;
 

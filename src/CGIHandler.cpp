@@ -43,6 +43,28 @@ void CGIHandler::setOutputPipeFd(int outputPipeFd[2]) {
 void CGIHandler::setCGIInput(const std::string& CGIInput) { _CGIInput = CGIInput; }
 void CGIHandler::setCGIOutput(const std::string& CGIOutput) { _CGIOutput = CGIOutput; }
 
+int CGIHandler::isCgiDone() {
+    int status;
+    int ret_value;
+    pid_t result = waitpid(_pid, &status, WNOHANG);
+    if (result == 0) {
+        // Process is still running
+        return 0;
+    } else if (result == _pid) {
+        // Process has exited
+        if (WIFEXITED(status)) {
+            ret_value = WEXITSTATUS(status);
+        } else {
+            ret_value = -1;
+        }
+        return ret_value;
+    } else {
+        // waitpid failed
+        Logger::instance().log(ERROR, "isCGIDone: waitpid failed: " + std::string(to_string(errno)));
+        return (INT_MIN);
+    }
+}
+
 
 int CGIHandler::writeToCGI() {
     if (_inputPipeFd[1] == -1) {
