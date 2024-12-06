@@ -50,10 +50,11 @@ void HTTPRequest::parseRawRequest(const ServerConfig& config) {
 
     // Determine max_body_size based on location
     const Location* location = config.findLocation(_path);
-    if (location && location->clientMaxBodySize != -1) {
-        _maxBodySize = location->clientMaxBodySize;
-    }
 
+
+		if (location) {
+	    _maxBodySize = location->clientMaxBodySize;
+	}
     // Parse headers
     std::string headers = getRawRequest().substr(0, header_end_pos);
     std::istringstream headers_stream(headers);

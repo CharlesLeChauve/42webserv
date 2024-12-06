@@ -96,7 +96,7 @@ void Server::receiveRequest(int client_fd, HTTPRequest& request) {
             return; // Full request received
         }
         // Check if body size exceeds maximum
-        if (request.getBodyReceived() > static_cast<size_t>(request.getMaxBodySize())) {
+        if (request.getBodyReceived() > static_cast<size_t>(request.getMaxBodySize()) && request.getMaxBodySize()) {
             Logger::instance().log(WARNING, "Request body size exceeds the configured maximum.");
             request.setRequestTooLarge(true);
 			request.setErrorCode(413);
@@ -142,7 +142,7 @@ void Server::handleHttpRequest(int client_fd, ClientConnection& connection) {
 	        int port = std::atoi(portStr.c_str());
 	        if (std::find(_config.ports.begin(), _config.ports.end(), port) == _config.ports.end()) {
 	            response->beError(404); // Not Found
-                //?? 404 ici ??, ca ressemble a un probleme de port plutot 
+                //?? 404 ici ??, ca ressemble a un probleme de port plutot
 	            Logger::instance().log(WARNING, "404 error (Not Found) sent on request : \n" + request.toString());
 	            return;
 	        }
