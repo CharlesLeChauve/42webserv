@@ -130,7 +130,15 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
             }
             continue;
         }
-
+        if (connection.getCgiHandler()) {
+            int cgiStatus = connection.getCgiHandler()->isCgiDone();
+            if (cgiStatus) {
+                HTTPResponse* cgiResponse = new HTTPResponse();
+                cgiResponse->beError(500, "CGI process was stopped unintentionnally");
+                connection.setResponse(cgiResponse);
+                connection.prepareResponse();
+            }
+        }
         //?? Bon en fait on ferme toujours la connexion, mais ca casse tout si je commente ca 
         if (connection.getResponse() != NULL && connection.isResponseComplete()) {
             close(client_fd);
@@ -511,15 +519,6 @@ int main(int argc, char* argv[]) {
                                 }
                             }
                             continue;
-                        }
-                        int cgiStatus = cgiHandler->isCgiDone();
-                        if (cgiStatus) {
-                            HTTPResponse* cgiResponse = new HTTPResponse();
-                            //?? Not here, because if was stopped, it would not send something detected by poll
-                            cgiResponse->beError(500, "CGI process was stopped unintentionnally");
-                            connection.setResponse(cgiResponse);
-                            connection.prepareResponse();
-                            
                         }
                     }
                 } else {

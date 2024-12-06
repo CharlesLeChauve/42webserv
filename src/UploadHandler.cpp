@@ -116,7 +116,7 @@ void    UploadHandler::handleFile(std::string& partHeaders, std::string& partCon
         } else {
             Logger::instance().log(ERROR, std::string("Error while parsing the file in the request:") + partHeaders);
             _response.beError(400, "Bad Request: File not found.");
-            throw forbiddenDest(); //?? Check if this exception could be used or create another one.
+            throw forbiddenDest();
         }
 }
 

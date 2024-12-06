@@ -141,9 +141,8 @@ void Server::handleHttpRequest(int client_fd, ClientConnection& connection) {
 	    if (!portStr.empty()) {
 	        int port = std::atoi(portStr.c_str());
 	        if (std::find(_config.ports.begin(), _config.ports.end(), port) == _config.ports.end()) {
-	            response->beError(404); // Not Found
-                //?? 404 ici ??, ca ressemble a un probleme de port plutot 
-	            Logger::instance().log(WARNING, "404 error (Not Found) sent on request : \n" + request.toString());
+	            response->beError(400); // Bad Request
+	            Logger::instance().log(WARNING, "400 error (Bad request) sent on request : \n" + request.toString());
 	            return;
 	        }
 	    }

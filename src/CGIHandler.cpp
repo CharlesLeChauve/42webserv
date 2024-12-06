@@ -10,8 +10,6 @@
 #include "Logger.hpp"
 #include "Utils.hpp"
 
-//?? Penser à ajouter un pointeru ou une reference vers la connection parent pour pouvoir faire des beError() quand je return false
-
 CGIHandler::CGIHandler::CGIHandler(const std::string& scriptPath, const std::string& interpreterPath, const HTTPRequest& request)
     : _scriptPath(scriptPath), _request(request), _interpreterPath(interpreterPath), _pid(-1), _CGIOutput(""), _bytesSent(0), _started(false) {
     _outputPipeFd[0] = -1;
