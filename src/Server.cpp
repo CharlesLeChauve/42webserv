@@ -96,7 +96,7 @@ void Server::receiveRequest(int client_fd, HTTPRequest& request) {
             return; // Full request received
         }
         // Check if body size exceeds maximum
-        if (request.getBodyReceived() > static_cast<size_t>(request.getMaxBodySize())) {
+        if (request.getBodyReceived() > static_cast<size_t>(request.getMaxBodySize()) && request.getMaxBodySize()) {
             Logger::instance().log(WARNING, "Request body size exceeds the configured maximum.");
             request.setRequestTooLarge(true);
 			request.setErrorCode(413);
