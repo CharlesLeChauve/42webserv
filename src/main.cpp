@@ -138,7 +138,9 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
                 connection.setResponse(cgiResponse);
                 connection.prepareResponse();
             }
+            continue;
         }
+
         //?? Bon en fait on ferme toujours la connexion, mais ca casse tout si je commente ca 
         if (connection.getResponse() != NULL && connection.isResponseComplete()) {
             close(client_fd);
@@ -161,7 +163,7 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
             continue;
         }
 
-        if (request->isComplete() && request->getErrorCode() == 0 && !connection.getCgiHandler()) {
+        if (request && request->isComplete() && request->getErrorCode() == 0 && !connection.getCgiHandler()) {
             Logger::instance().log(INFO, "Parsing OK, handling request for client fd: " + to_string(client_fd));
             connection.getServer()->handleHttpRequest(client_fd, connection);
 
@@ -207,11 +209,13 @@ int manageTimeouts(std::map<int, ClientConnection>& connections, std::vector<pol
     unsigned long now = curr_time_ms();
     unsigned long min_remaining_time = TIMEOUT_MS;
     bool has_active_connections = false;
-
+ 
     std::map<int, ClientConnection>::iterator it_conn;
     for (it_conn = connections.begin(); it_conn != connections.end(); ) {
         int client_fd = it_conn->first;
         HTTPRequest* request = it_conn->second.getRequest();
+        if (!request)
+            continue;
         ClientConnection& connection = it_conn->second;
         unsigned long time_since_last_activity = now - request->getLastActivity();
 
@@ -495,6 +499,7 @@ int main(int argc, char* argv[]) {
                     ClientConnection& connection = it->second;
                     CGIHandler* cgiHandler = connection.getCgiHandler();
                     if (cgiHandler->hasTimedOut()) {
+                        cgiHandler->terminateCGI();
                         connection.setResponse(new HTTPResponse());
                         connection.getResponse()->beError(504);
                         connection.prepareResponse();

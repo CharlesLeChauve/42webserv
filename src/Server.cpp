@@ -537,7 +537,7 @@ void Server::handleResponseSending(int client_fd, ClientConnection& connection) 
 
     int completed = connection.sendResponseChunk(client_fd);
     if (completed == 0) {
-
+        connection.setExchangeOver(true);
         Logger::instance().log(INFO, "Response fully sent to client FD: " + to_string(client_fd));
     } else if (completed == -1) {
         close(client_fd);
@@ -632,5 +632,3 @@ std::string Server::getInterpreterForExtension(const std::string& extension, con
     Logger::instance().log(DEBUG, "No interpreter found for extension: '" + extension + "'");
     return "";
 }
-
-
