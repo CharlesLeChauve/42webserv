@@ -162,6 +162,9 @@ void HTTPResponse::parseCGIOutput(const std::string& cgiOutput) {
         // Traiter en conséquence (erreur ou tout mettre dans le corps)
         setBody(cgiOutput);
     }
+	if (getStrHeader("Connection").empty()) {
+    	setHeader("Connection", "close");
+	}
 }
 
 void HTTPResponse::parseHeaders(const std::string& headers) {

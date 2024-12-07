@@ -119,58 +119,9 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
         HTTPRequest* request = it_conn->second.getRequest();
         ClientConnection& connection = it_conn->second;
 
+        // Si l'échange est terminé, on réinitialise et supprime la connexion
         if (connection.getExchangeOver()) {
             connection.resetConnection();
-            for (size_t i = 0; i < poll_fds.size(); ++i) {
-                if (poll_fds[i].fd == client_fd) {
-                    poll_fds[i].events &= ~POLLOUT;
-                    poll_fds[i].events |= POLLIN;
-                    break;
-                }
-            }
-            continue;
-        }
-        if (connection.getCgiHandler()) {
-    // Vérifier d'abord le timeout
-    if (connection.getCgiHandler()->hasTimedOut()) {
-        connection.getCgiHandler()->terminateCGI();
-        HTTPResponse* cgiResponse = new HTTPResponse();
-        cgiResponse->beError(504, "CGI script timed out");
-		cgiResponse->setHeader("Connection", "close");
-        connection.setResponse(cgiResponse);
-        connection.prepareResponse();
-		connection.setExchangeOver(true);
-		close(client_fd);
-        // On passe au suivant
-        ++it_conn;
-        continue;
-    }
-
-    int cgiStatus = connection.getCgiHandler()->isCgiDone();
-    if (cgiStatus) {
-        // Le CGI s'est terminé, mais peut ne pas avoir produit de sortie
-        std::string cgiOutput = connection.getCgiHandler()->getCGIOutput();
-        HTTPResponse* cgiResponse = new HTTPResponse();
-        cgiResponse->parseCGIOutput(cgiOutput);
-
-        // Si aucune en-tête CGI n'a été trouvée, parseCGIOutput mettra le corps brut.
-        // Si cgiOutput est vide, renvoyer une page d'erreur minimaliste
-        if (cgiOutput.empty()) {
-            cgiResponse->beError(500, "No output from CGI script");
-        }
-		cgiResponse->setHeader("Connection", "close");
-        connection.setResponse(cgiResponse);
-        connection.prepareResponse();
-    }
-
-    ++it_conn;
-    continue;
-}
-
-
-        //?? Bon en fait on ferme toujours la connexion, mais ca casse tout si je commente ca
-        if (connection.getResponse() != NULL && connection.isResponseComplete()) {
-			connection.setExchangeOver(true);
             close(client_fd);
             poll_fds.erase(
                 std::remove_if(poll_fds.begin(), poll_fds.end(), MatchFD(client_fd)),
@@ -180,6 +131,57 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
             continue;
         }
 
+        // Gestion des handlers CGI
+        if (connection.getCgiHandler()) {
+            // Timeout CGI
+            if (connection.getCgiHandler()->hasTimedOut()) {
+                connection.getCgiHandler()->terminateCGI();
+                HTTPResponse* cgiResponse = new HTTPResponse();
+                cgiResponse->beError(504, "CGI script timed out");
+                cgiResponse->setHeader("Connection", "close");
+                connection.setResponse(cgiResponse);
+                connection.prepareResponse();
+                connection.setExchangeOver(true);
+                close(client_fd);
+                poll_fds.erase(
+                    std::remove_if(poll_fds.begin(), poll_fds.end(), MatchFD(client_fd)),
+                    poll_fds.end()
+                );
+                connections.erase(it_conn++);
+                continue;
+            }
+
+            // Vérification si le CGI a terminé son exécution
+            int cgiStatus = connection.getCgiHandler()->isCgiDone();
+            if (cgiStatus) {
+                std::string cgiOutput = connection.getCgiHandler()->getCGIOutput();
+                HTTPResponse* cgiResponse = new HTTPResponse();
+                cgiResponse->parseCGIOutput(cgiOutput);
+
+                if (cgiOutput.empty()) {
+                    cgiResponse->beError(500, "No output from CGI script");
+                }
+                cgiResponse->setHeader("Connection", "close");
+                connection.setResponse(cgiResponse);
+                connection.prepareResponse();
+            }
+            ++it_conn;
+            continue;
+        }
+
+        // Si la réponse est complète, on ferme la connexion
+        if (connection.getResponse() != NULL && connection.isResponseComplete()) {
+            connection.setExchangeOver(true);
+            close(client_fd);
+            poll_fds.erase(
+                std::remove_if(poll_fds.begin(), poll_fds.end(), MatchFD(client_fd)),
+                poll_fds.end()
+            );
+            connections.erase(it_conn++);
+            continue;
+        }
+
+        // Si une réponse est prête mais pas encore envoyée
         if (connection.getResponse() != NULL) {
             for (size_t i = 0; i < poll_fds.size(); ++i) {
                 if (poll_fds[i].fd == client_fd) {
@@ -191,6 +193,7 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
             continue;
         }
 
+        // Traitement des requêtes complètes et sans erreur
         if (request && request->isComplete() && request->getErrorCode() == 0 && !connection.getCgiHandler()) {
             Logger::instance().log(INFO, "Parsing OK, handling request for client fd: " + to_string(client_fd));
             connection.getServer()->handleHttpRequest(client_fd, connection);
@@ -198,7 +201,7 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
             if (connection.getResponse() != NULL) {
                 connection.prepareResponse();
 
-                // Ensure POLLOUT is enabled
+                // Activer POLLOUT pour envoyer la réponse
                 for (size_t i = 0; i < poll_fds.size(); ++i) {
                     if (poll_fds[i].fd == client_fd) {
                         poll_fds[i].events |= POLLOUT;
@@ -231,6 +234,7 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
         ++it_conn;
     }
 }
+
 
 
 int manageTimeouts(std::map<int, ClientConnection>& connections, std::vector<pollfd>& poll_fds) {
