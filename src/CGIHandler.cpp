@@ -11,7 +11,7 @@
 #include "Utils.hpp"
 
 CGIHandler::CGIHandler::CGIHandler(const std::string& scriptPath, const std::string& interpreterPath, const HTTPRequest& request)
-    : _scriptPath(scriptPath), _request(request), _interpreterPath(interpreterPath), _pid(-1), _CGIOutput(""), _bytesSent(0), _started(false) {
+    : _scriptPath(scriptPath), _request(request), _interpreterPath(interpreterPath), _pid(-1), _CGIOutput(""), _bytesSent(0), _started(false), _cgiFinished(false), _cgiExitStatus(-1) {
     _outputPipeFd[0] = -1;
     _outputPipeFd[1] = -1;
     _inputPipeFd[0] = -1;
@@ -42,8 +42,12 @@ void CGIHandler::setCGIInput(const std::string& CGIInput) { _CGIInput = CGIInput
 void CGIHandler::setCGIOutput(const std::string& CGIOutput) { _CGIOutput = CGIOutput; }
 
 int CGIHandler::isCgiDone() {
+    if (_cgiFinished) {
+        // On a déjà appelé waitpid et récupéré le statut
+        return _cgiExitStatus;
+    }
+
     int status;
-    int ret_value;
     pid_t result = waitpid(_pid, &status, WNOHANG);
     if (result == 0) {
         // Process is still running
@@ -51,17 +55,22 @@ int CGIHandler::isCgiDone() {
     } else if (result == _pid) {
         // Process has exited
         if (WIFEXITED(status)) {
-            ret_value = WEXITSTATUS(status);
+            _cgiExitStatus = WEXITSTATUS(status);
         } else {
-            ret_value = -1;
+            _cgiExitStatus = -1;
         }
-        return ret_value;
+        _cgiFinished = true; // On note que c'est fini
+        return _cgiExitStatus;
     } else {
         // waitpid failed
         Logger::instance().log(ERROR, "isCGIDone: waitpid failed: " + std::string(to_string(errno)));
-        return (INT_MIN);
+        // On évite de rappeler waitpid, on considère que c'est fini mais en erreur
+        _cgiFinished = true;
+        _cgiExitStatus = -1;
+        return _cgiExitStatus;
     }
 }
+
 
 
 int CGIHandler::writeToCGI() {
@@ -188,26 +197,48 @@ bool CGIHandler::startCGI() {
 }
 
 void CGIHandler::setupEnvironment(const HTTPRequest& request, std::string scriptPath) {
-	if (request.getMethod() == "POST") {
-		setenv("REQUEST_METHOD", "POST", 1);  // Définir POST comme méthode
-		setenv("CONTENT_TYPE", "application/x-www-form-urlencoded", 1); // Valeur par défaut
-		setenv("CONTENT_LENGTH", to_string(request.getBody().size()).c_str(), 1);  // Définir la taille du corps de la requête
-	} else {
-		setenv("REQUEST_METHOD", "GET", 1);  // Définir GET comme méthode par défaut
-	}
-    setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
+    // Déterminer le chemin absolu du script (si nécessaire)
+    // S'il est déjà absolu, pas besoin, sinon :
+    char absPath[PATH_MAX];
+    if (realpath(scriptPath.c_str(), absPath) == NULL) {
+        Logger::instance().log(ERROR, "Failed to get absolute path of the CGI script.");
+        // Gérer l'erreur si nécessaire
+    }
+
+    // Méthode
     setenv("REQUEST_METHOD", request.getMethod().c_str(), 1);
-    setenv("SCRIPT_FILENAME", scriptPath.c_str(), 1);
+
+    // Content-Type et Content-Length depuis la requête
+    // Ne pas forcer à application/x-www-form-urlencoded, utiliser la valeur réelle :
+    std::string contentType = request.getStrHeader("Content-Type");
+    if (!contentType.empty()) {
+        setenv("CONTENT_TYPE", contentType.c_str(), 1);
+    }
+
+    setenv("CONTENT_LENGTH", to_string(request.getBody().size()).c_str(), 1);
+
+    // Variables CGI standard
+    setenv("GATEWAY_INTERFACE", "CGI/1.1", 1);
+    setenv("SCRIPT_FILENAME", absPath, 1);  // Utiliser le chemin absolu
     setenv("SCRIPT_NAME", scriptPath.c_str(), 1);
     setenv("QUERY_STRING", request.getQueryString().c_str(), 1);
-    setenv("CONTENT_TYPE", request.getStrHeader("Content-Type").c_str(), 1);
-    setenv("CONTENT_LENGTH", to_string(request.getBody().size()).c_str(), 1);
-    setenv("REDIRECT_STATUS", "200", 1); // Nécessaire pour php-cgi
+    setenv("REDIRECT_STATUS", "200", 1);
     setenv("SERVER_PROTOCOL", "HTTP/1.1", 1);
-    //setenv("REMOTE_ADDR", request.getClientIP().c_str(), 1);
-    setenv("SERVER_NAME", request.getStrHeader("Host").c_str(), 1);
-    //setenv("SERVER_PORT", request.getPort().c_str(), 1);
+
+    // Hôte et éventuellement le port
+    std::string host = request.getStrHeader("Host");
+    setenv("SERVER_NAME", host.c_str(), 1);
+
+    // Ajouter éventuellement :
+    setenv("SERVER_SOFTWARE", "webserv/1.0", 1);
+    // Si vous connaissez le port du serveur :
+    // setenv("SERVER_PORT", "80", 1);
+
+    // Autres variables possibles :
+    // setenv("REQUEST_URI", request.getPath().c_str(), 1);
+    // setenv("REMOTE_ADDR", request.getClientIP().c_str(), 1); (si disponible)
 }
+
 
 void CGIHandler::closeInputPipe() {
     if (_inputPipeFd[0] != -1) {

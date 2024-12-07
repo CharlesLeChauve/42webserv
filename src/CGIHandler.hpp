@@ -63,6 +63,9 @@ private:
     // Méthode auxiliaire pour vérifier l'extension
     bool endsWith(const std::string& str, const std::string& suffix) const;
 
+	bool _cgiFinished;
+    int _cgiExitStatus;
+
     //Server& _server;
 };
 

@@ -131,18 +131,46 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
             continue;
         }
         if (connection.getCgiHandler()) {
-            int cgiStatus = connection.getCgiHandler()->isCgiDone();
-            if (cgiStatus) {
-                HTTPResponse* cgiResponse = new HTTPResponse();
-                cgiResponse->beError(500, "CGI process was stopped unintentionnally");
-                connection.setResponse(cgiResponse);
-                connection.prepareResponse();
-            }
-            continue;
-        }
+    // Vérifier d'abord le timeout
+    if (connection.getCgiHandler()->hasTimedOut()) {
+        connection.getCgiHandler()->terminateCGI();
+        HTTPResponse* cgiResponse = new HTTPResponse();
+        cgiResponse->beError(504, "CGI script timed out");
+		cgiResponse->setHeader("Connection", "close");
+        connection.setResponse(cgiResponse);
+        connection.prepareResponse();
+		connection.setExchangeOver(true);
+		close(client_fd);
+        // On passe au suivant
+        ++it_conn;
+        continue;
+    }
 
-        //?? Bon en fait on ferme toujours la connexion, mais ca casse tout si je commente ca 
+    int cgiStatus = connection.getCgiHandler()->isCgiDone();
+    if (cgiStatus) {
+        // Le CGI s'est terminé, mais peut ne pas avoir produit de sortie
+        std::string cgiOutput = connection.getCgiHandler()->getCGIOutput();
+        HTTPResponse* cgiResponse = new HTTPResponse();
+        cgiResponse->parseCGIOutput(cgiOutput);
+
+        // Si aucune en-tête CGI n'a été trouvée, parseCGIOutput mettra le corps brut.
+        // Si cgiOutput est vide, renvoyer une page d'erreur minimaliste
+        if (cgiOutput.empty()) {
+            cgiResponse->beError(500, "No output from CGI script");
+        }
+		cgiResponse->setHeader("Connection", "close");
+        connection.setResponse(cgiResponse);
+        connection.prepareResponse();
+    }
+
+    ++it_conn;
+    continue;
+}
+
+
+        //?? Bon en fait on ferme toujours la connexion, mais ca casse tout si je commente ca
         if (connection.getResponse() != NULL && connection.isResponseComplete()) {
+			connection.setExchangeOver(true);
             close(client_fd);
             poll_fds.erase(
                 std::remove_if(poll_fds.begin(), poll_fds.end(), MatchFD(client_fd)),
@@ -209,7 +237,7 @@ int manageTimeouts(std::map<int, ClientConnection>& connections, std::vector<pol
     unsigned long now = curr_time_ms();
     unsigned long min_remaining_time = TIMEOUT_MS;
     bool has_active_connections = false;
- 
+
     std::map<int, ClientConnection>::iterator it_conn;
     for (it_conn = connections.begin(); it_conn != connections.end(); ) {
         int client_fd = it_conn->first;
@@ -432,6 +460,8 @@ int main(int argc, char* argv[]) {
                         std::string cgiOutput = connection.getCgiHandler()->getCGIOutput();
                         HTTPResponse* cgiResponse = new HTTPResponse();
                         cgiResponse->parseCGIOutput(cgiOutput);
+
+						cgiResponse->setHeader("Connection", "close");
                         connection.setResponse(cgiResponse);
                         connection.prepareResponse();
 
@@ -512,7 +542,7 @@ int main(int argc, char* argv[]) {
                             std::string cgiOutput = cgiHandler->getCGIOutput();
                             HTTPResponse* cgiResponse = new HTTPResponse();
                             cgiResponse->parseCGIOutput(cgiOutput);
-
+							cgiResponse->setHeader("Connection", "close");
                             connection.setResponse(cgiResponse);
                             connection.prepareResponse();
 

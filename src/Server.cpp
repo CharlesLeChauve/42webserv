@@ -113,6 +113,7 @@ void Server::handleHttpRequest(int client_fd, ClientConnection& connection) {
         response = new HTTPResponse();
         connection.setResponse(response);
     }
+
     const Location* location = _config.findLocation(request.getPath());
 
     if (location && !location->allowedMethods.empty()) {
@@ -123,30 +124,27 @@ void Server::handleHttpRequest(int client_fd, ClientConnection& connection) {
         }
     }
 
-	if (location && location->returnCode != 0) {
+    if (location && location->returnCode != 0) {
         response->setStatusCode(location->returnCode);
         response->setHeader("Location", location->returnUrl);
-        //sendResponse(client_fd, response);
         Logger::instance().log(INFO, "Redirecting " + request.getPath() + " to " + location->returnUrl);
-        return ;
+        return;
     }
 
     // Vérification de l'hôte et du port (code existant)
     std::string hostHeader = request.getHost();
-	if (!hostHeader.empty()) {
-	    size_t colonPos = hostHeader.find(':');
-	    std::string hostName = (colonPos != std::string::npos) ? hostHeader.substr(0, colonPos) : hostHeader;
-	    std::string portStr = (colonPos != std::string::npos) ? hostHeader.substr(colonPos + 1) : "";
-
-	    if (!portStr.empty()) {
-	        int port = std::atoi(portStr.c_str());
-	        if (std::find(_config.ports.begin(), _config.ports.end(), port) == _config.ports.end()) {
-	            response->beError(400); // Bad Request
-	            Logger::instance().log(WARNING, "400 error (Bad request) sent on request : \n" + request.toString());
-	            return;
-	        }
-	    }
-	} else {
+    if (!hostHeader.empty()) {
+        size_t colonPos = hostHeader.find(':');
+        std::string portStr = (colonPos != std::string::npos) ? hostHeader.substr(colonPos + 1) : "";
+        if (!portStr.empty()) {
+            int port = std::atoi(portStr.c_str());
+            if (std::find(_config.ports.begin(), _config.ports.end(), port) == _config.ports.end()) {
+                response->beError(400); // Bad Request
+                Logger::instance().log(WARNING, "400 error (Bad request) sent on request : \n" + request.toString());
+                return;
+            }
+        }
+    } else {
         response->beError(400); // Mauvaise requête
         Logger::instance().log(WARNING, "400 error (Bad Request) sent on request : \n" + request.toString());
         return;
@@ -160,6 +158,26 @@ void Server::handleHttpRequest(int client_fd, ClientConnection& connection) {
     } else {
         response->beError(501); // Not implemented method
         Logger::instance().log(WARNING, "501 error (Not Implemented) sent on request : \n" + request.toString());
+    }
+
+    // Détermination du keep-alive
+    std::string connectionHeader = request.getStrHeader("Connection");
+    bool keepAlive = true;
+    // En HTTP/1.1, keep-alive par défaut sauf si Connection: close
+    if (!connectionHeader.empty() && (connectionHeader == "close" || connectionHeader == "Close")) {
+        keepAlive = false;
+    }
+
+    // Définir l'en-tête Connection dans la réponse
+    if (keepAlive) {
+        response->setHeader("Connection", "keep-alive");
+    } else {
+        response->setHeader("Connection", "close");
+    }
+
+    // Ajouter Content-Length si absent
+    if (response->getStrHeader("Content-Length").empty()) {
+        response->setHeader("Content-Length", to_string(response->getBody().size()));
     }
 }
 
@@ -537,14 +555,28 @@ void Server::handleResponseSending(int client_fd, ClientConnection& connection) 
 
     int completed = connection.sendResponseChunk(client_fd);
     if (completed == 0) {
-        connection.setExchangeOver(true);
-        Logger::instance().log(INFO, "Response fully sent to client FD: " + to_string(client_fd));
+        // Réponse entièrement envoyée
+        HTTPResponse* res = connection.getResponse();
+        std::string connHeader = res->getStrHeader("Connection");
+
+        if (connHeader == "close") {
+            // Fermer la connexion car le client l'a demandé ou parce que non HTTP/1.1
+            connection.setExchangeOver(true);
+            Logger::instance().log(INFO, "Response fully sent, closing connection FD: " + to_string(client_fd));
+        } else {
+            // keep-alive : réinitialiser la connexion pour une prochaine requête
+            Logger::instance().log(INFO, "Response fully sent, keeping connection alive FD: " + to_string(client_fd));
+            connection.resetConnection();
+            int max_body_size = connection.getServer()->getConfig().clientMaxBodySize;
+            connection.setRequest(new HTTPRequest(max_body_size));
+            // Le main loop doit laisser ce fd en POLLIN pour recevoir une nouvelle requête
+        }
     } else if (completed == -1) {
-        close(client_fd);
-        Logger::instance().log(ERROR, std::string("Error while writing to client fd :") + to_string(client_fd) + ". Closing Connection");
+        // Erreur d'écriture
+        Logger::instance().log(ERROR, "Error while writing to client fd :" + to_string(client_fd) + ". Closing Connection");
+        connection.setExchangeOver(true);
     }
 }
-
 
 std::string Server::generateDirectoryListing(const std::string& directoryPath, const std::string& requestPath) {
     std::string listing;
