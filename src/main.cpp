@@ -357,28 +357,29 @@ int main(int argc, char* argv[]) {
 
     // Créer les serveurs et les sockets
     for (size_t i = 0; i < serverConfigs.size(); ++i) {
-    Server* server = new Server(serverConfigs[i]);
-    servers.push_back(server);
+    	Server* server = new Server(serverConfigs[i]);
+    	servers.push_back(server);
 
-        for (size_t j = 0; j < serverConfigs[i].ports.size(); ++j) {
-            int port = serverConfigs[i].ports[j];
-            Socket* socket = new Socket(port);
-            socket->build_sockets();
+    	for (size_t j = 0; j < serverConfigs[i].getPorts().size(); ++j) {
+        	int port = serverConfigs[i].getPorts()[j];
+        	Socket* socket = new Socket(serverConfigs[i].getHost(), port);
+        	socket->build_sockets();
 
-            pollfd pfd;
-            pfd.fd = socket->getSocket();
-            pfd.events = POLLIN;
-            pfd.revents = 0; // Initialize revents to 0
-            poll_fds.push_back(pfd);
+        	pollfd pfd;
+        	pfd.fd = socket->getSocket();
+        	pfd.events = POLLIN;
+        	pfd.revents = 0;
+        	poll_fds.push_back(pfd);
 
-            // Associer les sockets serveurs avec les serveurs
-            fdToServerMap[socket->getSocket()] = server;
+        	fdToServerMap[socket->getSocket()] = server;
 
-            sockets.push_back(socket);
+        	sockets.push_back(socket);
 
-            Logger::instance().log(INFO, "Server launched, listening on port: " + to_string(port));
-        }
-    }
+        	Logger::instance().log(INFO, "Server launched, listening on " +
+                                serverConfigs[i].getHost() + ":" + to_string(port));
+    	}
+	}
+
 
 
     while (!stopServer) {

@@ -60,3 +60,11 @@ bool ServerConfig::isValid() const {
 	}
 	return true;
 }
+
+const std::string& ServerConfig::getHost() const {
+    return host;
+}
+
+const std::vector<int>& ServerConfig::getPorts() const {
+    return ports;
+}

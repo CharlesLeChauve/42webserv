@@ -1,5 +1,5 @@
 
-#pragma once 
+#pragma once
 
 #include <sys/socket.h> // Fonction socket() + types AF_INET & SOCK_STREAM
 #include <netinet/in.h> // Struct. et constantes liees aux add. reseau (sockaddr_in + htons() pour convertir les ports au bon format)
@@ -19,7 +19,7 @@ private:
     // int new_sockets[10]; // Need to use vector later ?
 
 public:
-    Socket(int p_port);
+    Socket(const std::string& host, int port);
     ~Socket();
 
     // Socket creation

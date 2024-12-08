@@ -164,15 +164,23 @@ void ConfigParser::processServerDirective(std::ifstream &file, const std::string
         }
     } else if (endsWithSemicolon) {
         if (directive == "listen") {
-            size_t colonPos = value.find(':');
-            if (colonPos != std::string::npos) {
-                serverConfig.host = value.substr(0, colonPos);
-                int port = std::atoi(value.substr(colonPos + 1).c_str());
-                serverConfig.ports.push_back(port);
-            } else {
-                serverConfig.ports.push_back(std::atoi(value.c_str()));
-            }
-        } else if (directive == "server_name") {
+    size_t colonPos = value.find(':');
+    if (colonPos != std::string::npos) {
+        serverConfig.host = value.substr(0, colonPos);
+        int port = std::atoi(value.substr(colonPos + 1).c_str());
+        if (port <= 0 || port > 65535) {
+            throw ConfigParserException("Invalid port in listen directive: " + value);
+        }
+        serverConfig.ports.push_back(port);
+    } else {
+        	serverConfig.host = "0.0.0.0"; // Default host
+        	int port = std::atoi(value.c_str());
+        	if (port <= 0 || port > 65535) {
+        	    throw ConfigParserException("Invalid port in listen directive: " + value);
+        	}
+    		serverConfig.ports.push_back(port);
+    		}
+		} else if (directive == "server_name") {
             std::istringstream valueStream(value);
             std::string serverName;
             while (valueStream >> serverName) {

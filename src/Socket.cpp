@@ -8,13 +8,18 @@ bool Socket::operator==(int fd) const {
 	return (this->_socket_fd == fd);
 }
 
-Socket::Socket(int p_port) : _socket_fd(-1), _port(p_port) {
-	memset(&address, 0, sizeof(address));
-	address.sin_family = AF_INET;
-	address.sin_port = htons(_port);
-	address.sin_addr.s_addr = INADDR_ANY;
-	socket_creation();
+Socket::Socket(const std::string& host, int port) : _socket_fd(-1), _port(port) {
+    memset(&address, 0, sizeof(address));
+    address.sin_family = AF_INET;
+    address.sin_port = htons(_port);
+    address.sin_addr.s_addr = inet_addr(host.c_str());
+    if (address.sin_addr.s_addr == INADDR_NONE) {
+        Logger::instance().log(ERROR, "Invalid IP address: " + host);
+        return;
+    }
+    socket_creation();
 }
+
 
 Socket::~Socket() {
 	if (_socket_fd != -1) {
