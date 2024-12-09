@@ -1,6 +1,7 @@
 #include "ServerConfig.hpp"
 #include "Logger.hpp"
 #include <iostream>
+#include <cstring>
 
 ServerConfig::ServerConfig() : root("www/"), index("index.html"), host("0.0.0.0"), clientMaxBodySize(0), autoindex(false) {
 	serverNames.push_back("localhost");
