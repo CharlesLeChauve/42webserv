@@ -119,66 +119,71 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
         HTTPRequest* request = it_conn->second.getRequest();
         ClientConnection& connection = it_conn->second;
 
-        if (connection.getExchangeOver()) {
-            connection.resetConnection();
-            for (size_t i = 0; i < poll_fds.size(); ++i) {
-                if (poll_fds[i].fd == client_fd) {
-                    poll_fds[i].events &= ~POLLOUT;
-                    poll_fds[i].events |= POLLIN;
-                    break;
-                }
-            }
+         if (connection.getExchangeOver() == true) {
+            ++it_conn;
             continue;
         }
+        // if (connection.getExchangeOver()) {
+        //     connection.resetConnection();
+        //     for (size_t i = 0; i < poll_fds.size(); ++i) {
+        //         if (poll_fds[i].fd == client_fd) {
+        //             poll_fds[i].events &= ~POLLOUT;
+        //             poll_fds[i].events |= POLLIN;
+        //             break;
+        //         }
+        //     }
+        //     ++it_conn;
+        //     continue;
+        // }
         if (connection.getCgiHandler()) {
     // Vérifier d'abord le timeout
-    if (connection.getCgiHandler()->hasTimedOut()) {
-        connection.getCgiHandler()->terminateCGI();
-        HTTPResponse* cgiResponse = new HTTPResponse();
-        cgiResponse->beError(504, "CGI script timed out");
-		cgiResponse->setHeader("Connection", "close");
-        connection.setResponse(cgiResponse);
-        connection.prepareResponse();
-		connection.setExchangeOver(true);
-		close(client_fd);
-        // On passe au suivant
+        if (connection.getCgiHandler()->hasTimedOut()) {
+            connection.getCgiHandler()->terminateCGI();
+            HTTPResponse* cgiResponse = new HTTPResponse();
+            cgiResponse->beError(504, "CGI script timed out");
+            cgiResponse->setHeader("Connection", "close");
+            connection.setResponse(cgiResponse);
+            connection.prepareResponse();
+            connection.setExchangeOver(true);
+            close(client_fd);
+            // On passe au suivant
+            ++it_conn;
+            continue;
+        }
+
+        int cgiStatus = connection.getCgiHandler()->isCgiDone();
+        if (cgiStatus) {
+            // Le CGI s'est terminé, mais peut ne pas avoir produit de sortie
+            std::string cgiOutput = connection.getCgiHandler()->getCGIOutput();
+            HTTPResponse* cgiResponse = new HTTPResponse();
+            cgiResponse->parseCGIOutput(cgiOutput);
+
+            // Si aucune en-tête CGI n'a été trouvée, parseCGIOutput mettra le corps brut.
+            // Si cgiOutput est vide, renvoyer une page d'erreur minimaliste
+            if (cgiOutput.empty()) {
+                cgiResponse->beError(500, "No output from CGI script");
+            }
+            cgiResponse->setHeader("Connection", "close");
+            connection.setResponse(cgiResponse);
+            connection.prepareResponse();
+        }
+
         ++it_conn;
         continue;
     }
 
-    int cgiStatus = connection.getCgiHandler()->isCgiDone();
-    if (cgiStatus) {
-        // Le CGI s'est terminé, mais peut ne pas avoir produit de sortie
-        std::string cgiOutput = connection.getCgiHandler()->getCGIOutput();
-        HTTPResponse* cgiResponse = new HTTPResponse();
-        cgiResponse->parseCGIOutput(cgiOutput);
-
-        // Si aucune en-tête CGI n'a été trouvée, parseCGIOutput mettra le corps brut.
-        // Si cgiOutput est vide, renvoyer une page d'erreur minimaliste
-        if (cgiOutput.empty()) {
-            cgiResponse->beError(500, "No output from CGI script");
-        }
-		cgiResponse->setHeader("Connection", "close");
-        connection.setResponse(cgiResponse);
-        connection.prepareResponse();
-    }
-
-    ++it_conn;
-    continue;
-}
-
 
         //?? Bon en fait on ferme toujours la connexion, mais ca casse tout si je commente ca
-        if (connection.getResponse() != NULL && connection.isResponseComplete()) {
-			connection.setExchangeOver(true);
-            close(client_fd);
-            poll_fds.erase(
-                std::remove_if(poll_fds.begin(), poll_fds.end(), MatchFD(client_fd)),
-                poll_fds.end()
-            );
-            connections.erase(it_conn++);
-            continue;
-        }
+        // if (connection.getResponse() != NULL && connection.isResponseComplete()) {
+		// 	connection.setExchangeOver(true);
+        //     close(client_fd);
+        //     poll_fds.erase(
+        //         std::remove_if(poll_fds.begin(), poll_fds.end(), MatchFD(client_fd)),
+        //         poll_fds.end()
+        //     );
+        //     connections.erase(it_conn++);
+        //     continue;
+        // }
 
         if (connection.getResponse() != NULL) {
             for (size_t i = 0; i < poll_fds.size(); ++i) {
@@ -227,7 +232,7 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
             continue;
         }
 
-        Logger::instance().log(DEBUG, "A connection didn't match any condition in manageConnections");
+        Logger::instance().log(DEBUG, std::string("A connection didn't match any condition in manageConnections :") + to_string(client_fd));
         ++it_conn;
     }
 }
@@ -242,9 +247,11 @@ int manageTimeouts(std::map<int, ClientConnection>& connections, std::vector<pol
     for (it_conn = connections.begin(); it_conn != connections.end(); ) {
         int client_fd = it_conn->first;
         HTTPRequest* request = it_conn->second.getRequest();
-        if (!request)
-            continue;
         ClientConnection& connection = it_conn->second;
+        if (connection.getExchangeOver() == true) {
+            ++it_conn;
+            continue;
+        }
         unsigned long time_since_last_activity = now - request->getLastActivity();
 
         if (!request->isComplete() && time_since_last_activity >= TIMEOUT_MS) {
@@ -461,9 +468,13 @@ int main(int argc, char* argv[]) {
                         HTTPResponse* cgiResponse = new HTTPResponse();
                         cgiResponse->parseCGIOutput(cgiOutput);
 
-						cgiResponse->setHeader("Connection", "close");
+						cgiResponse->setHeader("Connection", "keep-alive");
+
                         connection.setResponse(cgiResponse);
                         connection.prepareResponse();
+
+                        delete connection.getCgiHandler();
+                        connection.setCgiHandler(NULL);
 
                         for (size_t j = 0; j < poll_fds.size(); ++j) {
                             if (poll_fds[j].fd == it->first) {
@@ -517,6 +528,8 @@ int main(int argc, char* argv[]) {
                     if (conn_it != connections.end()) {
                         ClientConnection& connection = conn_it->second;
                         Server* server = connection.getServer();
+                        if (connection.getExchangeOver())
+                            connection.setExchangeOver(false);
                         server->handleClient(poll_fds[i].fd, connection);
                     }
                     continue;
@@ -542,7 +555,7 @@ int main(int argc, char* argv[]) {
                             std::string cgiOutput = cgiHandler->getCGIOutput();
                             HTTPResponse* cgiResponse = new HTTPResponse();
                             cgiResponse->parseCGIOutput(cgiOutput);
-							cgiResponse->setHeader("Connection", "close");
+							cgiResponse->setHeader("Connection", "keep-alive");
                             connection.setResponse(cgiResponse);
                             connection.prepareResponse();
 

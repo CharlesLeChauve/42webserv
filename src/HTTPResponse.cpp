@@ -162,6 +162,10 @@ void HTTPResponse::parseCGIOutput(const std::string& cgiOutput) {
         // Traiter en conséquence (erreur ou tout mettre dans le corps)
         setBody(cgiOutput);
     }
+    
+    if (this->getStrHeader("Content-Length").empty()) {
+        this->setHeader("Content-Length", to_string(this->getBody().size()));
+    }
 }
 
 void HTTPResponse::parseHeaders(const std::string& headers) {

@@ -52,6 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo "<html><body>";
         echo "<h1>Merci pour votre message!</h1>";
         echo "<p>Votre message a été envoyé avec succès.</p>";
+        echo "<a href= \"/index.html\">Retour à l'accueil</a>";
         echo "</body></html>";
     } catch (Exception $e) {
         echo "<html><body>";
