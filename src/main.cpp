@@ -365,7 +365,7 @@ int main(int argc, char* argv[]) {
 
         for (size_t j = 0; j < serverConfigs[i].ports.size(); ++j) {
             int port = serverConfigs[i].ports[j];
-            Socket* socket = new Socket(port);
+            Socket* socket = new Socket(serverConfigs[i].getHost(), port);
             socket->build_sockets();
 
             pollfd pfd;
@@ -379,7 +379,7 @@ int main(int argc, char* argv[]) {
 
             sockets.push_back(socket);
 
-            Logger::instance().log(INFO, "Server launched, listening on port: " + to_string(port));
+            Logger::instance().log(INFO, "Server launched, listening on " + serverConfigs[i].getHost() + ":" + to_string(port));
         }
     }
 

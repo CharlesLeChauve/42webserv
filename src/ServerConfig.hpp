@@ -31,6 +31,10 @@ public:
     bool isValid() const;
 
 	std::map<std::string, std::string> cgiInterpreters;
+
+	const std::string& getHost() const;
+    const std::vector<int>& getPorts() const;
+
 };
 
 #endif
