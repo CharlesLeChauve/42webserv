@@ -178,10 +178,12 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
         }
 
         if (request && request->isComplete() && request->getErrorCode() == 0 && !connection.getCgiHandler()) {
+            
             Logger::instance().log(INFO, "Parsing OK, handling request for client fd: " + to_string(client_fd));
             connection.getServer()->handleHttpRequest(client_fd, connection);
 
             if (connection.getResponse() != NULL) {
+               
                 connection.prepareResponse();
 
                 // Ensure POLLOUT is enabled
