@@ -38,6 +38,7 @@ SESSIONFILES = $(SESSIONDIR)/*.txt
 all: webserver
 
 webserver: $(OBJ)
+	mkdir -p $(SESSIONDIR)
 	$(CXX) $(CXXFLAGS) -o $@ $(OBJ)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
@@ -48,10 +49,11 @@ clean:
 	rm -rf $(OBJDIR)
 
 clean_sessions:
+	rm -r $(SESSIONDIR)
 	rm -f $(SESSIONFILES)
 
-fclean: clean
-	rm -f webserver clean_sessions
+fclean: clean clean_sessions
+	rm -f webserver 
 
 php:
 ifeq ($(CHECK_PHP_CGI), 0)

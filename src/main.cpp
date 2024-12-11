@@ -287,7 +287,11 @@ int main(int argc, char* argv[]) {
         return 1;
     } else {
         if (argc == 1 || (argc == 2 && argv[1][0] == '-')) {
-            configFile = "config/server.conf";
+            #ifdef __APPLE__
+                configFile = "config/serverMac.conf";
+            #else
+                configFile = "config/serverLinux.conf";
+            #endif
             Logger::instance().log(DEBUG, "Default configuration file loaded : " + configFile);
         } else {
             configFile = argv[1];
@@ -471,6 +475,20 @@ int main(int argc, char* argv[]) {
             }
 
             if (poll_fds[i].revents & POLLNVAL) {
+            // if (fdType == FD_CGI_OUTPUT) {
+                //     std::map<int, ClientConnection>::iterator it = std::find_if(
+                //         connections.begin(),
+                //         connections.end(),
+                //         MatchCGIOutputFD(poll_fds[i].fd)
+                //     );
+                //     if (it != connections.end()) {
+                //         ClientConnection& connection = it->second;
+                //         connection.getCgiHandler()->terminateCGI();
+                //         connection.setResponse(new HTTPResponse());
+                //         connection.getResponse()->beError(502);
+                //         connection.prepareResponse();
+                //     }
+                // }
                 Logger::instance().log(ERROR, "File descriptor not valid: " + to_string(poll_fds[i].fd));
                 // Supprimer le descripteur invalide
                 poll_fds.erase(poll_fds.begin() + i);
