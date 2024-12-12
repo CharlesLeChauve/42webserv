@@ -66,7 +66,7 @@ int ClientConnection::sendResponseChunk(int client_fd) {
 void ClientConnection::resetConnection() {
     if (_request) {
         delete _request;
-        _request = NULL;
+        _request = new HTTPRequest(_server->getConfig().clientMaxBodySize);
     }
     if (_response) {
         delete _response;

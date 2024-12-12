@@ -564,23 +564,20 @@ void Server::handleResponseSending(int client_fd, ClientConnection& connection) 
 
         if (connHeader == "close") {
             // Fermer la connexion car le client l'a demandé ou parce que non HTTP/1.1
-            connection.setExchangeOver(true);
             Logger::instance().log(INFO, "Response fully sent, closing connection FD: " + to_string(client_fd));
         } else {
             // keep-alive : réinitialiser la connexion pour une prochaine requête
             Logger::instance().log(INFO, "Response fully sent, keeping connection alive FD: " + to_string(client_fd));
-            connection.resetConnection();
-            connection.setExchangeOver(true);
 
             int max_body_size = connection.getServer()->getConfig().clientMaxBodySize;
             connection.setRequest(new HTTPRequest(max_body_size));
             // Le main loop doit laisser ce fd en POLLIN pour recevoir une nouvelle requête
         }
+        connection.setExchangeOver(true);
     } else if (completed == -1) {
         // Erreur d'écriture
         Logger::instance().log(ERROR, "Error while writing to client fd :" + to_string(client_fd) + ". Closing Connection");
-        
-        //connection.setExchangeOver(true);
+        connection.setExchangeOver(true);
     }
 }
 

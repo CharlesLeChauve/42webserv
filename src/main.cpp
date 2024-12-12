@@ -119,27 +119,20 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
         HTTPRequest* request = it_conn->second.getRequest();
         ClientConnection& connection = it_conn->second;
 
-         if (connection.getExchangeOver() == true) {
+        if (connection.getExchangeOver()) {
+            connection.resetConnection();
+            for (size_t i = 0; i < poll_fds.size(); ++i) {
+                if (poll_fds[i].fd == client_fd) {
+                    poll_fds[i].events &= ~POLLOUT;
+                    poll_fds[i].events |= POLLIN;
+                    break;
+                }
+            }
             ++it_conn;
             continue;
         }
-        // if (connection.getExchangeOver()) {
-        //     connection.resetConnection();
-        //     for (size_t i = 0; i < poll_fds.size(); ++i) {
-        //         if (poll_fds[i].fd == client_fd) {
-        //             poll_fds[i].events &= ~POLLOUT;
-        //             poll_fds[i].events |= POLLIN;
-        //             break;
-        //         }
-        //     }
-        //     ++it_conn;
-        //     continue;
-        // }
         if (connection.getCgiHandler()) {
-    // Vérifier d'abord le timeout
-            int cgiStatus = connection.getCgiHandler()->isCgiDone();
             if (connection.getCgiHandler()->hasTimedOut()) {
-                std::cerr << "*** Here ***" << std::endl;
                 connection.getCgiHandler()->terminateCGI();
                 HTTPResponse* cgiResponse = new HTTPResponse();
                 cgiResponse->beError(504, "CGI script timed out");
@@ -152,6 +145,7 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
                 ++it_conn;
                 continue;
             }
+            int cgiStatus = connection.getCgiHandler()->isCgiDone();
             if (cgiStatus) {
                 std::cerr << "*** Here 1 ***" << std::endl;
                 HTTPResponse* cgiResponse = new HTTPResponse();
@@ -160,6 +154,7 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
                 connection.setCgiHandler(NULL);
                 connection.setResponse(cgiResponse);
                 connection.prepareResponse();
+                ++it_conn;
                 continue;
             }
             ++it_conn;
@@ -231,7 +226,7 @@ int manageTimeouts(std::map<int, ClientConnection>& connections, std::vector<pol
         int client_fd = it_conn->first;
         HTTPRequest* request = it_conn->second.getRequest();
         ClientConnection& connection = it_conn->second;
-        if (connection.getExchangeOver() == true) {
+        if (connection.getExchangeOver() == true || connection.getCgiHandler()) {
             ++it_conn;
             continue;
         }
@@ -271,9 +266,26 @@ int manageTimeouts(std::map<int, ClientConnection>& connections, std::vector<pol
     if (has_active_connections) {
         poll_timeout = static_cast<int>(min_remaining_time);
     } else {
+        Logger::instance().log(INFO, "No active connection, poll waiting indefinitely");
         poll_timeout = -1; // Bloquer indéfiniment si aucune connexion active
     }
     return poll_timeout;
+}
+
+void	throttle_calls(void)
+{
+	static unsigned long	last_call = 0;
+	unsigned long			now;
+	unsigned long			diff;
+
+	now = curr_time_ms();
+	if (last_call > 0)
+	{
+		diff = now - last_call;
+		if (diff < 3)
+			usleep(3000);
+	}
+	last_call = curr_time_ms();
 }
 
 
@@ -372,6 +384,8 @@ int main(int argc, char* argv[]) {
 
 
     while (!stopServer) {
+        throttle_calls();
+
         manageConnections(connections, poll_fds);
         int poll_timeout = manageTimeouts(connections, poll_fds);
 
@@ -390,6 +404,8 @@ int main(int argc, char* argv[]) {
         for (size_t i = 0; i < poll_fds.size(); ++i) {
             if (poll_fds[i].revents == 0)
                 continue;
+
+            Logger::instance().log(DEBUG, std::string("Event : ") + to_string(poll_fds[i].revents) + " detected on client_fd : " + to_string(poll_fds[i].fd));
 
             if (poll_fds[i].fd == serverSignal::pipe_fd[0]) {
                 if (poll_fds[i].revents & POLLIN) {
@@ -489,8 +505,7 @@ int main(int argc, char* argv[]) {
                 //         connection.prepareResponse();
                 //     }
                 // }
-                Logger::instance().log(ERROR, "File descriptor not valid: " + to_string(poll_fds[i].fd));
-                // Supprimer le descripteur invalide
+                Logger::instance().log(ERROR, "Filme descriptor not valid: " + to_string(poll_fds[i].fd));
                 poll_fds.erase(poll_fds.begin() + i);
                 --i;
                 continue;
@@ -529,8 +544,6 @@ int main(int argc, char* argv[]) {
                     if (conn_it != connections.end()) {
                         ClientConnection& connection = conn_it->second;
                         Server* server = connection.getServer();
-                        if (connection.getExchangeOver())
-                            connection.setExchangeOver(false);
                         server->handleClient(poll_fds[i].fd, connection);
                     }
                     continue;
