@@ -137,7 +137,7 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
                 HTTPResponse* cgiResponse = new HTTPResponse();
                 cgiResponse->beError(504, "CGI script timed out");
                 cgiResponse->setHeader("Connection", "close");
-                
+
                 delete connection.getCgiHandler();
                 connection.setCgiHandler(NULL);
                 connection.setResponse(cgiResponse);
@@ -145,6 +145,7 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
                 ++it_conn;
                 continue;
             }
+			usleep(5000);
             int cgiStatus = connection.getCgiHandler()->isCgiDone();
             if (cgiStatus) {
                 std::cerr << "*** Here 1 ***" << std::endl;
@@ -173,12 +174,12 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
         }
 
         if (request && request->isComplete() && request->getErrorCode() == 0 && !connection.getCgiHandler()) {
-            
+
             Logger::instance().log(INFO, "Parsing OK, handling request for client fd: " + to_string(client_fd));
             connection.getServer()->handleHttpRequest(client_fd, connection);
 
             if (connection.getResponse() != NULL) {
-               
+
                 connection.prepareResponse();
 
                 // Ensure POLLOUT is enabled
@@ -384,7 +385,7 @@ int main(int argc, char* argv[]) {
 
 
     while (!stopServer) {
-        throttle_calls();
+
 
         manageConnections(connections, poll_fds);
         int poll_timeout = manageTimeouts(connections, poll_fds);

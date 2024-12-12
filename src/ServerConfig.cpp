@@ -22,13 +22,21 @@ ServerConfig::ServerConfig(const ServerConfig& other) {
 
 
 const Location* ServerConfig::findLocation(const std::string& path) const {
+    const Location* bestMatch = NULL;
+    size_t bestMatchLength = 0;
+
     for (size_t i = 0; i < locations.size(); ++i) {
-        // Vérifie une correspondance exacte ou un chemin avec un '/' final pour les répertoires
-        if (strncmp(path.c_str(), locations[i].path.c_str(), locations[i].path.size()) == 0 || strncmp(path.c_str(), std::string(locations[i].path + "/").c_str(), locations[i].path.size() + 1) == 0) {
-            return &locations[i];
+        if (path.compare(0, locations[i].path.size(), locations[i].path) == 0 ||
+            path.compare(0, locations[i].path.size() + 1, locations[i].path + "/") == 0) {
+            size_t matchLength = locations[i].path.size();
+            if (matchLength > bestMatchLength) {
+                bestMatch = &locations[i];
+                bestMatchLength = matchLength;
+            }
         }
     }
-    return NULL; // Aucune location correspondante trouvée
+
+    return bestMatch;
 }
 
 ServerConfig& ServerConfig::operator=(const ServerConfig& other) {
