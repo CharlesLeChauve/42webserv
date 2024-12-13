@@ -163,11 +163,12 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
                 continue;
             }
             //In case of CGI sleeps 5ms to give a little time for the process to close, Otherwise waitpid ca return 0 indefinitely;
-			usleep(5000);
+            usleep(5000);
             int cgiStatus = connection.getCgiHandler()->isCgiDone();
             if (cgiStatus) {
                 HTTPResponse* cgiResponse = new HTTPResponse();
                 cgiResponse->beError(500, std::string("CGI process was stopped unintentionnally Exit code : ") + to_string(cgiStatus));
+                connection.getCgiHandler()->terminateCGI();
                 for (size_t i = 0; i < poll_fds.size(); ++i) {
                     if (poll_fds[i].fd == connection.getCgiHandler()->getOutputPipeFd()) {
                         poll_fds.erase(poll_fds.begin() + i);
@@ -389,9 +390,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-
     while (!stopServer) {
-
 
         manageConnections(connections, poll_fds);
         int poll_timeout = manageTimeouts(connections, poll_fds);
