@@ -53,7 +53,8 @@ void HTTPRequest::parseRawRequest(const ServerConfig& config) {
 
 
 		if (location) {
-	    _maxBodySize = location->clientMaxBodySize;
+			if (location->clientMaxBodySize != -1)
+	    		_maxBodySize = location->clientMaxBodySize;
 	}
     // Parse headers
     std::string headers = getRawRequest().substr(0, header_end_pos);

@@ -20,7 +20,7 @@ struct Location {
 
 	std::map<std::string, std::string> cgiInterpreters;
 
-	Location() : clientMaxBodySize(0), returnCode(0), uploadOn(false), autoindex(-1) {}
+	Location() : clientMaxBodySize(-1), returnCode(0), uploadOn(false), autoindex(-1) {}
 };
 
 #endif

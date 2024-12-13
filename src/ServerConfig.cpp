@@ -3,7 +3,7 @@
 #include <iostream>
 #include <cstring>
 
-ServerConfig::ServerConfig() : root("www/"), index("index.html"), host("0.0.0.0"), clientMaxBodySize(0), autoindex(false) {
+ServerConfig::ServerConfig() : index("index.html"), host("0.0.0.0"), clientMaxBodySize(0), autoindex(false) {
 	serverNames.push_back("localhost");
 }
 
@@ -61,10 +61,6 @@ ServerConfig::~ServerConfig() {}
 bool ServerConfig::isValid() const {
 	if (ports.empty()) {
 		Logger::instance().log(ERROR, "Erreur : Aucun port n'est spécifié.");
-		return false;
-	}
-	if (root.empty()) {
-		Logger::instance().log(ERROR, "Erreur : Le chemin racine est vide.");
 		return false;
 	}
 	return true;

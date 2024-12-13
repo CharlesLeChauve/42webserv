@@ -35,6 +35,12 @@ void ConfigParser::parseConfigFile(const std::string &filename) {
                     continue;
                 }
                 if (line == "}") {
+					if (serverConfig.root.empty()) {
+                        throw ConfigParserException("Missing required directive 'root' in server block.");
+                    }
+                    if (serverConfig.ports.empty()) {
+						throw ConfigParserException("Missing required directive 'listen' in server block.");
+					}
                     break;
                 }
 
