@@ -112,9 +112,25 @@ void initialize_random_generator() {
     srand(seed);
 }
 
+void	throttle_calls(void)
+{
+	static unsigned long	last_call = 0;
+	unsigned long			now;
+	unsigned long			diff;
+
+	now = curr_time_ms();
+	if (last_call > 0)
+	{
+		diff = now - last_call;
+		if (diff < 3)
+			usleep(5000);
+	}
+	last_call = curr_time_ms();
+}
+
 void manageConnections(std::map<int, ClientConnection>& connections, std::vector<pollfd>& poll_fds) {
     std::map<int, ClientConnection>::iterator it_conn;
-    for (it_conn = connections.begin(); it_conn != connections.end(); ) {
+    for (it_conn = connections.begin(); it_conn != connections.end();) {
         int client_fd = it_conn->first;
         HTTPRequest* request = it_conn->second.getRequest();
         ClientConnection& connection = it_conn->second;
@@ -131,6 +147,7 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
             ++it_conn;
             continue;
         }
+
         if (connection.getCgiHandler()) {
             if (connection.getCgiHandler()->hasTimedOut()) {
                 connection.getCgiHandler()->terminateCGI();
@@ -145,12 +162,18 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
                 ++it_conn;
                 continue;
             }
+            //In case of CGI sleeps 5ms to give a little time for the process to close, Otherwise waitpid ca return 0 indefinitely;
 			usleep(5000);
             int cgiStatus = connection.getCgiHandler()->isCgiDone();
             if (cgiStatus) {
-                std::cerr << "*** Here 1 ***" << std::endl;
                 HTTPResponse* cgiResponse = new HTTPResponse();
-                cgiResponse->beError(500, "CGI process was stopped unintentionnally");
+                cgiResponse->beError(500, std::string("CGI process was stopped unintentionnally Exit code : ") + to_string(cgiStatus));
+                for (size_t i = 0; i < poll_fds.size(); ++i) {
+                    if (poll_fds[i].fd == connection.getCgiHandler()->getOutputPipeFd()) {
+                        poll_fds.erase(poll_fds.begin() + i);
+                        break;
+                    }
+                }
                 delete connection.getCgiHandler();
                 connection.setCgiHandler(NULL);
                 connection.setResponse(cgiResponse);
@@ -210,7 +233,6 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
             ++it_conn;
             continue;
         }
-
         Logger::instance().log(DEBUG, std::string("A connection didn't match any condition in manageConnections :") + to_string(client_fd));
         ++it_conn;
     }
@@ -271,22 +293,6 @@ int manageTimeouts(std::map<int, ClientConnection>& connections, std::vector<pol
         poll_timeout = -1; // Bloquer indéfiniment si aucune connexion active
     }
     return poll_timeout;
-}
-
-void	throttle_calls(void)
-{
-	static unsigned long	last_call = 0;
-	unsigned long			now;
-	unsigned long			diff;
-
-	now = curr_time_ms();
-	if (last_call > 0)
-	{
-		diff = now - last_call;
-		if (diff < 3)
-			usleep(3000);
-	}
-	last_call = curr_time_ms();
 }
 
 

@@ -57,8 +57,11 @@ int CGIHandler::isCgiDone() {
         return 0;
     } else if (result == _pid) {
         // Process has exited
-        if (WIFEXITED(status)) {
-            _cgiExitStatus = WEXITSTATUS(status);
+        if (WIFEXITED(status) || WIFSIGNALED(status)) {
+            if (WEXITSTATUS(status))
+                _cgiExitStatus = WEXITSTATUS(status);
+            else if (WTERMSIG(status))
+                _cgiExitStatus = WTERMSIG(status);
         } else {
             _cgiExitStatus = -1;
         }

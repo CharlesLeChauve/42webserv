@@ -56,7 +56,6 @@ int ClientConnection::sendResponseChunk(int client_fd) {
             return 0; // Réponse entièrement envoyée
         }
     } else if (bytesSent == -1) {
-        // Erreur lors de l'écriture
         _isSending = false;
         return -1; // Considérer que la réponse est complète pour fermer la connexion
     }
