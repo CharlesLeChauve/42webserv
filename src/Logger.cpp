@@ -88,14 +88,16 @@ Logger::~Logger() {
             if (errorFile.is_open())
                 errorFile.close();
             if (user_input == "d" || user_input == "D") {
-                if (std::remove(std::string(_logsDir + "/debug.log").c_str()) == 0)
-                    std::cout << "Debug log deleted successfully.\n";
-                if (std::remove(std::string(_logsDir + "/info.log").c_str()) == 0)
-                    std::cout << "Info log deleted successfully.\n";
-                if (std::remove(std::string(_logsDir + "/warning.log").c_str()) == 0)
-                    std::cout << "Warning log deleted successfully.\n";
-                if (std::remove(std::string(_logsDir + "/error.log").c_str()) == 0)
-                    std::cout << "Error log deleted successfully.\n";
+				if (system((std::string(std::string("rm -rf ") + _logsDir)).c_str()))
+					std::cout << "Failed to remove dir : " << _logsDir << std::endl;
+                // if (std::remove(std::string(_logsDir + "/debug.log").c_str()) == 0)
+                //     std::cout << "Debug log deleted successfully.\n";
+                // if (std::remove(std::string(_logsDir + "/info.log").c_str()) == 0)
+                //     std::cout << "Info log deleted successfully.\n";
+                // if (std::remove(std::string(_logsDir + "/warning.log").c_str()) == 0)
+                //     std::cout << "Warning log deleted successfully.\n";
+                // if (std::remove(std::string(_logsDir + "/error.log").c_str()) == 0)
+                //     std::cout << "Error log deleted successfully.\n";
             }
             break;
         } else {
