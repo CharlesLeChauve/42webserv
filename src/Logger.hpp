@@ -72,6 +72,7 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <cstdlib>
 
 class Logger {
 public:

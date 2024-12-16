@@ -27,7 +27,8 @@ private:
     void receiveRequest(int client_fd, HTTPRequest& request);
     void sendResponse(int client_fd, HTTPResponse response);
     void handleGetOrPostRequest(int client_fd, ClientConnection& connection);
-    void handleDeleteRequest(const HTTPRequest& request);
+    // void handleDeleteRequest(const HTTPRequest& request);
+    void handleDeleteRequest(ClientConnection& connection);
     void serveStaticFile(int client_fd, const std::string& filePath, HTTPResponse& response, const HTTPRequest& request);
     void handleFileUpload(const HTTPRequest& request, HTTPResponse& response, const std::string& boundary);
 	bool isPathAllowed(const std::string& path, const std::string& uploadPath);

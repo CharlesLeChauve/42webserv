@@ -22,13 +22,13 @@
             <label for="prénom">Prénom :</label>
             <input type="text" id="prénom" name="prénom" placeholder="THIERRY">
             <label for="email">Adresse mail :</label>
-            <input type="email" id="email" name="email" placeholder="example@domaine.com">
+            <input type="email" id="email" name="email" placeholder="example@domaine.com" required title="Veuillez renseigner une adresse mail.">
             <label for="tel">Numéro de téléphone :</label>
             <input type="number" id="tel" name="tel" placeholder="06 78 89 XX XX">
             <label for="sujet">Sujet :</label>
-            <input type="text" id="sujet" name="sujet" placeholder="Objet du message">
+            <input type="text" id="sujet" name="sujet" placeholder="Objet du message" required title="Veuillez renseigner l'objet de votre demande.">
             <label for="message">Message :</label>
-            <textarea id="message" name="message" rows="5" placeholder="Ecrivez votre message ici !"></textarea>
+            <textarea id="message" name="message" rows="5" required title="Veuillez remplir le champ." placeholder="Ecrivez votre message ici !"></textarea> 
             
             <button type="submit">Envoyer </button>
         </form>
