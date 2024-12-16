@@ -157,7 +157,7 @@ void Server::handleHttpRequest(int client_fd, ClientConnection& connection) {
     if (request.getMethod() == "GET" || request.getMethod() == "POST") {
         handleGetOrPostRequest(client_fd, connection);
     } else if (request.getMethod() == "DELETE") {
-        handleDeleteRequest(request);
+        handleDeleteRequest(connection);
     } else {
         response->beError(501); // Not implemented method
         Logger::instance().log(WARNING, "501 error (Not Implemented) sent on request : \n" + request.toString());
@@ -394,22 +394,30 @@ void Server::handleGetOrPostRequest(int client_fd, ClientConnection& connection)
         // Handle other POST requests (e.g., forms)
         Logger::instance().log(INFO, "POST request to static resource.");
 
+        //Teapot 
+        response.beError(418, "POST request targeting static ressource or non-configured CGI");
+
+
         // Customize the response here
-        response.setStatusCode(200);
-        response.setHeader("Content-Type", "text/html");
-        response.setBody("<html><body><h1>POST request received</h1></body></html>");
+        // response.setStatusCode(200);
+        // response.setHeader("Content-Type", "text/html");
+        // response.setBody("<html><body><h1>POST request received</h1></body></html>");
         // sendResponse(client_fd, response);
         return;
     }
 }
 
-void Server::handleDeleteRequest(const HTTPRequest& request) {
+void Server::handleDeleteRequest(ClientConnection& connection) {
+    const HTTPRequest& request = *connection.getRequest();
 	std::string fullPath = _config.root + request.getPath();
 	HTTPResponse response;
 	if (access(fullPath.c_str(), F_OK) == -1) {
         Logger::instance().log(WARNING, "404 error (Not Found) sent on DELETE request for address: \n" + _config.root + request.getPath());
 		response.beError(404);
-	} else {
+	} else if (access(fullPath.c_str(), W_OK) == -1) {
+        Logger::instance().log(WARNING, "403 Forbidden on DELETE request for: " + fullPath);
+        response.beError(403, "No permission to delete file : " + request.getPath());
+    } else {
 		if (remove(fullPath.c_str()) == 0) {
 			response.setStatusCode(204);
 			response.setHeader("Content-Type", "text/html");
@@ -423,6 +431,7 @@ void Server::handleDeleteRequest(const HTTPRequest& request) {
 			response.beError(500);
 		}
 	}
+    connection.setResponse(new HTTPResponse(response));
 }
 
 void Server::serveStaticFile(int client_fd, const std::string& filePath,
