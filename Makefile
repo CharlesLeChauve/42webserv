@@ -49,11 +49,11 @@ clean:
 	rm -rf $(OBJDIR)
 
 clean_sessions:
-	rm -r $(SESSIONDIR)
+	rm -rf $(SESSIONDIR)
 	rm -f $(SESSIONFILES)
 
 fclean: clean clean_sessions
-	rm -f webserver 
+	rm -f webserver
 
 php:
 ifeq ($(CHECK_PHP_CGI), 0)
