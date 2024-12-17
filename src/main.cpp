@@ -148,7 +148,7 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
             continue;
         }
 
-        if (connection.getCgiHandler()) {
+        if (connection.getCgiHandler() && !connection.getCgiHandler()->hasReceivedBody()) {
             if (connection.getCgiHandler()->hasTimedOut()) {
                 connection.getCgiHandler()->terminateCGI();
                 HTTPResponse* cgiResponse = new HTTPResponse();
@@ -248,13 +248,18 @@ int manageTimeouts(std::map<int, ClientConnection>& connections, std::vector<pol
         int client_fd = it_conn->first;
         HTTPRequest* request = it_conn->second.getRequest();
         ClientConnection& connection = it_conn->second;
-        if (!request || connection.getExchangeOver() == true || connection.getCgiHandler()) {
+        if (connection.getCgiHandler())
+            has_active_connections = true;
+        if ((!request && !connection.getUsed())|| connection.getExchangeOver() == true || connection.getCgiHandler()) {
             ++it_conn;
             continue;
         }
-        unsigned long time_since_last_activity = now - request->getLastActivity();
 
-        if (!request->isComplete() && time_since_last_activity >= TIMEOUT_MS) {
+        unsigned long time_since_last_activity = 0;
+        if (request)
+            time_since_last_activity = now - request->getLastActivity();
+
+        if (request && !request->isComplete() && time_since_last_activity >= TIMEOUT_MS) {
             Logger::instance().log(INFO, "Connection timed out for client FD: " + to_string(client_fd));
 
             HTTPResponse* timeoutResponse = new HTTPResponse();
@@ -271,7 +276,7 @@ int manageTimeouts(std::map<int, ClientConnection>& connections, std::vector<pol
             request->setLastActivity(now);
             ++it_conn;
             continue;
-        } else if (!request->isComplete()) {
+        } else if (request && !request->isComplete()) {
             // Mettre à jour le temps restant et continuer
             unsigned long remaining_time = TIMEOUT_MS - time_since_last_activity;
             if (remaining_time < min_remaining_time) {

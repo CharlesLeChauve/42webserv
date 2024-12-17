@@ -8,7 +8,7 @@
 #include <errno.h>
 
 ClientConnection::ClientConnection(Server* server)
-    : _server(server), _request(NULL), _response(NULL), _cgiHandler(NULL), _responseOffset(0), _isSending(false), _exchangeOver(false) {}
+    : _server(server), _request(NULL), _response(NULL), _cgiHandler(NULL), _responseOffset(0), _isSending(false), _exchangeOver(false), _used(false) {}
 
 ClientConnection::~ClientConnection() {
     delete _request;
@@ -20,6 +20,7 @@ HTTPRequest* ClientConnection::getRequest() const { return _request; }
 HTTPResponse* ClientConnection::getResponse() const { return _response; }
 CGIHandler* ClientConnection::getCgiHandler() const { return _cgiHandler; }
 bool ClientConnection::getExchangeOver() const { return _exchangeOver; }
+bool ClientConnection::getUsed() const { return _used; }
 
 void ClientConnection::setExchangeOver(bool value) { _exchangeOver = value; }
 void ClientConnection::setCgiHandler(CGIHandler* cgiHandler) { this->_cgiHandler = cgiHandler; }
@@ -78,6 +79,7 @@ void ClientConnection::resetConnection() {
     _responseOffset = 0;
     _isSending = false;
     _exchangeOver = false;
+    _used = true;
 }
 
 

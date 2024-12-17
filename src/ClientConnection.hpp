@@ -22,6 +22,7 @@ private:
     size_t _responseOffset;
     bool _isSending;
     bool _exchangeOver;
+    bool _used;
 
 
 public:
@@ -33,6 +34,7 @@ public:
     HTTPResponse* getResponse() const;
     CGIHandler* getCgiHandler() const;
     bool getExchangeOver() const;   
+    bool getUsed() const;
 
     void setExchangeOver(bool value);
     void setCgiHandler(CGIHandler* cgiHandler);

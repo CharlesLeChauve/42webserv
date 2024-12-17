@@ -39,6 +39,8 @@ public:
     void terminateCGI();
     bool hasTimedOut() const;
 
+    bool hasReceivedBody();
+
 private:
     std::string _scriptPath;
     const HTTPRequest& _request;

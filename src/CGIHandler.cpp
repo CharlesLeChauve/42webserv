@@ -106,6 +106,19 @@ int CGIHandler::writeToCGI() {
     // Not all data sent yet; continue writing
 }
 
+bool CGIHandler::hasReceivedBody() {
+    std::string sequence = "\r\n\r\n";
+    // Trouve la position de la séquence dans la chaîne
+    size_t pos = getCGIOutput().find(sequence);
+
+    // Si la séquence n'est pas trouvée, retourne faux
+    if (pos == std::string::npos)
+        return false;
+
+    // Vérifie s'il y a des caractères après cette position
+    return ((pos + 4) < getCGIOutput().length());
+} 
+
 int CGIHandler::readFromCGI() {
     if (_outputPipeFd[0] == -1) {
         return -1;
