@@ -562,7 +562,6 @@ int main(int argc, char* argv[]) {
                     ClientConnection& connection = it->second;
                     CGIHandler* cgiHandler = connection.getCgiHandler();
                     if (cgiHandler->hasTimedOut()) {
-                        std::cerr << "*** Here 2***" << std::endl;
                         cgiHandler->terminateCGI();
                         connection.setResponse(new HTTPResponse());
                         connection.getResponse()->beError(504);
@@ -642,8 +641,8 @@ int main(int argc, char* argv[]) {
     // Nettoyer la mémoire
     for (size_t i = 0; i < servers.size(); ++i) {
         delete servers[i];
-        delete sockets[i];
     }
-
+    for (size_t i = 0; i < sockets.size(); ++i)
+        delete sockets[i];
     return 0;
 }
