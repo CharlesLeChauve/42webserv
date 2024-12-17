@@ -165,6 +165,8 @@ void Server::handleHttpRequest(int client_fd, ClientConnection& connection) {
 
     // Détermination du keep-alive
     std::string connectionHeader = request.getStrHeader("Connection");
+    delete connection.getRequest();
+    connection.setRequest(NULL);
     bool keepAlive = true;
     // En HTTP/1.1, keep-alive par défaut sauf si Connection: close
     if (!connectionHeader.empty() && (connectionHeader == "close" || connectionHeader == "Close")) {
@@ -534,6 +536,9 @@ void Server::handleClient(int client_fd, ClientConnection& connection) {
         Logger::instance().log(ERROR, "Invalid client FD: " + to_string(client_fd));
         return;
     }
+
+    if (!connection.getRequest())
+        connection.setRequest(new HTTPRequest(connection.getServer()->getConfig().clientMaxBodySize));
 
     receiveRequest(client_fd, *connection.getRequest());
 

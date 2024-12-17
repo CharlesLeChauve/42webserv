@@ -198,10 +198,8 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
         }
 
         if (request && request->isComplete() && request->getErrorCode() == 0 && !connection.getCgiHandler()) {
-
             Logger::instance().log(INFO, "Parsing OK, handling request for client fd: " + to_string(client_fd));
             connection.getServer()->handleHttpRequest(client_fd, connection);
-
             if (connection.getResponse() != NULL) {
 
                 connection.prepareResponse();
@@ -250,7 +248,7 @@ int manageTimeouts(std::map<int, ClientConnection>& connections, std::vector<pol
         int client_fd = it_conn->first;
         HTTPRequest* request = it_conn->second.getRequest();
         ClientConnection& connection = it_conn->second;
-        if (connection.getExchangeOver() == true || connection.getCgiHandler()) {
+        if (!request || connection.getExchangeOver() == true || connection.getCgiHandler()) {
             ++it_conn;
             continue;
         }
@@ -526,14 +524,15 @@ int main(int argc, char* argv[]) {
 
 				    if (client_fd != -1) {
 				        // Enregistrer l'association client_fd -> server
-				        std::pair<std::map<int, ClientConnection>::iterator, bool> result =
+				        // std::pair<std::map<int, ClientConnection>::iterator, bool> result =
 				            connections.insert(std::make_pair(client_fd, ClientConnection(server)));
 
 				        // Créer un nouvel objet HTTPRequest et le stocker dans la connexion
-				        int max_body_size = server->getConfig().clientMaxBodySize;
-				        std::map<int, ClientConnection>::iterator conn_it = result.first;
-
-				        conn_it->second.setRequest(new HTTPRequest(max_body_size));
+				        // int max_body_size = server->getConfig().clientMaxBodySize;
+				        // std::map<int, ClientConnection>::iterator conn_it = result.first;
+                        // if (conn_it->second.getRequest() == NULL) {
+    				    //     conn_it->second.setRequest(new HTTPRequest(max_body_size));
+                        // }
 
 				        pollfd client_pollfd;
 				        client_pollfd.fd = client_fd;
