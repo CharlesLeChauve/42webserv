@@ -22,7 +22,6 @@ Socket::Socket(const std::string& host, int port) : _socket_fd(-1), _port(port) 
 
 Socket::~Socket() {
 	if (_socket_fd != -1) {
-		// std::cout << "Fermeture du socket FD: " << _socket_fd << std::endl;
 		close(_socket_fd);
 		_socket_fd = -1;
 	}
@@ -38,7 +37,6 @@ void Socket::socket_creation() {
 		Logger::instance().log(ERROR, std::string("Socket creation failed: ") + strerror(errno));
 		return;
 	}
-	// std::cout << "Socket successfully created with FD: " << _socket_fd << " for port: " << _port << std::endl;
 
 	int flags = fcntl(_socket_fd, F_GETFL, 0);
 	if (flags == -1) {
@@ -54,7 +52,6 @@ void Socket::socket_creation() {
 		_socket_fd = -1;
 		return;
 	}
-	// std::cout << "Socket FD: " << _socket_fd << " set to non-blocking mode." << std::endl;
 }
 
 

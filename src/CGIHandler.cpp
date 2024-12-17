@@ -49,9 +49,7 @@ int CGIHandler::isCgiDone() {
     }
 
     int status;
-    std::cerr << "NEW PID : " << _pid << std::endl;
     pid_t result = waitpid(_pid, &status, WNOHANG);
-    std::cerr << "WAITPID : " << result << std::endl;
     if (result == 0) {
         // Process is still running
         return 0;
@@ -184,7 +182,6 @@ bool CGIHandler::startCGI() {
         Logger::instance().log(ERROR, std::string("executeCGI: Failed to execute CGI script: ") + _scriptPath + std::string(". Error: ") + strerror(errno));
         exit(EXIT_FAILURE);
     } else if (pid > 0){
-        std::cerr << "PID : " << pid << std::endl;
         _pid = pid;
         _started = true;
         close(_outputPipeFd[1]);

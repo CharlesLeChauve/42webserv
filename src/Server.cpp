@@ -113,7 +113,6 @@ void Server::handleHttpRequest(int client_fd, ClientConnection& connection) {
         response = new HTTPResponse();
         connection.setResponse(response);
     }
-    std::cout << "Strheader : " << request.getStrHeader("Cookie") << std::endl;
     SessionManager  session(request.getStrHeader("Cookie"));
     session.getManager(&request, response, client_fd, session);
 
