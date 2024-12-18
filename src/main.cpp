@@ -157,12 +157,14 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
 
                 delete connection.getCgiHandler();
                 connection.setCgiHandler(NULL);
+                if (connection.getResponse())
+                    delete connection.getResponse();
                 connection.setResponse(cgiResponse);
                 connection.prepareResponse();
                 ++it_conn;
                 continue;
             }
-            //In case of CGI sleeps 5ms to give a little time for the process to close, Otherwise waitpid ca return 0 indefinitely;
+            //In case of CGI, sleeps 5ms to give a little time for the process to close, Otherwise waitpid ca return 0 indefinitely;
             usleep(5000);
             int cgiStatus = connection.getCgiHandler()->isCgiDone();
             if (cgiStatus) {
@@ -177,6 +179,8 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
                 }
                 delete connection.getCgiHandler();
                 connection.setCgiHandler(NULL);
+                if (connection.getResponse())
+                    delete connection.getResponse();
                 connection.setResponse(cgiResponse);
                 connection.prepareResponse();
                 ++it_conn;
@@ -232,7 +236,7 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
             ++it_conn;
             continue;
         }
-        Logger::instance().log(DEBUG, std::string("A connection didn't match any condition in manageConnections :") + to_string(client_fd));
+        //Logger::instance().log(DEBUG, std::string("A connection didn't match any condition in manageConnections :") + to_string(client_fd));
         ++it_conn;
     }
 }
@@ -264,6 +268,8 @@ int manageTimeouts(std::map<int, ClientConnection>& connections, std::vector<pol
 
             HTTPResponse* timeoutResponse = new HTTPResponse();
             timeoutResponse->beError(408); // Request Timeout
+            if (connection.getResponse())
+                    delete connection.getResponse();
             connection.setResponse(timeoutResponse);
             connection.prepareResponse();
 
@@ -482,6 +488,9 @@ int main(int argc, char* argv[]) {
 
 						cgiResponse->setHeader("Connection", "keep-alive");
 
+                        if (connection.getResponse())
+                            delete connection.getResponse();
+
                         connection.setResponse(cgiResponse);
                         connection.prepareResponse();
 
@@ -565,12 +574,13 @@ int main(int argc, char* argv[]) {
                     );
                     ClientConnection& connection = it->second;
                     CGIHandler* cgiHandler = connection.getCgiHandler();
-                    if (cgiHandler->hasTimedOut()) {
-                        cgiHandler->terminateCGI();
-                        connection.setResponse(new HTTPResponse());
-                        connection.getResponse()->beError(504);
-                        connection.prepareResponse();
-                    } else {
+                    // normalement pas indispensable pusiaue checke dans manageconnections
+                    // if (cgiHandler->hasTimedOut()) {
+                    //     cgiHandler->terminateCGI();
+                    //     connection.setResponse(new HTTPResponse());
+                    //     connection.getResponse()->beError(504);
+                    //     connection.prepareResponse();
+                    // } else {
                         int received = cgiHandler->readFromCGI();
                         if (!received) {
                             poll_fds.erase(poll_fds.begin() + i);
@@ -580,6 +590,8 @@ int main(int argc, char* argv[]) {
                             HTTPResponse* cgiResponse = new HTTPResponse();
                             cgiResponse->parseCGIOutput(cgiOutput);
 							cgiResponse->setHeader("Connection", "keep-alive");
+                            if (connection.getResponse())
+                                delete connection.getResponse();
                             connection.setResponse(cgiResponse);
                             connection.prepareResponse();
 
@@ -592,7 +604,7 @@ int main(int argc, char* argv[]) {
                             }
                             continue;
                         }
-                    }
+                    // }
                 } else {
                     Logger::instance().log(WARNING, std::string("Unhandled POLLIN event on fd : ") + to_string(poll_fds[i].fd));
                 }

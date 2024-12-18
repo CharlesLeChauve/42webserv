@@ -162,6 +162,8 @@ void Server::handleHttpRequest(int client_fd, ClientConnection& connection) {
         Logger::instance().log(WARNING, "501 error (Not Implemented) sent on request : \n" + request.toString());
     }
 
+    response = connection.getResponse();
+
     // Détermination du keep-alive
     std::string connectionHeader = request.getStrHeader("Connection");
     delete connection.getRequest();
@@ -173,14 +175,14 @@ void Server::handleHttpRequest(int client_fd, ClientConnection& connection) {
     }
 
     // Définir l'en-tête Connection dans la réponse
-    if (keepAlive) {
+    if (response && keepAlive) {
         response->setHeader("Connection", "keep-alive");
-    } else {
+    } else if (response) {
         response->setHeader("Connection", "close");
     }
 
     // Ajouter Content-Length si absent
-    if (response->getStrHeader("Content-Length").empty()) {
+    if (response && response->getStrHeader("Content-Length").empty()) {
         response->setHeader("Content-Length", to_string(response->getBody().size()));
     }
 }
@@ -379,6 +381,10 @@ void Server::handleGetOrPostRequest(int client_fd, ClientConnection& connection)
             if (!cgiHandler->startCGI()) {
                 response.beError(500, "Unable to start CGI Process");
             } else {
+                //?? Here is the leak !! But if i delete, it causes invalid read in Server ;ethods later, i have to find why...
+                // Invalid reads are located in
+                if (connection.getResponse())
+                    delete connection.getResponse();
                 connection.setResponse(NULL);
                 Logger::instance().log(DEBUG, "Response set to NULL to prevent sending prematurely");
             }
@@ -432,6 +438,8 @@ void Server::handleDeleteRequest(ClientConnection& connection) {
 			response.beError(500);
 		}
 	}
+    if (connection.getResponse())
+        delete connection.getResponse();
     connection.setResponse(new HTTPResponse(response));
 }
 
@@ -545,6 +553,8 @@ void Server::handleClient(int client_fd, ClientConnection& connection) {
         // Une erreur a été détectée dans receiveRequest
         HTTPResponse* errorResponse = new HTTPResponse();
         errorResponse->beError(connection.getRequest()->getErrorCode());
+        if (connection.getResponse())
+            delete connection.getResponse();
         connection.setResponse(errorResponse);
         connection.prepareResponse();
         return;
@@ -583,6 +593,10 @@ void Server::handleResponseSending(int client_fd, ClientConnection& connection) 
             Logger::instance().log(INFO, "Response fully sent, keeping connection alive FD: " + to_string(client_fd));
 
             int max_body_size = connection.getServer()->getConfig().clientMaxBodySize;
+            if (connection.getRequest())
+            {
+                delete connection.getRequest();
+            }
             connection.setRequest(new HTTPRequest(max_body_size));
             // Le main loop doit laisser ce fd en POLLIN pour recevoir une nouvelle requête
         }
