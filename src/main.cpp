@@ -135,6 +135,19 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
         HTTPRequest* request = it_conn->second.getRequest();
         ClientConnection& connection = it_conn->second;
 
+        if (connection.getRequest() && connection.getRequest()->getConnectionClosed())
+        {
+            connection.resetConnection();
+            connections.erase(it_conn);
+            for (size_t i = 0; i < poll_fds.size(); ++i) {
+                if (poll_fds[i].fd == client_fd) {
+                    poll_fds.erase(poll_fds.begin() + i);
+                    break;
+                }
+            }
+            continue;
+        }
+
         if (connection.getExchangeOver()) {
             connection.resetConnection();
             for (size_t i = 0; i < poll_fds.size(); ++i) {
