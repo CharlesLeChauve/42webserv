@@ -1,6 +1,6 @@
+#include <sstream>
 #include "HTTPResponse.hpp"
 #include "Server.hpp"
-#include <sstream>
 #include "Utils.hpp"
 
 HTTPResponse::HTTPResponse() : _statusCode(200), _reasonPhrase("OK") {}
@@ -9,7 +9,6 @@ HTTPResponse::~HTTPResponse() {}
 
 void HTTPResponse::setStatusCode(int code) {
 	_statusCode = code;
-	// Vous pouvez définir la raison en fonction du code
 	switch (code) {
 		case 200: _reasonPhrase = "OK"; break;
 		case 201: _reasonPhrase = "Created"; break;
@@ -54,7 +53,6 @@ std::string replacePlaceholders(const std::string& templateStr, const std::map<s
 std::string readFile(const std::string& filename) {
     std::ifstream file(filename.c_str());
     if (!file) {
-        // Gérer l'erreur de fichier non trouvé ou non accessible
         return "";
     }
     std::stringstream buffer;
@@ -120,7 +118,7 @@ std::string HTTPResponse::getBody() const {
 std::string HTTPResponse::getStrHeader(std::string header) const {
 	std::map<std::string, std::string>::const_iterator it = _headers.find(header);
 	if (it == _headers.end())
-		return ""; // Retourner une chaîne vide si l'en-tête n'existe pas
+		return "";
 	return it->second;
 }
 
@@ -128,7 +126,6 @@ std::string HTTPResponse::toStringHeaders() const {
 	std::ostringstream oss;
 	oss << "HTTP/1.1 " << _statusCode << " " << _reasonPhrase << "\r\n";
 
-	// Ajouter les en-têtes
 	for (std::map<std::string, std::string>::const_iterator it = _headers.begin(); it != _headers.end(); ++it) {
 		oss << it->first << ": " << it->second << "\r\n";
 	}
@@ -139,27 +136,20 @@ std::string HTTPResponse::toString() const {
 	std::ostringstream oss;
 	oss << toStringHeaders();
 
-	oss << "\r\n"; // Fin des en-têtes
-	oss << _body;  // Corps de la réponse
+	oss << "\r\n";
+	oss << _body;
 
 	return oss.str();
 }
 
 void HTTPResponse::parseCGIOutput(const std::string& cgiOutput) {
-    // Trouver la fin des en-têtes (double saut de ligne)
     size_t headerEnd = cgiOutput.find("\r\n\r\n");
     if (headerEnd != std::string::npos) {
         std::string headers = cgiOutput.substr(0, headerEnd);
         std::string body = cgiOutput.substr(headerEnd + 4);
-
-        // Analyser les en-têtes et remplir les champs appropriés
         parseHeaders(headers);
-
-        // Définir le corps de la réponse
         setBody(body);
     } else {
-        // Pas de séparation entre en-têtes et corps trouvée
-        // Traiter en conséquence (erreur ou tout mettre dans le corps)
         setBody(cgiOutput);
     }
     
@@ -172,21 +162,16 @@ void HTTPResponse::parseHeaders(const std::string& headers) {
     std::istringstream stream(headers);
     std::string line;
     while (std::getline(stream, line)) {
-        // Supprimer les retours chariot éventuels
         if (!line.empty() && line[line.size() - 1] == '\r') {
             line.erase(line.size() - 1);
         }
-        // Trouver la position du ':'
         size_t colonPos = line.find(':');
         if (colonPos != std::string::npos) {
             std::string headerName = line.substr(0, colonPos);
             std::string headerValue = line.substr(colonPos + 1);
-            // Supprimer les espaces blancs en début et fin
             headerName = trim(headerName);
             headerValue = trim(headerValue);
-            // Gestion spécifique de l'en-tête 'Status'
             if (headerName == "Status") {
-                // Le format attendu est "Status: 200 OK"
                 size_t spacePos = headerValue.find(' ');
                 if (spacePos != std::string::npos) {
                     int statusCode = atoi(headerValue.substr(0, spacePos).c_str());
@@ -203,7 +188,6 @@ void HTTPResponse::parseHeaders(const std::string& headers) {
     }
 }
 
-
 std::string HTTPResponse::trim(const std::string& str) {
     size_t first = str.find_first_not_of(' ');
     if (std::string::npos == first)
@@ -213,4 +197,3 @@ std::string HTTPResponse::trim(const std::string& str) {
     size_t last = str.find_last_not_of(' ');
     return str.substr(first, (last - first + 1));
 }
-

@@ -1,10 +1,11 @@
 // Logger.cpp
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <string>
+#include <cstdio>
 #include <ctime>
 #include "Logger.hpp"
-#include <iostream>
-#include <sys/stat.h>
-#include <sys/types.h>
 
 Logger& Logger::instance() {
     static Logger instance;
@@ -17,23 +18,16 @@ Logger::Logger() : repeatCount(0), logToStderr(false), mute(false) {
         mkdir("logs", 0755);
     }
 
-    // Obtenir la date et l'heure actuelles
     std::time_t now = std::time(NULL);
     std::tm* now_tm = std::localtime(&now);
-
-    // Formater le timestamp
     char timestamp[20];
     std::strftime(timestamp, sizeof(timestamp), "%Y%m%d_%H%M%S", now_tm);
 
-    // Créer le nom du répertoire avec le timestamp
     _logsDir = std::string("logs/logs_") + timestamp;
 
-    // Vérifier et créer le répertoire timestampé s'il n'existe pas
     if (stat(_logsDir.c_str(), &st) != 0) {
             mkdir(_logsDir.c_str(), 0755);
     }
-
-    // Construire les noms de fichiers avec le répertoire timestampé
     std::string debugFilename = _logsDir + "/debug.log";
     std::string infoFilename = _logsDir + "/info.log";
     std::string warningFilename = _logsDir + "/warning.log";
@@ -44,12 +38,10 @@ Logger::Logger() : repeatCount(0), logToStderr(false), mute(false) {
     warningFile.open(warningFilename.c_str(), std::ofstream::out | std::ofstream::trunc);
     errorFile.open(errorFilename.c_str(), std::ofstream::out | std::ofstream::trunc);
 
-    // Vérifier si tous les fichiers sont ouverts avec succès
     if (!debugFile.is_open() || !infoFile.is_open() || !warningFile.is_open() || !errorFile.is_open()) {
         std::cerr << "Erreur lors de l'ouverture des fichiers de log. Les logs seront redirigés vers std::cerr." << std::endl;
         logToStderr = true;
 
-        // Fermer les fichiers éventuellement ouverts
         if (debugFile.is_open()) debugFile.close();
         if (infoFile.is_open()) infoFile.close();
         if (warningFile.is_open()) warningFile.close();
@@ -58,10 +50,6 @@ Logger::Logger() : repeatCount(0), logToStderr(false), mute(false) {
         this->log(INFO, std::string("Starting Program logs at : ") + timestamp);
     }
 }
-
-#include <iostream>
-#include <string>
-#include <cstdio> // pour std::remove
 
 Logger::~Logger() {
     std::string user_input;
@@ -112,16 +100,11 @@ void Logger::log(LoggerLevel level, const std::string& message) {
         repeatCount++;
     } else {
         if (repeatCount > 1) {
-            // Output the summary of hidden lines
             std::string hiddenMessage = "[ " + to_string(repeatCount - 2) + " similar lines hidden ]\n";
             writeToLogs(lastLevel, hiddenMessage);
-
-            // Output the last repeated message
             std::string lastOutput = getLevelString(lastLevel) + ": " + lastMessage + "\n";
             writeToLogs(lastLevel, lastOutput);
         }
-
-        // Output the new message
         std::string output = getLevelString(level) + ": " + message + "\n";
         writeToLogs(level, output);
 

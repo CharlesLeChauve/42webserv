@@ -1,11 +1,11 @@
 // ClientConnection.cpp
+#include <unistd.h>
+#include <errno.h>
 #include "ClientConnection.hpp"
 #include "CGIHandler.hpp"
 #include "Server.hpp"
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
-#include <unistd.h>
-#include <errno.h>
 
 ClientConnection::ClientConnection(Server* server)
     : _server(server), _request(NULL), _response(NULL), _cgiHandler(NULL), _responseOffset(0), _isSending(false), _exchangeOver(false), _used(false) {}
@@ -54,19 +54,19 @@ int ClientConnection::sendResponseChunk(int client_fd) {
         _responseOffset += bytesSent;
         if (_responseOffset >= _responseBuffer.size()) {
             _isSending = false;
-            return 0; // Réponse entièrement envoyée
+            return 0; // Response fully sent
         }
     } else if (bytesSent == -1) {
         _isSending = false;
-        return -1; // Considérer que la réponse est complète pour fermer la connexion
+        return -1;
     }
-    return 1; // Réponse pas encore entièrement envoyée
+    return 1; // Response not fully sent
 }
 
 void ClientConnection::resetConnection() {
     if (_request) {
         delete _request;
-        _request = NULL; //new HTTPRequest(_server->getConfig().clientMaxBodySize);
+        _request = NULL;
     }
     if (_response) {
         delete _response;

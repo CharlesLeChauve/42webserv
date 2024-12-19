@@ -1,10 +1,10 @@
+#include <sstream>
+#include <iostream>
+#include <cstdlib>
 #include "HTTPRequest.hpp"
 #include "Utils.hpp"
 #include "Location.hpp"
 #include "Logger.hpp"
-#include <sstream>
-#include <iostream>
-#include <cstdlib>
 
 HTTPRequest::HTTPRequest()
     : _complete(false), _connectionClosed(false), _maxBodySize(0),
@@ -42,21 +42,17 @@ void HTTPRequest::parseRawRequest(const ServerConfig& config) {
         return;
     }
 
-    // Parse the request line
     size_t line_end_pos = _rawRequest.find("\r\n");
     std::string request_line = _rawRequest.substr(0, line_end_pos);
     std::istringstream iss(request_line);
     iss >> _method >> _path;
 
-    // Determine max_body_size based on location
     const Location* location = config.findLocation(_path);
 
-
-		if (location) {
-			if (location->clientMaxBodySize != -1)
-	    		_maxBodySize = location->clientMaxBodySize;
+	if (location) {
+		if (location->clientMaxBodySize != -1)
+	    	_maxBodySize = location->clientMaxBodySize;
 	}
-    // Parse headers
     std::string headers = getRawRequest().substr(0, header_end_pos);
     std::istringstream headers_stream(headers);
     std::string header_line;
@@ -130,7 +126,6 @@ bool HTTPRequest::parse() {
     return true;
 }
 
-// Parse the request line and extract method, path, and version
 bool HTTPRequest::parseRequestLine(const std::string& line) {
     std::istringstream iss(line);
     std::string version;
@@ -141,7 +136,6 @@ bool HTTPRequest::parseRequestLine(const std::string& line) {
         return false;
     }
 
-    // Extract query string if present
     parseQueryString();
 
     if (version != "HTTP/1.1") {
@@ -151,7 +145,6 @@ bool HTTPRequest::parseRequestLine(const std::string& line) {
     return true;
 }
 
-// Extract the query string from the path
 void HTTPRequest::parseQueryString() {
     size_t pos = _path.find('?');
     if (pos != std::string::npos) {
@@ -228,8 +221,8 @@ std::string HTTPRequest::toString() const {
     std::ostringstream oss;
     oss << toStringHeaders();
 
-    oss << "\r\n"; // End of headers
-    oss << _body;  // Body of the response
+    oss << "\r\n";
+    oss << _body;
 
     return oss.str();
 }

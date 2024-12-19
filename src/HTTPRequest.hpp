@@ -1,9 +1,9 @@
 #ifndef HTTPREQUEST_HPP
 #define HTTPREQUEST_HPP
 
-#include "ServerConfig.hpp"
 #include <string>
 #include <map>
+#include "ServerConfig.hpp"
 
 
 class HTTPRequest {

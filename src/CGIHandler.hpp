@@ -13,9 +13,9 @@ public:
     CGIHandler(const std::string& scriptPath, const std::string& interpreterPath, const HTTPRequest& request);
     ~CGIHandler();
 
-    // Execute the CGI script and return the output
     bool startCGI();
 
+    // Getters
     int getPid() const;
     int getInputPipeFd() const;
     int getOutputPipeFd() const;
@@ -59,16 +59,12 @@ private:
     unsigned long _startTime;
     static const unsigned long CGI_TIMEOUT_MS = 5000;
 
-    // Setup the environment variables required for CGI execution
 	void setupEnvironment(const HTTPRequest&, std::string scriptPath);
 
-    // Méthode auxiliaire pour vérifier l'extension
     bool endsWith(const std::string& str, const std::string& suffix) const;
 
 	bool _cgiFinished;
     int _cgiExitStatus;
-
-    //Server& _server;
 };
 
 #endif

@@ -1,12 +1,12 @@
 // ConfigParser.cpp
-#include "ConfigParser.hpp"
-#include "ServerConfig.hpp"
-#include "Logger.hpp"
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <cctype>
 #include <algorithm>
+#include "ConfigParser.hpp"
+#include "ServerConfig.hpp"
+#include "Logger.hpp"
 
 ConfigParser::ConfigParser() {}
 
@@ -128,7 +128,6 @@ void ConfigParser::validateDirectiveValue(const std::string &directive, const st
         if (value.empty()) {
             throw ConfigParserException("Invalid CGI interpreter path: " + value);
         }
-        // Optionally, you can add checks to see if the interpreter exists on the system
     }
 
 }
@@ -137,7 +136,6 @@ void ConfigParser::validateDirectiveValue(const std::string &directive, const st
 void ConfigParser::processServerDirective(std::ifstream &file, const std::string &line, ServerConfig &serverConfig) {
     std::string directive_line = line;
 
-    // Vérifier si la ligne se termine par un point-virgule ou une accolade ouvrante
     trim(directive_line);
     bool endsWithSemicolon = false;
     bool endsWithOpeningBrace = false;
@@ -218,7 +216,6 @@ void ConfigParser::processServerDirective(std::ifstream &file, const std::string
                 serverConfig.errorPages[errorCodes[i]] = errorPage;
             }
         }
-        // Ajout de la gestion de la directive cgi_extension
         else if (directive == "cgi_extension") {
             std::istringstream valueStream(value);
             std::string ext;
@@ -274,9 +271,7 @@ void ConfigParser::processLocationBlock(std::ifstream &file, const std::string& 
             return;
         }
 
-        if (!line.empty() && line[line.size() - 1] == ';') {
-            // Ligne valide se terminant par ';'
-        } else {
+        if (!line.empty() && !(line[line.size() - 1] == ';')) {
             throw ConfigParserException("Missing ';' at the end of line: '" + line + "'");
         }
 
@@ -289,7 +284,6 @@ void ConfigParser::processLocationBlock(std::ifstream &file, const std::string& 
         trim(value);
 
         if (directive == "method") {
-            // Traitement des méthodes HTTP
             std::istringstream valueStream(value);
             std::string method;
             while (valueStream >> method) {
@@ -297,7 +291,6 @@ void ConfigParser::processLocationBlock(std::ifstream &file, const std::string& 
                 location.allowedMethods.push_back(method);
             }
         } else {
-            // Pour toutes les autres directives, valider la valeur complète
             validateDirectiveValue(directive, value);
 
             if (directive == "cgi_extension") {
