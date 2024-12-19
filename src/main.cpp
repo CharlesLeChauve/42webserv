@@ -201,6 +201,21 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
             continue;
         }
 
+        if (connection.getRequest() && connection.getRequest()->getErrorCode() != 0) {
+            for (size_t i = 0; i < poll_fds.size(); ++i) {
+                if (poll_fds[i].fd == client_fd) {
+                    poll_fds.erase(poll_fds.begin() + i);
+                    break;
+                }
+                connection.resetConnection();
+
+            }
+            connections.erase(client_fd);
+            ++it_conn;
+            continue;
+        }
+
+
         if (request && request->isComplete() && request->getErrorCode() == 0 && !connection.getCgiHandler()) {
             Logger::instance().log(INFO, "Parsing OK, handling request for client fd: " + to_string(client_fd));
             connection.getServer()->handleHttpRequest(client_fd, connection);
@@ -299,7 +314,7 @@ int manageTimeouts(std::map<int, ClientConnection>& connections, std::vector<pol
     if (has_active_connections) {
         poll_timeout = static_cast<int>(min_remaining_time);
     } else {
-        Logger::instance().log(INFO, "No active connection, poll waiting indefinitely");
+        //Logger::instance().log(DEBUG, "No active connection, poll waiting indefinitely");
         poll_timeout = -1; // Bloquer indéfiniment si aucune connexion active
     }
     return poll_timeout;
@@ -420,7 +435,7 @@ int main(int argc, char* argv[]) {
             if (poll_fds[i].revents == 0)
                 continue;
 
-            Logger::instance().log(DEBUG, std::string("Event : ") + to_string(poll_fds[i].revents) + " detected on client_fd : " + to_string(poll_fds[i].fd));
+            //Logger::instance().log(DEBUG, std::string("Event : ") + to_string(poll_fds[i].revents) + " detected on client_fd : " + to_string(poll_fds[i].fd));
 
             if (poll_fds[i].fd == serverSignal::pipe_fd[0]) {
                 if (poll_fds[i].revents & POLLIN) {

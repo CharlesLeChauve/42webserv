@@ -15,8 +15,6 @@
 #include <limits.h>    // Pour PATH_MAX
 #include <stdlib.h>    // Pour realpath
 #include <dirent.h>
-
-
 #include <string.h>
 
 Server::Server(const ServerConfig& config) : _config(config) {
@@ -47,7 +45,6 @@ std::string getSorryPath() {
 	int num = rand() % 6;
 	num++;
     std::string path = "images/" + to_string(num) + "-sorry.gif";
-    Logger::instance().log(DEBUG, "path for error sorry gif : " + path);
 	return path;
 }
 
@@ -74,16 +71,16 @@ void Server::receiveRequest(int client_fd, HTTPRequest& request) {
     }
 
     readFromSocket(client_fd, request);
-    if (request.getRequestTooLarge()) {
-		request.setErrorCode(413);
-        return;
-    }
     if (!request.getHeadersParsed()) {
         request.parseRawRequest(_config);
         if (request.getRequestTooLarge()) {
 			request.setErrorCode(413);
             return;
         }
+    }
+    if (request.getRequestTooLarge()) {
+		request.setErrorCode(413);
+        return;
     }
     if (request.getHeadersParsed()) {
         // Calculate body received
@@ -563,8 +560,6 @@ void Server::handleClient(int client_fd, ClientConnection& connection) {
         // Request is incomplete, return and wait for more data
         return;
     }
-
-
     if (!connection.getRequest()->parse()) {
         Logger::instance().log(ERROR, "Failed to parse client request on fd " + to_string(client_fd));
         connection.getRequest()->setErrorCode(400);  // Bad Request

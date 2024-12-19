@@ -108,6 +108,10 @@ void    UploadHandler::handleFile(std::string& partHeaders, std::string& partCon
             try {
                 // Save the file to the authorized path
                 saveFile(destPath, partContent);
+            } catch (const forbiddenDest& e) {
+                Logger::instance().log(ERROR, std::string("Forbidden destination error: ") + e.what());
+                _response.beError(403, "Forbidden: Write-protected destination.");
+                throw; // Relancer l'exception.
             } catch (const std::exception& e) {
                 Logger::instance().log(ERROR, std::string("Error while saving file: ") + e.what());
                 _response.beError(500, "Internal Server Error: Error during file upload.");
@@ -121,6 +125,16 @@ void    UploadHandler::handleFile(std::string& partHeaders, std::string& partCon
 }
 
 void UploadHandler::saveFile(const std::string& destPath, const std::string& fileContent) {
+    struct stat fileStat;
+    if (stat(destPath.c_str(), &fileStat) == 0) { // Le fichier existe
+        if (fileStat.st_mode & S_IWUSR) {
+            // Le fichier est accessible en écriture pour l'utilisateur
+        } else {
+            Logger::instance().log(ERROR, "Destination file is write-protected.");
+            throw forbiddenDest();
+        }
+    }
+    
     std::ofstream destFile(destPath.c_str(), std::ios::binary);
     if (!destFile.is_open()) {
         Logger::instance().log(ERROR, "Failed to open dest file on server's file system");
