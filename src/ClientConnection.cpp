@@ -31,6 +31,23 @@ void ClientConnection::setResponse(HTTPResponse* response) { this->_response = r
 void ClientConnection::setRequestActivity(unsigned long time) { _request->setLastActivity(time); }
 
 void ClientConnection::prepareResponse() {
+    if (_server->getConfig().errorPages.find(_response->getStatusCode()) !=  _server->getConfig().errorPages.end())
+    {
+        std::string filePath = _server->getConfig().root + _server->getConfig().errorPages.find(_response->getStatusCode())->second;
+        std::cerr << std::string("FilePath = ") + filePath << std::endl;
+        std::ifstream file(filePath.c_str(), std::ios::binary);
+        if (file) {
+            Logger::instance().log(INFO, "Serving error file found at: " + filePath);
+            std::stringstream buffer;
+            buffer << file.rdbuf();
+            std::string content = buffer.str();
+            std::string contentType = "text/html";
+            _response->setHeader("Content-Type", contentType);
+            _response->setHeader("Content-Length", to_string(content.size()));
+            _response->setBody(content);
+        }
+    }
+
     if (_response) {
         _responseBuffer = _response->toString();
         _responseOffset = 0;
