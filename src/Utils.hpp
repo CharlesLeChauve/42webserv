@@ -3,6 +3,7 @@
 
 #include <sstream>
 #include <string>
+
 #include <unistd.h>
 #include <sys/time.h>
 
@@ -17,9 +18,11 @@ std::string to_string(T value) {
 }
 
 namespace serverSignal {
-    extern int pipe_fd[2]; // Déclaration de la variable
+    extern int pipe_fd[2];
     void signal_handler(int signum);
 }
+
+enum FDType { FD_SERVER_SOCKET, FD_CLIENT_SOCKET, FD_CGI_INPUT, FD_CGI_OUTPUT, FD_UNKNOWN };
 
 enum LoggerLevel { DEBUG, INFO, WARNING, ERROR };
 

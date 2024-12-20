@@ -1,12 +1,15 @@
 // ConfigParser.cpp
+#include "ConfigParser.hpp"
+
+#include "ServerConfig.hpp"
+#include "Logger.hpp"
+
 #include <fstream>
 #include <sstream>
 #include <iostream>
-#include <cctype>
 #include <algorithm>
-#include "ConfigParser.hpp"
-#include "ServerConfig.hpp"
-#include "Logger.hpp"
+
+#include <cctype>
 
 ConfigParser::ConfigParser() {}
 

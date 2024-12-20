@@ -68,10 +68,12 @@
 #define LOGGER_HPP
 
 #include "Utils.hpp"
+
 #include <string>
 #include <fstream>
 #include <iostream>
 #include <vector>
+
 #include <cstdlib>
 
 class Logger {

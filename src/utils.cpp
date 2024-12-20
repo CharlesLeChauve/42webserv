@@ -1,7 +1,7 @@
 #include "Utils.hpp"
 
 namespace serverSignal {
-    int pipe_fd[2]; // Définition de la variable
+    int pipe_fd[2];
 
     void signal_handler(int signum) {
 		(void)signum;
@@ -9,7 +9,6 @@ namespace serverSignal {
         write(pipe_fd[1], &byte, sizeof(byte));
     }
 }
-
 
 unsigned long curr_time_ms() {
     struct timeval tv;

@@ -5,6 +5,8 @@
 #include <string.h>
 #include <algorithm>
 #include "ServerConfig.hpp"
+#include "HTTPRequest.hpp"
+#include "HTTPResponse.hpp"
 
 
 class UploadHandler {

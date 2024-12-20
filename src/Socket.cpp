@@ -1,8 +1,11 @@
 #include "Socket.hpp"
+
 #include "Logger.hpp"
+
+#include <iostream>
+
 #include <fcntl.h>
 #include <cstring>
-#include <iostream>
 
 bool Socket::operator==(int fd) const {
 	return (this->_socket_fd == fd);

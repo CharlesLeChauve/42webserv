@@ -1,11 +1,10 @@
 // Logger.cpp
+#include "Logger.hpp"
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <string>
 #include <cstdio>
 #include <ctime>
-#include "Logger.hpp"
+#include <sys/stat.h>
+#include <sys/types.h>
 
 Logger& Logger::instance() {
     static Logger instance;

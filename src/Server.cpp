@@ -1,21 +1,24 @@
-#include <fstream>
-#include "SessionManager.hpp"
 #include "Server.hpp"
+
+#include "SessionManager.hpp"
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
 #include "CGIHandler.hpp"
 #include "ServerConfig.hpp"
 #include "UploadHandler.hpp"
 #include "Logger.hpp"
-#include <sys/stat.h>  // Pour utiliser la fonction stat
+#include "Utils.hpp"
+
 #include <sstream>
+#include <fstream>
+
 #include <fcntl.h>
 #include <time.h>
-#include "Utils.hpp"
-#include <limits.h>    // Pour PATH_MAX
-#include <stdlib.h>    // Pour realpath
-#include <dirent.h>
+#include <limits.h>
+#include <stdlib.h>
 #include <string.h>
+#include <dirent.h>
+#include <sys/stat.h>
 
 Server::Server(const ServerConfig& config) : _config(config) {
 	if (!_config.isValid()) {
@@ -83,14 +86,13 @@ void Server::receiveRequest(int client_fd, HTTPRequest& request) {
         return;
     }
     if (request.getHeadersParsed()) {
-        // Calculate body received
         size_t header_end_pos = request._rawRequest.find("\r\n\r\n") + 4;
         request.setBodyReceived(request._rawRequest.size() - header_end_pos);
         // Check if full body is received
         if (request.getBodyReceived() >= request.getContentLength()) {
             request.setComplete(true);
             Logger::instance().log(INFO, "Full request read.");
-            return; // Full request received
+            return;
         }
         // Check if body size exceeds maximum
         if (request.getBodyReceived() > static_cast<size_t>(request.getMaxBodySize()) && request.getMaxBodySize()) {
@@ -117,7 +119,7 @@ void Server::handleHttpRequest(int client_fd, ClientConnection& connection) {
 
     if (location && !location->allowedMethods.empty()) {
         if (std::find(location->allowedMethods.begin(), location->allowedMethods.end(), request.getMethod()) == location->allowedMethods.end()) {
-            response->beError(405); // Méthode non autorisée
+            response->beError(405); // Method not allowed
             Logger::instance().log(WARNING, "405 error (Forbidden) sent on request : \n" + request.toString());
             return;
         }
@@ -130,7 +132,6 @@ void Server::handleHttpRequest(int client_fd, ClientConnection& connection) {
         return;
     }
 
-    // Vérification de l'hôte et du port (code existant)
     std::string hostHeader = request.getHost();
     if (!hostHeader.empty()) {
         size_t colonPos = hostHeader.find(':');
@@ -144,7 +145,7 @@ void Server::handleHttpRequest(int client_fd, ClientConnection& connection) {
             }
         }
     } else {
-        response->beError(400); // Mauvaise requête
+        response->beError(400); // Bad Request
         Logger::instance().log(WARNING, "400 error (Bad Request) sent on request : \n" + request.toString());
         return;
     }
@@ -161,7 +162,6 @@ void Server::handleHttpRequest(int client_fd, ClientConnection& connection) {
 
     response = connection.getResponse();
 
-    // Détermination du keep-alive
     std::string connectionHeader = request.getStrHeader("Connection");
     delete connection.getRequest();
     connection.setRequest(NULL);
@@ -171,7 +171,6 @@ void Server::handleHttpRequest(int client_fd, ClientConnection& connection) {
         keepAlive = false;
     }
 
-    // Définir l'en-tête Connection dans la réponse
     if (response && keepAlive) {
         response->setHeader("Connection", "keep-alive");
     } else if (response) {
@@ -203,10 +202,7 @@ bool Server::endsWith(const std::string& str, const std::string& suffix) const {
 }
 
 bool Server::isPathAllowed(const std::string& path, const std::string& uploadPath) {
-    // Extraire le chemin du répertoire à partir du chemin complet
     std::string directoryPath = path.substr(0, path.find_last_of('/'));
-
-    // Résoudre les chemins absolus
     char resolvedDirectoryPath[PATH_MAX];
     char resolvedUploadPath[PATH_MAX];
 
@@ -223,11 +219,9 @@ bool Server::isPathAllowed(const std::string& path, const std::string& uploadPat
     std::string directoryPathStr(resolvedDirectoryPath);
     std::string uploadPathStr(resolvedUploadPath);
 
-    // Logger les chemins résolus pour le débogage
     Logger::instance().log(DEBUG, "Resolved directory path: " + directoryPathStr);
     Logger::instance().log(DEBUG, "Resolved upload path: " + uploadPathStr);
 
-    // Vérifier que le chemin du répertoire commence par le chemin autorisé
     return directoryPathStr.find(uploadPathStr) == 0;
 }
 
@@ -247,7 +241,7 @@ std::string Server::sanitizeFilename(const std::string& filename) {
 void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response, const std::string& boundary) {
     const Location* location = _config.findLocation(request.getPath());
     if (!location || !location->uploadOn) {
-        Logger::instance().log(ERROR, "Upload not allowed for this location.");
+        Logger::instance().log(WARNING, "Upload not allowed for this location.");
         response.beError(403, "Upload not allowed.");
         return;
     }
@@ -257,28 +251,23 @@ void Server::handleFileUpload(const HTTPRequest& request, HTTPResponse& response
         return;
     }
 
-    // Préparer le répertoire de téléchargement
     std::string uploadDir = location->uploadPath;
     if (!uploadDir.empty() && uploadDir[0] != '/') {
         uploadDir = _config.root + "/" + uploadDir;
     }
 
-    // Vérifier que le répertoire de téléchargement existe
     struct stat st;
     if (stat(uploadDir.c_str(), &st) != 0 || !S_ISDIR(st.st_mode)) {
         Logger::instance().log(ERROR, "Upload directory does not exist or is not a directory: " + uploadDir);
-        response.beError(500, "Internal Server Error: Upload directory does not exist.");
+        response.beError(404, "Upload directory does not exist.");
         return;
     }
 
     try {
-        // Déléguer le traitement à UploadHandler
         UploadHandler uploadHandler(request, response, boundary, uploadDir, _config);
         uploadHandler.handleUpload();
     } catch (const std::exception& e) {
-        // Logger::instance().log(ERROR, std::string("Error while handling file upload: ") + e.what());
-        // response.setStatusCode(500);
-        // response.setBody("Internal Server Error: Error during file upload.");
+        Logger::instance().log(ERROR, "Exception caught while uploading file");
         return;
     }
 }
@@ -288,11 +277,8 @@ void Server::handleGetOrPostRequest(int client_fd, ClientConnection& connection)
     HTTPRequest& request = *connection.getRequest();
     HTTPResponse& response = *connection.getResponse();
 
-    // Find the corresponding Location
     const Location* location = _config.findLocation(request.getPath());
 
-
-	// Determine the root to use
     std::string root = _config.root;
     if (location && !location->root.empty()) {
         root = location->root;
@@ -300,10 +286,8 @@ void Server::handleGetOrPostRequest(int client_fd, ClientConnection& connection)
 
     std::string pathUnderRoot;
     if (location && !location->root.empty() && !location->path.empty()) {
-        // La Location a son propre root, on enlève location->path du chemin de la requête
         pathUnderRoot = request.getPath().substr(location->path.length());
     } else {
-        // On utilise le root global et le chemin complet de la requête
         pathUnderRoot = request.getPath();
     }
 
@@ -313,17 +297,12 @@ void Server::handleGetOrPostRequest(int client_fd, ClientConnection& connection)
 
     std::string fullPath = root + pathUnderRoot;
 
-    // Log to verify the complete path
-    Logger::instance().log(DEBUG, "handleGetOrPostRequest: fullPath = " + fullPath);
-
-    // Check if the method is supported
     if (request.getMethod() != "GET" && request.getMethod() != "POST" && request.getMethod() != "DELETE") {
         response.beError(501); // Not Implemented
         Logger::instance().log(WARNING, "501 error (Not Implemented): Method not supported.");
         return;
     }
 
-    // Handle file upload for POST requests with multipart/form-data
     bool isFileUpload = false;
     std::string contentType;
     if (request.getMethod() == "POST" && request.hasHeader("Content-Type")) {
@@ -334,7 +313,6 @@ void Server::handleGetOrPostRequest(int client_fd, ClientConnection& connection)
     }
 
     if (isFileUpload) {
-        // Handle file upload
         if (location && location->uploadOn) {
             size_t boundaryPos = contentType.find("boundary=");
             if (boundaryPos != std::string::npos) {
@@ -348,20 +326,16 @@ void Server::handleGetOrPostRequest(int client_fd, ClientConnection& connection)
                 return;
             }
         } else {
-            // Upload not allowed in this location
             response.beError(403); // Forbidden
             Logger::instance().log(WARNING, "403 error (Forbidden): Upload not allowed for this location.");
             return;
         }
     }
 
-    // Check if the file has a CGI extension
-       // Check if the file has a CGI extension
     std::string extension = getFileExtension(fullPath);
     if (hasCgiExtension(extension)) {
         Logger::instance().log(DEBUG, "CGI extension detected for path: " + fullPath);
 
-        // Get the interpreter for this extension
         std::string interpreter = getInterpreterForExtension(extension, location);
         if (interpreter.empty()) {
             Logger::instance().log(ERROR, "No interpreter found for extension: " + extension);
@@ -378,8 +352,6 @@ void Server::handleGetOrPostRequest(int client_fd, ClientConnection& connection)
             if (!cgiHandler->startCGI()) {
                 response.beError(500, "Unable to start CGI Process");
             } else {
-                //?? Here is the leak !! But if i delete, it causes invalid read in Server ;ethods later, i have to find why...
-                // Invalid reads are located in
                 if (connection.getResponse())
                     delete connection.getResponse();
                 connection.setResponse(NULL);
@@ -389,24 +361,12 @@ void Server::handleGetOrPostRequest(int client_fd, ClientConnection& connection)
         }
     }
 
-    // Handle GET and POST methods
     if (request.getMethod() == "GET") {
-        // Serve the static file
         Logger::instance().log(DEBUG, "Serving static file for path: " + fullPath);
         serveStaticFile(client_fd, fullPath, response, request);
     } else if (request.getMethod() == "POST") {
-        // Handle other POST requests (e.g., forms)
         Logger::instance().log(INFO, "POST request to static resource.");
-
-        //Teapot 
         response.beError(418, "POST request targeting static ressource or non-configured CGI");
-
-
-        // Customize the response here
-        // response.setStatusCode(200);
-        // response.setHeader("Content-Type", "text/html");
-        // response.setBody("<html><body><h1>POST request received</h1></body></html>");
-        // sendResponse(client_fd, response);
         return;
     }
 }
@@ -429,7 +389,6 @@ void Server::handleDeleteRequest(ClientConnection& connection) {
 			response.setHeader("Content-Length", to_string(body.size()));
 			response.setBody(body);
             Logger::instance().log(INFO, "Successful DELETE on resource : " + fullPath);
-			//sendResponse(client_fd, response);
 		} else {
             Logger::instance().log(WARNING, "500 error (Internal Server Error) to DELETE: " + fullPath + ": remove() failed");
 			response.beError(500);
@@ -444,22 +403,19 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath,
                              HTTPResponse& response, const HTTPRequest& request) {
     struct stat pathStat;
     if (stat(filePath.c_str(), &pathStat) == 0 && S_ISDIR(pathStat.st_mode)) {
-        // Vérifier s'il existe un fichier index
         Logger::instance().log(INFO, "Request File Path is a directory, searching for an index page...");
         std::string indexPath = filePath + "/" + _config.index;
         if (access(indexPath.c_str(), F_OK) != -1) {
             Logger::instance().log(INFO, "Found index page: " + indexPath);
             serveStaticFile(client_fd, indexPath, response, request);
         } else {
-            // Vérifier la valeur de autoindex
-            bool autoindex = _config.autoindex; // Valeur par défaut du serveur
+            bool autoindex = _config.autoindex;
             const Location* location = _config.findLocation(request.getPath());
-            if (location && location->autoindex != -1) { // Si défini dans la location
+            if (location && location->autoindex != -1) {
                 autoindex = (location->autoindex == 1);
             }
 
             if (autoindex) {
-                // Générer le listing du répertoire
                 Logger::instance().log(INFO, "Index page not found. Generating directory listing for: " + filePath);
                 std::string directoryListing = generateDirectoryListing(filePath, request.getPath());
 
@@ -467,9 +423,7 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath,
                 response.setHeader("Content-Type", "text/html");
                 response.setBody(directoryListing);
                 response.setHeader("Content-Length", to_string(directoryListing.size()));
-                //sendResponse(client_fd, response);
             } else {
-                // Si autoindex est désactivé, retourner une erreur 403 Forbidden
                 Logger::instance().log(INFO, "Index page not found and autoindex is off. Sending 403 Forbidden.");
                 response.beError(403);//Forbidden
             }
@@ -499,15 +453,12 @@ void Server::serveStaticFile(int client_fd, const std::string& filePath,
                     contentType = "image/jpeg";
                 else if (extension == ".gif")
                     contentType = "image/gif";
-                // Vous pouvez ajouter d'autres types MIME si nécessaire
             }
 
             response.setHeader("Content-Type", contentType);
             response.setHeader("Content-Length", to_string(content.size()));
             response.setBody(content);
             Logger::instance().log(DEBUG, "Set-Cookie header: " + response.getStrHeader("Set-Cookie"));
-
-            //sendResponse(client_fd, response);
         } else {
             Logger::instance().log(WARNING, "Requested file not found: " + filePath + "; 404 error sent");
             response.beError(404);
@@ -531,7 +482,6 @@ int Server::acceptNewClient(int server_fd) {
 		return -1;
 	}
     setNonBlocking(client_fd);
-
 	return client_fd;
 }
 
@@ -547,7 +497,6 @@ void Server::handleClient(int client_fd, ClientConnection& connection) {
     receiveRequest(client_fd, *connection.getRequest());
 
 	if (connection.getRequest()->getErrorCode() != 0) {
-        // Une erreur a été détectée dans receiveRequest
         HTTPResponse* errorResponse = new HTTPResponse();
         errorResponse->beError(connection.getRequest()->getErrorCode());
         if (connection.getResponse())
@@ -576,15 +525,13 @@ void Server::handleResponseSending(int client_fd, ClientConnection& connection) 
 
     int completed = connection.sendResponseChunk(client_fd);
     if (completed == 0) {
-        // Réponse entièrement envoyée
+        // Response fully sent
         HTTPResponse* res = connection.getResponse();
         std::string connHeader = res->getStrHeader("Connection");
 
         if (connHeader == "close") {
-            // Fermer la connexion car le client l'a demandé ou parce que non HTTP/1.1
             Logger::instance().log(INFO, "Response fully sent, closing connection FD: " + to_string(client_fd));
         } else {
-            // keep-alive : réinitialiser la connexion pour une prochaine requête
             Logger::instance().log(INFO, "Response fully sent, keeping connection alive FD: " + to_string(client_fd));
 
             int max_body_size = connection.getServer()->getConfig().clientMaxBodySize;
@@ -593,11 +540,9 @@ void Server::handleResponseSending(int client_fd, ClientConnection& connection) 
                 delete connection.getRequest();
             }
             connection.setRequest(new HTTPRequest(max_body_size));
-            // Le main loop doit laisser ce fd en POLLIN pour recevoir une nouvelle requête
         }
         connection.setExchangeOver(true);
     } else if (completed == -1) {
-        // Erreur d'écriture
         Logger::instance().log(ERROR, "Error while writing to client fd :" + to_string(client_fd) + ". Closing Connection");
         connection.setExchangeOver(true);
     }
@@ -615,7 +560,6 @@ std::string Server::generateDirectoryListing(const std::string& directoryPath, c
         while ((entry = readdir(dir)) != NULL) {
             std::string name = entry->d_name;
 
-            // Ignorer les entrées spéciales "." et ".."
             if (name == "." || name == "..")
                 continue;
 
@@ -624,7 +568,6 @@ std::string Server::generateDirectoryListing(const std::string& directoryPath, c
                 fullPath += "/";
             fullPath += name;
 
-            // Ajouter un '/' à la fin si c'est un répertoire
             std::string displayName = name;
             std::string filePath = directoryPath + "/" + name;
             struct stat st;

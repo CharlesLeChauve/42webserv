@@ -15,7 +15,6 @@
 #include <iomanip>
 #include <fstream>
 
-
 class SessionManager
 {
 private:
@@ -36,7 +35,6 @@ public:
 	std::string	curr_time();
 	void	getManager(HTTPRequest* request, HTTPResponse* response, int client_fd, SessionManager& session);
 
-	std::string generate_session_id();
 	std::string generateUUID();
 	const std::string& getSessionId() const;
 	bool getFirstCon() const;	

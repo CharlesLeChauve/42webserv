@@ -2,9 +2,11 @@
 #ifndef CGIHANDLER_HPP
 #define CGIHANDLER_HPP
 
-#include <string>
-#include <stdlib.h>
 #include "HTTPRequest.hpp"
+
+#include <string>
+
+#include <stdlib.h>
 
 class Server;
 

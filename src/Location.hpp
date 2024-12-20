@@ -5,7 +5,6 @@
 #include <map>
 #include <vector>
 
-
 struct Location {
 	std::string path;
 	std::string root;

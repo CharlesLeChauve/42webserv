@@ -1,15 +1,17 @@
 // CGIHandler.cpp
-#include <sys/wait.h>
-#include <unistd.h>
-#include <signal.h>
-#include <limits.h>
-#include <iostream>
-#include <cstring>
 #include "CGIHandler.hpp"
 #include "HTTPResponse.hpp"
 #include "Server.hpp"
 #include "Logger.hpp"
 #include "Utils.hpp"
+
+#include <iostream>
+
+#include <cstring>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <signal.h>
+#include <limits.h>
 
 CGIHandler::CGIHandler::CGIHandler(const std::string& scriptPath, const std::string& interpreterPath, const HTTPRequest& request)
     : _scriptPath(scriptPath), _request(request), _interpreterPath(interpreterPath), _pid(-1), _CGIOutput(""), _bytesSent(0), _started(false), _cgiFinished(false), _cgiExitStatus(-1) {

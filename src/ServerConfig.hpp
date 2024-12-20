@@ -3,6 +3,7 @@
 #define SERVERCONFIG_HPP
 
 #include "Location.hpp"
+
 #include <string>
 #include <vector>
 #include <map>

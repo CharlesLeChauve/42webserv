@@ -1,11 +1,13 @@
 // ClientConnection.cpp
-#include <unistd.h>
-#include <errno.h>
 #include "ClientConnection.hpp"
+
 #include "CGIHandler.hpp"
 #include "Server.hpp"
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
+
+#include <unistd.h>
+#include <errno.h>
 
 ClientConnection::ClientConnection(Server* server)
     : _server(server), _request(NULL), _response(NULL), _cgiHandler(NULL), _responseOffset(0), _isSending(false), _exchangeOver(false), _used(false) {}
@@ -45,7 +47,6 @@ int ClientConnection::sendResponseChunk(int client_fd) {
     size_t remaining = _responseBuffer.size() - _responseOffset;
     size_t bytesToSend = std::min(remaining, BUFFER_SIZE);
 
-    // Copier les données dans le buffer fixe
     std::memcpy(buffer, _responseBuffer.c_str() + _responseOffset, bytesToSend);
 
     ssize_t bytesSent = write(client_fd, buffer, bytesToSend);

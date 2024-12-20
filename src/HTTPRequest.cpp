@@ -1,10 +1,13 @@
-#include <sstream>
-#include <iostream>
-#include <cstdlib>
 #include "HTTPRequest.hpp"
+
 #include "Utils.hpp"
 #include "Location.hpp"
 #include "Logger.hpp"
+
+#include <sstream>
+#include <iostream>
+
+#include <cstdlib>
 
 HTTPRequest::HTTPRequest()
     : _complete(false), _connectionClosed(false), _maxBodySize(0),

@@ -1,4 +1,3 @@
-// Si possible, inclure une bibliothèque de hachage MD5 ou SHA1
 #include "SessionManager.hpp"
 
 SessionManager::SessionManager(std::string session_id) {
@@ -12,7 +11,6 @@ SessionManager::SessionManager(std::string session_id) {
         std::cout << "Welcome to User : " << _session_id << " for his first connection !" << std::endl;
         Logger::instance().log(INFO, "Session id generated " + _session_id);
     }
-    // loadSession();
 }
 
 
@@ -23,21 +21,6 @@ SessionManager::SessionManager()
 
 SessionManager::~SessionManager()
 {
-}
-
-
-
-std::string SessionManager::generate_session_id() {
-    std::stringstream ss;
-
-    // Ajouter l'horodatage avec une meilleure précision
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    ss << tv.tv_sec << tv.tv_usec;
-
-    ss << rand() << rand();
-    std::string session_id = ss.str(); // À implémenter ou utiliser une bibliothèque externe
-    return session_id;
 }
 
 /*
@@ -68,7 +51,7 @@ std::string SessionManager::generateUUID() {
 
 void SessionManager::setData(const std::string& key, const std::string& value, bool append) {
     if (append && _session_data.find(key) != _session_data.end()) {
-        _session_data[key] += ", " + value;  // Ajout de la nouvelle valeur
+        _session_data[key] += ", " + value;
     }
     else {
         _session_data[key] = value;
@@ -111,27 +94,22 @@ std::string cleanValue(const std::string& value) {
 }
 
 void SessionManager::persistSession() {
-    std::string filepath = "sessions/" + _session_id + ".txt"; // Définition du chemin de fichier
+    std::string filepath = "sessions/" + _session_id + ".txt";
 
-    // Avant d'écrire dans le file, nettoie les données
     for (std::map<std::string, std::string>::iterator it = _session_data.begin(); it != _session_data.end(); ++it) {
         it->second = cleanValue(it->second);
     }
 
-    // Ouvre le fichier en mode ajout
     std::ofstream file(filepath.c_str(), std::ios::app);
     if (!file.is_open()) {
         std::cerr << "Erreur : impossible de sauvegarder la session dans " << filepath << std::endl;
         return;
     }
 
-    // Ajoute une ligne vide avant [General] si le fichier n'est pas vide
-    file.seekp(0, std::ios::end); // Place le curseur à la fin
     if (file.tellp() > 0) {
-        file << "\n"; // Ajoute une ligne vide
+        file << "\n";
     }
 
-    // Écrit les nouvelles données sous [General]
     file << "[General]\n";
     if (_session_data.find("last_access_time") != _session_data.end()) {
         file << "last_access_time=" << cleanValue(curr_time()) << "\n";
@@ -145,7 +123,6 @@ void SessionManager::persistSession() {
 
     file << "\n[Requests]\n";
 
-    // Écrit les nouvelles données sous [Requests]
     if (_session_data.find("requested_pages") != _session_data.end()) {
         file << "Pages=" << cleanValue(_session_data["requested_pages"]) << "\n";
     }
@@ -169,7 +146,7 @@ void SessionManager::loadSession() {
 
     std::string line, current_section;
     while (std::getline(file, line)) {
-        if (line.empty() || line[0] == '#') // Ignore lignes vides ou commentaires
+        if (line.empty() || line[0] == '#')
             continue;
         if (line[0] == '[' && line[line.size() - 1] == ']') {
             current_section = line.substr(1, line.size() - 2);
@@ -196,7 +173,7 @@ std::string SessionManager::curr_time() {
     char buffer[80];
     
     time_info = localtime(&raw_time);
-    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", time_info);  // Format lisible
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", time_info);
     return std::string(buffer);
 }
 
@@ -206,16 +183,15 @@ void    SessionManager::manageUserSession(HTTPRequest* request, HTTPResponse* re
 
     if (session.getFirstCon()) {
         response->setHeader("Set-Cookie", session.getSessionId() + "; Path=/; HttpOnly");
-        session.setData("status", "new user"); // Set up uniquement lors de la première connexion
+        session.setData("status", "new user");
     }
     else {
         if (session.getData("status") == "new user") {
-            session.setData("status", "existing user"); // Met à jour pour les connexions suivantes
+            session.setData("status", "existing user");
         }
         Logger::instance().log(INFO, "Returning user: " + session.getSessionId());
     }
 
-    // Mise à jour des informations
     session.setData("last_access_time", to_string(session.curr_time()), true);
     std::string path = request->getPath();
     std::string method = request->getMethod();
@@ -232,9 +208,9 @@ void    SessionManager::manageUserSession(HTTPRequest* request, HTTPResponse* re
         Logger::instance().log(WARNING, "Request method is empty for client fd: " + to_string(client_fd));
 
     if (user_agent.empty())
-        user_agent = "Unknown"; // By default
+        user_agent = "Unknown";
     else
-        session.setData("user_agent", user_agent); // False pour ne pas accumuler pls valeurs pour un user.
+        session.setData("user_agent", user_agent);
 }
 
 void	SessionManager::getManager(HTTPRequest* request, HTTPResponse* response, int client_fd, SessionManager& session) {

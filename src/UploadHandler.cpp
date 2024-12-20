@@ -1,10 +1,10 @@
 // UploadHandler.cpp
-#include "HTTPRequest.hpp"
-#include "HTTPResponse.hpp"
 #include "UploadHandler.hpp"
-#include <fstream>
-#include <sys/stat.h>
+
 #include "Logger.hpp"
+
+#include <sys/stat.h>
+#include <fstream>
 
 UploadHandler::UploadHandler(const HTTPRequest& request, HTTPResponse& response, const std::string& boundary, const std::string& uploadDir, const ServerConfig& config)
     : _request(request), _response(response), _boundary("--" + boundary), _uploadDir(uploadDir), _config(config), _filename("") {}
@@ -30,7 +30,6 @@ void UploadHandler::handleUpload() {
             pos += 2;
         }
 
-        // Extraire les en-têtes de la partie
         size_t headersEnd = requestBody.find("\r\n\r\n", pos);
         if (headersEnd == std::string::npos) {
             Logger::instance().log(WARNING, "Missing \\r\\n\\r\\n in request for Upload");
@@ -38,9 +37,8 @@ void UploadHandler::handleUpload() {
             return;
         }
         std::string partHeaders = requestBody.substr(pos, headersEnd - pos);
-        pos = headersEnd + 4; // Position du début du contenu
+        pos = headersEnd + 4;
 
-        // Trouver la prochaine limite
         endPos = requestBody.find(_boundary, pos);
         if (endPos == std::string::npos) {
             Logger::instance().log(ERROR, "End Boundary Marker not found.");
@@ -49,20 +47,17 @@ void UploadHandler::handleUpload() {
         }
         size_t contentEnd = endPos;
 
-        // Retirer les éventuels \r\n avant la limite
         if (requestBody.substr(contentEnd - 2, 2) == "\r\n") {
             contentEnd -= 2;
         }
 
-        // Extraire le contenu de la partie
         std::string partContent = requestBody.substr(pos, contentEnd - pos);
 
-        // Vérifier si c'est un fichier
         try {
             handleFile(partHeaders, partContent);
         }
         catch (std::exception& e) {
-            throw; // Relancer l'exception pour la catch
+            throw;
             return;
         }
         endPos = endPos + _boundary.length();
@@ -79,7 +74,6 @@ void UploadHandler::handleUpload() {
 
 void    UploadHandler::handleFile(std::string& partHeaders, std::string& partContent) {
 
-     // Vérifier si c'est un fichier
         if (partHeaders.find("Content-Disposition") != std::string::npos &&
             partHeaders.find("filename=\"") != std::string::npos)
         {
@@ -93,10 +87,8 @@ void    UploadHandler::handleFile(std::string& partHeaders, std::string& partCon
                 return;
             }
 
-            // Sanitize filename to prevent directory traversal attacks
             this->_filename = sanitizeFilename(this->_filename);
 
-            // Construct the destination path
             std::string destPath = this->_uploadDir + "/" + this->_filename;
 
             if (!isPathAllowed(destPath, this->_uploadDir)) {
@@ -106,16 +98,15 @@ void    UploadHandler::handleFile(std::string& partHeaders, std::string& partCon
             }
 
             try {
-                // Save the file to the authorized path
                 saveFile(destPath, partContent);
             } catch (const forbiddenDest& e) {
                 Logger::instance().log(ERROR, std::string("Forbidden destination error: ") + e.what());
                 _response.beError(403, "Forbidden: Write-protected destination.");
-                throw; // Relancer l'exception.
+                throw;
             } catch (const std::exception& e) {
                 Logger::instance().log(ERROR, std::string("Error while saving file: ") + e.what());
                 _response.beError(500, "Internal Server Error: Error during file upload.");
-                throw; // Relancer l'exception.
+                throw;
             }
         } else {
             Logger::instance().log(ERROR, std::string("Error while parsing the file in the request:") + partHeaders);
@@ -126,10 +117,8 @@ void    UploadHandler::handleFile(std::string& partHeaders, std::string& partCon
 
 void UploadHandler::saveFile(const std::string& destPath, const std::string& fileContent) {
     struct stat fileStat;
-    if (stat(destPath.c_str(), &fileStat) == 0) { // Le fichier existe
-        if (fileStat.st_mode & S_IWUSR) {
-            // Le fichier est accessible en écriture pour l'utilisateur
-        } else {
+    if (stat(destPath.c_str(), &fileStat) == 0) {
+        if (!(fileStat.st_mode & S_IWUSR)) {
             Logger::instance().log(ERROR, "Destination file is write-protected.");
             throw forbiddenDest();
         }
@@ -147,13 +136,10 @@ void UploadHandler::saveFile(const std::string& destPath, const std::string& fil
 
 std::string UploadHandler::sanitizeFilename(const std::string& filename) {
     std::string sanitized = filename;
-    // Implémenter la logique pour supprimer les caractères non autorisés, les chemins relatifs, etc.
-    // Par exemple, supprimer les ../ pour éviter la traversée de répertoires
     size_t pos;
     while ((pos = sanitized.find("..")) != std::string::npos) {
         sanitized.erase(pos, 2);
     }
-    // Supprimer les caractères spéciaux
     const std::string invalidChars = "\\/:?\"<>|";
     for (size_t i = 0; i < invalidChars.size(); ++i) {
         sanitized.erase(std::remove(sanitized.begin(), sanitized.end(), invalidChars[i]), sanitized.end());
@@ -162,10 +148,8 @@ std::string UploadHandler::sanitizeFilename(const std::string& filename) {
 }
 
 bool UploadHandler::isPathAllowed(const std::string& path, const std::string& uploadDir) {
-    // Vérifier que le chemin est dans le répertoire autorisé
     std::string directoryPath = path.substr(0, path.find_last_of('/'));
 
-    // Résoudre les chemins absolus
     char resolvedDirectoryPath[PATH_MAX];
     char resolvedUploadPath[PATH_MAX];
 
@@ -182,10 +166,8 @@ bool UploadHandler::isPathAllowed(const std::string& path, const std::string& up
     std::string directoryPathStr(resolvedDirectoryPath);
     std::string uploadPathStr(resolvedUploadPath);
 
-    // Logger les chemins résolus pour le débogage
     Logger::instance().log(DEBUG, "Resolved directory path: " + directoryPathStr);
     Logger::instance().log(DEBUG, "Resolved upload path: " + uploadPathStr);
 
-    // Vérifier que le chemin du répertoire commence par le chemin autorisé
     return directoryPathStr.find(uploadPathStr) == 0;
 }

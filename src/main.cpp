@@ -15,34 +15,6 @@
 #include <map>
 #include "ClientConnection.hpp"
 
-void modifyPollFD(std::vector<pollfd>& poll_fds, int fd, short events, bool addEvent) {
-    for (size_t i = 0; i < poll_fds.size(); ++i) {
-        if (poll_fds[i].fd == fd) {
-            if (addEvent) {
-                poll_fds[i].events |= events; // Add the event(s)
-            } else {
-                poll_fds[i].events &= ~events; // Remove the event(s)
-                if (poll_fds[i].events == 0) {
-                    // If no events are left, you may choose to remove the fd
-                    poll_fds.erase(poll_fds.begin() + i);
-                }
-            }
-            return;
-        }
-    }
-    if (addEvent) {
-        // FD not found; add a new pollfd entry
-        pollfd pfd;
-        pfd.fd = fd;
-        pfd.events = events;
-        pfd.revents = 0;
-        poll_fds.push_back(pfd);
-    }
-}
-
-
-enum FDType { FD_SERVER_SOCKET, FD_CLIENT_SOCKET, FD_CGI_INPUT, FD_CGI_OUTPUT, FD_UNKNOWN };
-
 FDType getFDType(int fd, const std::map<int, Server*>& fdToServerMap, const std::map<int, ClientConnection>& connections) {
     if (fdToServerMap.find(fd) != fdToServerMap.end()) {
         return FD_SERVER_SOCKET;

@@ -4,7 +4,6 @@
 
 #include <string>
 
-// Forward declarations
 class Server;
 class HTTPRequest;
 class HTTPResponse;
@@ -17,7 +16,6 @@ private:
     HTTPResponse* _response;
     CGIHandler* _cgiHandler;
 
-    // Attributes for managing response sending
     std::string _responseBuffer;
     size_t _responseOffset;
     bool _isSending;
@@ -42,7 +40,6 @@ public:
     void setResponse(HTTPResponse* response);
     void setRequestActivity(unsigned long time);
 
-    // Methods to manage sending the response
     void prepareResponse();
     int sendResponseChunk(int client_fd);
     bool isResponseComplete() const;
