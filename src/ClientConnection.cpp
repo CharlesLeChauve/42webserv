@@ -34,7 +34,6 @@ void ClientConnection::prepareResponse() {
     if (_server->getConfig().errorPages.find(_response->getStatusCode()) !=  _server->getConfig().errorPages.end())
     {
         std::string filePath = _server->getConfig().root + _server->getConfig().errorPages.find(_response->getStatusCode())->second;
-        std::cerr << std::string("FilePath = ") + filePath << std::endl;
         std::ifstream file(filePath.c_str(), std::ios::binary);
         if (file) {
             Logger::instance().log(INFO, "Serving error file found at: " + filePath);

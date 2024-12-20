@@ -110,7 +110,8 @@ void manageConnections(std::map<int, ClientConnection>& connections, std::vector
         if (connection.getRequest() && connection.getRequest()->getConnectionClosed())
         {
             connection.resetConnection();
-            connections.erase(it_conn);
+            std::map<int, ClientConnection>::iterator it_to_erase = it_conn++;
+            connections.erase(it_to_erase);
             for (size_t i = 0; i < poll_fds.size(); ++i) {
                 if (poll_fds[i].fd == client_fd) {
                     poll_fds.erase(poll_fds.begin() + i);
