@@ -30,7 +30,7 @@ make
 ```sh
 ./webserv [config_file]
 ```
-By default, the server will use the configuration file designed to serve the project's demo static site, which is included in this repository.
+By default, the server will use the configuration file designed to serve the project's demo static site (on MacOs), which is included in this repository.
 
 ## Configuration
 The server is configurable via a `.conf` configuration file that allows you to define:
