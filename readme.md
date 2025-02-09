@@ -55,6 +55,7 @@ The server is configurable via a `.conf` configuration file that allows you to d
 ## Authors
 - **tgibert** **CharlesLeChauve**
 - **anporced** **Tulece**
+- **jeguerin** **JayZ66**
 
 ## License
 Project developed as part of 42 school, under a free license.
